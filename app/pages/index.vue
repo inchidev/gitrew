@@ -72,10 +72,10 @@ const stages = [
 const watchlist = [
   {
     name: "Cursor",
-    focus: "Cloud agents & remote execution",
+    focus: "Origin & cloud agents",
     description:
-      "Following how agents work in isolated environments and bring changes back for review.",
-    href: "https://cursor.com/docs/cloud-agent",
+      "Following Origin, Cursor’s Git forge in early beta, and how cloud agents turn repository tasks into changes ready for review.",
+    href: "https://cursor.com/docs/origin",
   },
   {
     name: "Claude",

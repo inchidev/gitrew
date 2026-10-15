@@ -24,7 +24,7 @@ Keep Cloudflare and Vercel installation paths. Test celld locally with the same 
 
 ## Watch and learn
 
-- [Cursor cloud agents](https://cursor.com/docs/cloud-agent): remote environments, API handoff, repository results.
+- [Cursor Origin](https://cursor.com/docs/origin) and [cloud agents](https://cursor.com/docs/cloud-agent): early-beta Git forge, repository apps, remote environments and reviewable results.
 - [Claude / Anthropic Scion](https://www.anthropic.com/engineering/redesigning-source-control): agent-scale source control; Scion is internal research.
 - [Cloudflare Git platform direction](https://blog.cloudflare.com/next-git-platform-on-cloudflare/): Artifacts repository backend, Sandboxes for execution, AI Gateway for model routing. These are separate responsibilities.
 - [GitOrange](https://github.com/choyiny/gitorange), [Weft](https://github.com/celador/weft), [AgentBranches](https://github.com/alexeygrigorev/cloudflare-agent-git): evaluate repository models, agent operations and interface ideas before reuse.
