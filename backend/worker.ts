@@ -1,4 +1,17 @@
-import { appReturnTo, legacyWorkspacePath, workspacePath } from "../shared/routes";
+import {
+  PushStore,
+  pushEnabled,
+  subscriptionSchema,
+  type PushEnv,
+} from "./push";
+import { mediaProvider, type MediaEnv } from "./huddles";
+import type { LiveHub, LiveIdentity } from "./live-hub";
+import { authorizeRoom, roomSchema } from "./live-access";
+import {
+  appReturnTo,
+  legacyWorkspacePath,
+  workspacePath,
+} from "../shared/routes";
 import { Buffer } from "node:buffer";
 import { repositoryNameSchema } from "../shared/workspace";
 import { z } from "zod";
@@ -75,24 +88,35 @@ function publicApp(app: App | null) {
 }
 function canonical(request: Request, app: App) {
   if (new URL(request.url).origin !== app.origin)
-    throw new HttpError(403, "Use this deployment's configured Gitrew address.");
+    throw new HttpError(
+      403,
+      "Use this deployment's configured Gitrew address.",
+    );
 }
 
-export interface BackendEnv {
+export interface BackendEnv extends MediaEnv, PushEnv {
   DB?: D1Database;
+  LIVE?: DurableObjectNamespace<LiveHub>;
   STORE?: BackendStore;
   ASSETS?: { fetch(request: Request): Promise<Response> };
   SETUP_TOKEN: string;
   PUBLIC_APP: string;
   SANDBOX_ORGANIZATION: string;
-  PLATFORM?: "cloudflare" | "vercel";
+  PLATFORM?: "cloudflare" | "celld";
 }
 
 export default {
-  async fetch(request: Request, env: BackendEnv): Promise<Response> {
+  async fetch(
+    request: Request,
+    env: BackendEnv,
+    ctx?: ExecutionContext,
+  ): Promise<Response> {
     const url = new URL(request.url);
-    if (url.protocol !== "https:" && !["localhost","127.0.0.1"].includes(url.hostname)) {
-      url.protocol="https:";
+    if (
+      url.protocol !== "https:" &&
+      !["localhost", "127.0.0.1"].includes(url.hostname)
+    ) {
+      url.protocol = "https:";
       return redirect(url.href);
     }
     if (url.pathname === "/health")
@@ -101,22 +125,43 @@ export default {
       if (env.ASSETS) return env.ASSETS.fetch(request);
       // The sandbox publishes static files on GitHub Pages. Dynamic paths use
       // its public SPA shell; no cookies or private request headers are forwarded.
-      if (/^\/(w|demo)\//.test(url.pathname) && ["GET", "HEAD"].includes(request.method)) {
+      if (
+        /^\/(w|demo)\//.test(url.pathname) &&
+        ["GET", "HEAD"].includes(request.method)
+      ) {
         try {
           const shell = await fetch(new URL("/200.html", url.origin), {
-            method: request.method, redirect: "manual", signal: AbortSignal.timeout(15_000),
+            method: request.method,
+            redirect: "manual",
+            signal: AbortSignal.timeout(15_000),
           });
-          if (shell.status >= 300 && shell.status < 400) return json({ error: "Gitrew frontend address needs attention." }, 502);
-          return new Response(shell.body, { status: shell.status, headers: {
-            "Content-Type": shell.headers.get("Content-Type") || "text/html; charset=utf-8",
-            "Cache-Control": "no-store",
-          } });
-        } catch { return json({ error: "Gitrew could not load. Reload and try again." }, 502); }
+          if (shell.status >= 300 && shell.status < 400)
+            return json(
+              { error: "Gitrew frontend address needs attention." },
+              502,
+            );
+          return new Response(shell.body, {
+            status: shell.status,
+            headers: {
+              "Content-Type":
+                shell.headers.get("Content-Type") || "text/html; charset=utf-8",
+              "Cache-Control": "no-store",
+            },
+          });
+        } catch {
+          return json(
+            { error: "Gitrew could not load. Reload and try again." },
+            502,
+          );
+        }
       }
       return json({ error: "Open the Gitrew frontend to continue." }, 404);
     }
     if (!env.STORE && !env.DB)
-      return json({ error: "Configure this deployment's private storage before setup." }, 503);
+      return json(
+        { error: "Configure this deployment's private storage before setup." },
+        503,
+      );
     const store = env.STORE || new Store(env.DB!, env.SETUP_TOKEN || "");
     let sessionId = "";
     try {
@@ -129,6 +174,10 @@ export default {
           app: publicApp(app),
           sandbox: env.SANDBOX_ORGANIZATION || "",
           platform: env.PLATFORM || "cloudflare",
+          realtime: Boolean(env.LIVE),
+          huddles: env.LIVE ? mediaProvider(env) : null,
+          push: pushEnabled(env),
+          pushPublicKey: pushEnabled(env) ? env.VAPID_PUBLIC_KEY : null,
         });
       }
       if (url.pathname === "/api/setup/start" && request.method === "POST") {
@@ -173,7 +222,13 @@ export default {
             members: "read",
             organization_administration: "read",
           },
-          default_events: [],
+          default_events: [
+            "discussion",
+            "discussion_comment",
+            "membership",
+            "member",
+            "organization",
+          ],
         };
         return json(
           {
@@ -244,9 +299,14 @@ export default {
         ).toString("base64url");
         // Only a known local destination is retained; no arbitrary redirect URL is accepted.
         const workspace = url.searchParams.get("workspace") || "";
-        const returnTo = url.searchParams.get("setup") === "1" ? "/create/" :
-          appReturnTo(url.searchParams.get("returnTo")) || legacyWorkspacePath(workspace) ||
-          (env.SANDBOX_ORGANIZATION ? workspacePath(env.SANDBOX_ORGANIZATION) : "/login");
+        const returnTo =
+          url.searchParams.get("setup") === "1"
+            ? "/create/"
+            : appReturnTo(url.searchParams.get("returnTo")) ||
+              legacyWorkspacePath(workspace) ||
+              (env.SANDBOX_ORGANIZATION
+                ? workspacePath(env.SANDBOX_ORGANIZATION)
+                : "/login");
         const state = await store.state("oauth", { verifier, returnTo });
         const authorize = new URL("https://github.com/login/oauth/authorize");
         authorize.search = new URLSearchParams({
@@ -272,9 +332,11 @@ export default {
           );
         const pending = authState.parse(await store.consume(state, "oauth"));
         if (!code || code.length > 512 || url.searchParams.has("error"))
-          return redirect("/login?authError=cancelled&returnTo=" + encodeURIComponent(pending.returnTo), [
-            setCookie(request, FLOW, "", 0),
-          ]);
+          return redirect(
+            "/login?authError=cancelled&returnTo=" +
+              encodeURIComponent(pending.returnTo),
+            [setCookie(request, FLOW, "", 0)],
+          );
         const credentials = await oauthToken(app, {
           code,
           code_verifier: pending.verifier,
@@ -311,15 +373,64 @@ export default {
           .object({
             action: z.string().optional(),
             sender: actorSchema.optional(),
+            installation: z.object({ id: z.number() }).optional(),
+            repository: z.object({ full_name: z.string() }).optional(),
+            discussion: z.object({ node_id: z.string() }).optional(),
+            comment: z.object({ node_id: z.string() }).optional(),
+            membership: z.object({ user: actorSchema }).optional(),
+            member: actorSchema.optional(),
           })
           .parse(JSON.parse(new TextDecoder().decode(raw)));
+        const event = request.headers.get("X-GitHub-Event");
+        const workspace = await store.defaultWorkspace();
+        const hub = workspace && env.LIVE?.getByName(workspace.organization);
         if (
-          request.headers.get("X-GitHub-Event") ===
-            "github_app_authorization" &&
+          event === "github_app_authorization" &&
           payload.action === "revoked" &&
           payload.sender
-        )
+        ) {
           await store.revoke(payload.sender.id);
+          await hub?.revoke(payload.sender.id);
+        }
+        if (
+          workspace &&
+          hub &&
+          payload.installation?.id === workspace.installationId
+        ) {
+          if (
+            ["discussion", "discussion_comment"].includes(event || "") &&
+            [workspace.repository, workspace.vault].includes(
+              payload.repository?.full_name || "",
+            )
+          ) {
+            // Never publish private bodies, participant lists or titles via webhooks.
+            await hub.emit(payload.discussion?.node_id || "", {
+              type: "refresh",
+            });
+            if (
+              event === "discussion_comment" &&
+              payload.action === "created" &&
+              payload.discussion &&
+              payload.comment &&
+              pushEnabled(env)
+            ) {
+              const notify = new PushStore(env).notify(
+                store,
+                app,
+                workspace.organization,
+                payload.discussion.node_id,
+                payload.comment.node_id,
+                payload.sender?.id,
+              );
+              if (ctx) ctx.waitUntil(notify.catch(() => undefined));
+              else await notify.catch(() => undefined);
+            }
+          }
+          if (["membership", "member", "organization"].includes(event || "")) {
+            const member = payload.membership?.user || payload.member;
+            if (member) await hub.revoke(member.id);
+          }
+        }
         return json({ received: true });
       }
       const session = await store.session(cookie(request, SESSION));
@@ -339,6 +450,13 @@ export default {
       }
       if (url.pathname === "/api/logout" && request.method === "POST") {
         await store.logout(session.id);
+        if (pushEnabled(env)) await new PushStore(env).revoke(session.id);
+        const workspace = await store.defaultWorkspace();
+        if (workspace)
+          await env.LIVE?.getByName(workspace.organization).revoke(
+            session.userId,
+            session.id,
+          );
         return json({ signedOut: true }, 200, {
           "Set-Cookie": setCookie(request, SESSION, "", 0),
         });
@@ -361,6 +479,120 @@ export default {
           workspace: workspace?.ready ? workspaceConfig(workspace, app) : null,
           sandbox: env.SANDBOX_ORGANIZATION || "",
         });
+      }
+      if (url.pathname === "/api/push" && request.method === "POST") {
+        if (!pushEnabled(env))
+          throw new HttpError(
+            409,
+            "Push notifications are not configured on this installation.",
+          );
+        const input = z
+          .object({
+            room: roomSchema,
+            subscription: subscriptionSchema,
+            remove: z.boolean().optional(),
+          })
+          .parse(await boundedJson(request));
+        const push = new PushStore(env);
+        if (input.remove)
+          await push.remove(actor.id, input.subscription.endpoint, input.room);
+        else {
+          await authorizeRoom(store, app, api, actor, input.room);
+          await push.save(actor.id, session.id, input.room, input.subscription);
+        }
+        return json({ ok: true });
+      }
+      if (
+        url.pathname.startsWith("/api/huddle/") &&
+        request.method === "POST"
+      ) {
+        if (!env.LIVE)
+          throw new HttpError(409, "Huddles need the realtime backend.");
+        const input = z
+          .object({ room: roomSchema, lease: z.uuid().optional() })
+          .parse(await boundedJson(request));
+        await authorizeRoom(store, app, api, actor, input.room);
+        const hub = env.LIVE.getByName(input.room.organization);
+        if (url.pathname === "/api/huddle/join") {
+          if (!(await hub.consumeRate(`huddle:${actor.id}`, 8)))
+            throw new HttpError(
+              429,
+              "Wait a minute before joining another huddle.",
+            );
+          return json(
+            await hub.joinHuddle(
+              input.room.channel,
+              actor.login,
+              actor.id,
+              session.id,
+            ),
+          );
+        }
+        if (!input.lease) throw new HttpError(400, "Huddle lease required.");
+        if (url.pathname === "/api/huddle/heartbeat") {
+          if (!(await hub.heartbeatHuddle(input.lease, session.id)))
+            throw new HttpError(410, "Your huddle ended. Join again.");
+          return json({ ok: true });
+        }
+        if (url.pathname === "/api/huddle/leave") {
+          await hub.leaveHuddle(input.lease, session.id);
+          return json({ ok: true });
+        }
+      }
+      if (url.pathname === "/api/live/ticket" && request.method === "POST") {
+        if (!env.LIVE)
+          throw new HttpError(
+            409,
+            "Realtime is not enabled on this deployment.",
+          );
+        const room = roomSchema.parse(await boundedJson(request));
+        await authorizeRoom(store, app, api, actor, room);
+        const ticket = await store.state("live", {
+          room,
+          sessionId: session.id,
+          userId: actor.id,
+          login: actor.login,
+        });
+        return json({ ticket });
+      }
+      if (url.pathname === "/api/live/socket" && request.method === "GET") {
+        sameOrigin(request);
+        if (
+          !env.LIVE ||
+          request.headers.get("Upgrade")?.toLowerCase() !== "websocket"
+        )
+          throw new HttpError(426, "WebSocket required.");
+        const ticket = z
+          .object({
+            room: roomSchema,
+            sessionId: z.string(),
+            userId: z.number(),
+            login: z.string(),
+          })
+          .parse(
+            await store.consume(url.searchParams.get("ticket") || "", "live"),
+          );
+        if (ticket.sessionId !== session.id || ticket.userId !== actor.id)
+          throw new HttpError(403, "Socket belongs to another session.");
+        // Recheck access at consumption: a ticket does not preserve removed membership.
+        await authorizeRoom(store, app, api, actor, ticket.room);
+        const identity: LiveIdentity = {
+          userId: actor.id,
+          login: actor.login,
+          sessionId: session.id,
+          expires: Math.min(session.expires, Date.now() + 240_000),
+          channel: ticket.room.channel,
+          kind: ticket.room.kind,
+          lastTyping: 0,
+        };
+        return env.LIVE.getByName(ticket.room.organization).fetch(
+          new Request(request.url, {
+            headers: {
+              Upgrade: "websocket",
+              "X-Gitrew-Live": JSON.stringify(identity),
+            },
+          }),
+        );
       }
       if (url.pathname === "/api/workspaces" && request.method === "POST") {
         const { organization, repositoryName, vaultName } = z
@@ -397,6 +629,22 @@ export default {
           input.method,
           input.body,
         );
+        if (
+          response.ok &&
+          input.method !== "GET" &&
+          (input.path !== "/graphql" ||
+            /^\s*mutation\b/.test(
+              String((input.body as { query?: string })?.query || ""),
+            ))
+        ) {
+          const workspace = await store.defaultWorkspace();
+          if (workspace)
+            await env.LIVE?.getByName(workspace.organization)
+              .emit("", {
+                type: "refresh",
+              })
+              .catch(() => undefined);
+        }
         if (response.status === 401) await store.logout(session.id);
         return json(
           response.status === 204 ? null : await response.json(),
@@ -412,16 +660,48 @@ export default {
             404,
             "This workspace has not been set up on this deployment.",
           );
-        return json(
-          await vaultOperation(
-            store,
-            app,
-            workspace,
-            actor,
-            input.operation,
-            input.nonce || crypto.randomUUID(),
-          ),
+        const result = await vaultOperation(
+          store,
+          app,
+          workspace,
+          actor,
+          input.operation,
+          input.nonce || crypto.randomUUID(),
         );
+        const op = input.operation as {
+          op?: string;
+          conversation?: string;
+          userId?: number;
+        };
+        if (op.op === "send" && op.conversation && pushEnabled(env)) {
+          const message = (result as { message?: { id: string } }).message;
+          if (message) {
+            const notify = new PushStore(env).notify(
+              store,
+              app,
+              workspace.organization,
+              op.conversation,
+              message.id,
+              actor.id,
+            );
+            if (ctx) ctx.waitUntil(notify.catch(() => undefined));
+            else await notify.catch(() => undefined);
+          }
+        }
+        if (op.op === "send")
+          await env.LIVE?.getByName(workspace.organization)
+            .emit(op.conversation || "", { type: "refresh" })
+            .catch(() => undefined);
+        if (["create", "invite", "remove", "join"].includes(op.op || "")) {
+          if (op.op === "remove" && op.userId)
+            await env.LIVE?.getByName(workspace.organization).revoke(op.userId);
+          await env.LIVE?.getByName(workspace.organization)
+            .emit("", {
+              type: "refresh",
+            })
+            .catch(() => undefined);
+        }
+        return json(result);
       }
       return json({ error: "Not found." }, 404);
     } catch (error) {

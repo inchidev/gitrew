@@ -29,3 +29,7 @@ This preserves the state volume. Use your local Docker context explicitly if oth
 Built the Docker image and ran it on the local Colima context. `/`, `/create/`, `/login/`, `/w/inchidev`, `/health` and `/api/config` returned200. Config initialized D1 and showed a fresh unconfigured installation. An incorrect setup key returned403. Restart retained the generated key and initialized storage. The container became healthy. No GitHub OAuth or second-member private-message flow was claimed by this local test.
 
 celld0.6.2 needed a small static-route adapter for trailing slashes; the Docker build uses that adapter while Cloudflare continues using the original Worker.
+
+## Live coordination verification, 2026-10-15
+
+After adding the `LIVE` binding, the local installation returned `platform:celld` and `realtime:true` and became healthy with the existing state volume. A separate disposable celld container ran the actual LiveHub class: WebSocket ready, conversation presence, huddle state and typing arrived; an HTTP-triggered DO RPC broadcast returned200 and delivered `refresh`. The probe container was stopped afterward. It used synthetic identities in a localhost-only harness, not the application's GitHub authorization flow. GitHub authorization/isolation is covered separately by workerd runtime tests.

@@ -24,3 +24,7 @@ public/bootstrap/auth-bundle.json
 
 # Retired setup recovery material (may contain credentials).
 .gitwok-setup/
+
+public/rtk/
+
+.playwright-cli/

@@ -1,0 +1,19 @@
+# Gitrew documentation
+
+Gitrew is a GitHub organization workspace for channels, threads, private groups and DMs. The current priority is everyday team communication: live updates, presence, typing, notifications and voice huddles. Agent workflows, Gitea and GitLab are deferred.
+
+## Start here
+
+- [User guide](usage.md): sign in, conversations, threads, notifications, huddles and issues.
+- [Cloudflare installation](cloudflare-backend.md): Worker, D1, Durable Object and your own GitHub App.
+- [VPS / Coolify installation](vps.md): Docker Compose, HTTPS, storage and operational checks.
+- [Local celld instructions and verification](celld.md).
+- [Huddles](huddles.md): your RealtimeKit credentials or LiveKit server.
+- [Notifications](notifications.md): Web Push keys, browser permission and privacy.
+- [Operations](operations.md): updates, backups, recovery and troubleshooting.
+- [Architecture and security](architecture.md).
+- [Realtime contract](realtime.md): event flow, authorization and fallback behavior.
+- [inchidev installation record](inchidev-install.md): dated live verification, distinct from local tests.
+- [Roadmap](../ROADMAP.md).
+
+Cloudflare and celld are the supported runtime targets. Vercel support was removed because this version relies on Durable Objects. The old static/Actions installation is retired.
