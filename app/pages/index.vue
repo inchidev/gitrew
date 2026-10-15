@@ -8,9 +8,9 @@ const providers = [
     title: "Your GitHub organization becomes your workspace.",
     description:
       "Sign in with GitHub. Talk in channels, private groups and DMs, with conversations stored in GitHub Discussions.",
-    next: "Next: connect issues, pull requests and Projects, then hand a selected conversation to Copilot and follow the result here.",
+    next: "Next: turn a selected conversation into linked work, hand it to Copilot and follow the result here.",
     boundary:
-      "Chat is available. Repository previews, Projects and Copilot task execution are still on the roadmap.",
+      "Chat, repository issues and links to Project boards are available. Conversation handoffs and Copilot task execution are planned.",
     icon: "i-octicon-mark-github-16",
   },
   {
@@ -162,8 +162,8 @@ useHead({
             /></a>
           </div>
           <p class="hero-note">
-            Channels, private groups, DMs and threads today.<br />Issues,
-            Projects and Copilot are the next steps.
+            Channels, private groups, DMs and threads today.<br />Browse issues
+            and boards. Copilot handoffs come next.
           </p>
         </div>
         <div

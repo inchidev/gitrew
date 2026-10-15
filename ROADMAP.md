@@ -6,7 +6,7 @@ Ship an organization workspace with channels, threads, private groups and DMs. R
 
 ## First milestone: conversation to work
 
-1. Show issues and Projects for selected accessible repositories.
+1. Available: browse issues and open organization Project boards for selected accessible repositories.
 2. Turn explicitly selected messages into an issue with a preview of the shared context.
 3. Link issue, repository and Project back to the conversation.
 4. Prototype a Copilot task handoff with explicit consent, user authentication and visible status/PR. Verify API availability and plan requirements before implementing.

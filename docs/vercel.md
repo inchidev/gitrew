@@ -39,7 +39,7 @@ installation. If GitHub requires at least one existing repository, create an
 empty private bootstrap repository and select only that repository. GitHub
 [automatically grants access to repositories the App creates](https://docs.github.com/en/apps/using-github-apps/installing-your-own-github-app).
 After setup, remove the bootstrap repository from the installation and retain
-only the chosen chat and vault repositories. Leave unrelated private repositories
+the chosen chat and vault repositories, plus any source repositories you intentionally connect for Issues and Projects. Leave unrelated private repositories
 unselected. An installation with **All repositories** can access existing private
 repositories as well.
 

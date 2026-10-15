@@ -5,7 +5,7 @@ A place for the people, conversations and context behind your code.
 
 [Open Gitrew](https://gitrew.inchi.dev) · [Roadmap](ROADMAP.md) · [Source](https://github.com/inchidev/gitrew)
 
-Gitrew currently provides channels, threads, private groups and DMs through GitHub. A GitHub organization is the workspace. GitHub Discussions hold channel messages; a private vault stores encrypted private conversations and access records. Each installation owns its GitHub App and credentials.
+Gitrew currently provides channels, threads, private groups and DMs through GitHub, plus repository issue browsing and links to organization Project boards. A GitHub organization is the workspace. GitHub Discussions hold channel messages; a private vault stores encrypted private conversations and access records. Each installation owns its GitHub App and credentials.
 
 The next workflow connects conversations to repository issues and Projects, then to a reviewed agent task and pull request. Copilot execution is planned. Cursor, Claude/Scion and Cloudflare Artifacts are research references, not shipped integrations. Gitea and GitLab do not connect yet.
 
@@ -33,4 +33,4 @@ Gitrew is MIT licensed. Hosting, GitHub plans and AI usage are paid to your chos
 
 Nuxt 4 + Vue + Nuxt UI frontend; a Workers-compatible backend with encrypted sessions and configuration in D1 (Cloudflare/celld) or private Blob storage (Vercel). Messages stay on GitHub. The production site uses an organization-owned installation; it is not an open signup sandbox.
 
-[Architecture](docs/architecture.md) · [Legacy client-only setup](docs/self-hosting.md)
+[Architecture](docs/architecture.md) · [inchidev installation verification](docs/inchidev-install.md) · [Legacy client-only setup](docs/self-hosting.md)

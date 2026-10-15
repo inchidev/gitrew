@@ -4,7 +4,6 @@
 > be private; shared channels are organization-wide. New static/Actions installs
 > are disabled because they require a public auth mailbox. Use the backend setup.
 
-
 > This document describes the legacy static/Actions mode. For the recommended
 > backend and guided owner-controlled App setup, see
 > [current architecture](architecture.md).
@@ -154,7 +153,7 @@ endpoint is provided by Actions.
 
 ## Open sandbox and installer entry
 
-The shared demo belongs to `gitrew-sandbox`; `inchidev/gitrew` remains source code.
+This retired architecture has no maintained hosted demo. `inchidev/gitrew` is the current source repository; use the backend deployment guides for new installations.
 Its public GitHub App accepts authorization from people outside the organization.
 After sign-in the client submits an encrypted `join` operation once per session.
 Only `openRegistration: true` in the private member directory enables this
