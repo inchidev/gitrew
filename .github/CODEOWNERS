@@ -1,0 +1,24 @@
+# Owners must have write access. Add another trusted owner before an owner-authored
+# PR changes these files: GitHub does not allow authors to approve their own PRs.
+/backend/encryption.ts @vnmtvlv
+/backend/security.ts @vnmtvlv
+/backend/github.ts @vnmtvlv
+/backend/store.ts @vnmtvlv
+/backend/worker.ts @vnmtvlv
+/backend/workspace.ts @vnmtvlv
+/backend/blob-store.ts @vnmtvlv
+/backend/vercel.ts @vnmtvlv
+/oauth/ @vnmtvlv
+/app/lib/auth.ts @vnmtvlv
+/app/lib/creator.ts @vnmtvlv
+/app/pages/login.vue @vnmtvlv
+/app/pages/create.vue @vnmtvlv
+/app/components/BackendSetup.vue @vnmtvlv
+/app/components/SetupWizard.vue @vnmtvlv
+/scripts/provision-auth.mjs @vnmtvlv
+/scripts/setup-workspace.mjs @vnmtvlv
+
+# Changes to the review policy and its required CI also need owner review.
+/.github/CODEOWNERS @vnmtvlv
+/.github/main-protection.json @vnmtvlv
+/.github/workflows/ @vnmtvlv
