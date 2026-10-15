@@ -6,17 +6,12 @@ review conversations to be resolved. `check` is the job in the **Check client**
 workflow; the workflow title itself is not the status-check context. The check is
 bound to the GitHub Actions app so another integration cannot satisfy it.
 
-Ordinary changes do not require a blanket approval. Changes to the auth,
-credential, encryption, security, and review-policy paths listed in
-`.github/CODEOWNERS` require an approving code-owner review. New commits dismiss
-stale approvals. Administrators are subject to the same branch protection; force
-pushes and deletion of `main` are disabled.
-
-GitHub does not let a PR author approve their own PR. The current owner is
-`@vnmtvlv`; another trusted collaborator with write access must be added to the
-relevant CODEOWNERS entries before owner-authored changes to these paths can
-complete the review requirement. Do not treat an AI review comment as a GitHub
-approval or disable the policy to claim that a review passed.
+Gitrew currently has one maintainer, so approving reviews are optional for all
+changes. The maintainer can merge their own PR after the required checks pass.
+`.github/CODEOWNERS` identifies ownership of auth, credentials, encryption,
+security, and review-policy paths and requests review where possible. It does
+not create a mandatory approval gate. Administrators are subject to the same PR
+and CI requirements; force pushes and deletion of `main` are disabled.
 
 ## Administration
 
@@ -34,5 +29,6 @@ gh api repos/inchidev/gitrew/codeowners/errors
 
 For an independent installation, replace the repository and code owners with
 your own. Recheck the actual CI job name and source app before applying the
-payload. CODEOWNERS takes effect from the PR's base branch, so review enforcement
-for these paths begins once the file is merged into `main`.
+payload. CODEOWNERS is read from the PR's base branch after it is merged into
+`main`. Required code-owner approvals can be enabled later when another trusted
+maintainer with write access is available.

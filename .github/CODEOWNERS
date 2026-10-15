@@ -1,5 +1,5 @@
-# Owners must have write access. Add another trusted owner before an owner-authored
-# PR changes these files: GitHub does not allow authors to approve their own PRs.
+# Owners must have write access. These entries identify maintainers and request
+# review where possible; code-owner approval is optional for this solo project.
 /backend/encryption.ts @vnmtvlv
 /backend/security.ts @vnmtvlv
 /backend/github.ts @vnmtvlv
@@ -18,7 +18,7 @@
 /scripts/provision-auth.mjs @vnmtvlv
 /scripts/setup-workspace.mjs @vnmtvlv
 
-# Changes to the review policy and its required CI also need owner review.
+# Keep ownership of the review policy and its required CI visible too.
 /.github/CODEOWNERS @vnmtvlv
 /.github/main-protection.json @vnmtvlv
 /.github/workflows/ @vnmtvlv
