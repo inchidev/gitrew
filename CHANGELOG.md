@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1 — 2026-10-15
+
+- Update the development compiler to TypeScript 6.0.3 after the full CI suite passed. TypeScript 7 remains deferred because it is incompatible with the current Vue typechecker; Node declarations remain on Node 24.
+- Refresh the lockfile, removing unused Vercel dependency entries. Application behavior and the verification limits below remain the same.
+
 ## 0.1.0 — 2026-10-15
 
 First Gitrew release: GitHub organization chat on Cloudflare, with a local celld deployment path.
