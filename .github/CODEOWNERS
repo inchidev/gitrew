@@ -1,0 +1,24 @@
+# Owners must have write access. These entries identify maintainers and request
+# review where possible; code-owner approval is optional for this solo project.
+/backend/encryption.ts @vnmtvlv
+/backend/security.ts @vnmtvlv
+/backend/github.ts @vnmtvlv
+/backend/store.ts @vnmtvlv
+/backend/worker.ts @vnmtvlv
+/backend/workspace.ts @vnmtvlv
+/backend/live-access.ts @vnmtvlv
+/backend/push.ts @vnmtvlv
+/oauth/ @vnmtvlv
+/app/lib/auth.ts @vnmtvlv
+/app/lib/creator.ts @vnmtvlv
+/app/pages/login.vue @vnmtvlv
+/app/pages/create.vue @vnmtvlv
+/app/components/BackendSetup.vue @vnmtvlv
+/app/components/SetupWizard.vue @vnmtvlv
+/scripts/provision-auth.mjs @vnmtvlv
+/scripts/setup-workspace.mjs @vnmtvlv
+
+# Keep ownership of the review policy and its required CI visible too.
+/.github/CODEOWNERS @vnmtvlv
+/.github/main-protection.json @vnmtvlv
+/.github/workflows/ @vnmtvlv

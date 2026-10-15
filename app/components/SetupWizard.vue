@@ -17,7 +17,7 @@ defineEmits<{ authorize: []; ready: [config: MailboxConfig] }>();
     </p>
     <UAlert
       title="The Actions installer is retired"
-      description="It required a public authentication mailbox. Cloudflare and Vercel deployments keep authentication on your backend."
+      description="It required a public authentication mailbox. Cloudflare and celld deployments keep authentication on your backend."
     />
     <DeployButtons />
   </div>

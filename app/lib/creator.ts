@@ -58,7 +58,7 @@ export async function createWorkspaceRepositories(
   _onStep: (message: string) => void,
 ) {
   throw new Error(
-    "The legacy Actions installer requires a public authentication mailbox and is retired. Deploy Gitrew on Cloudflare or Vercel and use /create/ to create private workspace repositories.",
+    "The legacy Actions installer requires a public authentication mailbox and is retired. Deploy Gitrew on Cloudflare or celld and use /create/ to create private workspace repositories.",
   );
 }
 

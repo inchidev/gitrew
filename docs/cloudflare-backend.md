@@ -1,11 +1,9 @@
 # Gitrew on Cloudflare
 
-For a frontend and function hosted in your Vercel account with native private
-Blob storage, see [Gitrew on Vercel](vercel.md). Both providers use the same
-owner-controlled GitHub App setup wizard.
+For your own server, see [celld](celld.md) and the [VPS guide](vps.md). Gitrew now targets Workers-compatible runtimes with D1 and Durable Objects.
 
 The recommended independent deployment is one Worker serving the static Nuxt
-client and API, plus D1 for encrypted credentials, sessions, setup state and
+client and API, plus LiveHub for live communication and D1 for encrypted credentials, sessions, setup state and
 workspace connections. Conversations remain in GitHub Discussions. This change
 does not implement a model runtime or Copilot integration.
 
@@ -13,7 +11,7 @@ does not implement a model runtime or Copilot integration.
 
 1. Click [Deploy to Cloudflare](https://deploy.workers.cloudflare.com/?url=https://github.com/inchidev/gitrew).
 2. Keep the detected deploy command (`npm run deploy`). Choose a random secret
-   `SETUP_TOKEN` of at least 32 characters. Cloudflare provisions D1.
+   `SETUP_TOKEN` of at least 32 characters. Cloudflare provisions D1 and the LiveHub Durable Object binding.
 3. Open `/create/` on the deployed site. Configure your custom domain before App
    registration, if needed, so that the callback address is final.
 4. Enter your GitHub organization and deployment setup key, then review and create
@@ -88,7 +86,7 @@ Private messages are not encrypted against GitHub, workspace administrators or
 the backend operator. Independent hosting transfers that operator role to you.
 The backend bounds request/response bodies, applies timeouts and login/setup rate
 limits, and redacts query strings in observability. It does not log credentials
-or request bodies. Gitrew is free; your own platform and Copilot usage remain yours.
+or request bodies. Gitrew is free; your own platform and optional media usage remain yours.
 
 ## Development and validation
 

@@ -5,7 +5,7 @@
   "workers_dev": false,
   "routes": [{ "pattern": "gitrew.inchi.dev", "custom_domain": true }],
   "preview_urls": false,
-  "main": "backend/worker.ts",
+  "main": "backend/cloudflare.ts",
   "compatibility_date": "2026-10-14",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
@@ -21,7 +21,18 @@
       "database_id": "5a3f451a-3beb-4126-b3f5-ad3a1d8f1e05",
     },
   ],
-  "vars": { "PUBLIC_APP": "false", "SANDBOX_ORGANIZATION": "" },
+  "durable_objects": {
+    "bindings": [{ "name": "LIVE", "class_name": "LiveHub" }],
+  },
+  "migrations": [{ "tag": "live-v1", "new_sqlite_classes": ["LiveHub"] }],
+  "vars": {
+    "PUBLIC_APP": "false",
+    "SANDBOX_ORGANIZATION": "",
+    "HUDDLE_PROVIDER": "realtimekit",
+    "RTK_ACCOUNT_ID": "ee47884b4794b0240647bfa7a3e56c0b",
+    "RTK_APP_ID": "6c4a0dd4-fbed-487e-adfd-ad06e26df5fc",
+    "RTK_PRESET": "gitrew_voice",
+  },
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1,

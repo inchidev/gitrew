@@ -23,8 +23,6 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
       - run: npx playwright test -c playwright.backend.config.ts
-      - run: npm run build:vercel
-      - run: node scripts/check-vercel-build.mjs
       - name: Build Worker despite provider preset auto-detection
         run: npm run build:worker
         env:

@@ -10,7 +10,29 @@ try {
   secret = randomBytes(32).toString("hex");
   await writeFile(".celld/setup-token", secret, { mode: 0o600, flag: "wx" });
 }
-await writeFile(".dev.vars", `SETUP_TOKEN=${secret}\n`, { mode: 0o600 });
+const optional = [
+  "HUDDLE_PROVIDER",
+  "RTK_ACCOUNT_ID",
+  "RTK_APP_ID",
+  "RTK_API_TOKEN",
+  "RTK_PRESET",
+  "LIVEKIT_URL",
+  "LIVEKIT_API_KEY",
+  "LIVEKIT_API_SECRET",
+  "VAPID_PUBLIC_KEY",
+  "VAPID_PRIVATE_KEY",
+  "VAPID_SUBJECT",
+];
+await writeFile(
+  ".dev.vars",
+  `SETUP_TOKEN=${secret}\n` +
+    optional
+      .filter((name) => process.env[name])
+      .map((name) => `${name}=${JSON.stringify(process.env[name])}`)
+      .join("\n") +
+    "\n",
+  { mode: 0o600 },
+);
 const child = spawn(
   "celld",
   ["dev", ".", "--host", "0.0.0.0", "--port", "9877", "--no-watch"],

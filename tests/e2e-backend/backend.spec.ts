@@ -123,7 +123,7 @@ test("an owner installs the deployment's App and creates a verified workspace", 
   ]);
 });
 
-for (const repositoryName of ["gitrew-chat", "vercel-test-chat"]) {
+for (const repositoryName of ["gitrew-chat", "custom-test-chat"]) {
   test(`cookie sessions use ${repositoryName} despite a stale preference, preserve private reads and clear on sign-out`, async ({
     page,
   }) => {
@@ -136,7 +136,7 @@ for (const repositoryName of ["gitrew-chat", "vercel-test-chat"]) {
     const connectedWorkspace = {
       ...workspace,
       repository: `team/${repositoryName}`,
-      vault: "team/vercel-test-vault",
+      vault: "team/custom-test-vault",
     };
     const channelRepositories: string[] = [];
     const suffix =
@@ -423,7 +423,12 @@ test("the landing is public, and protected links preserve their destination at l
     page.getByRole("heading", { name: "A place for your Git crew." }),
   ).toBeVisible();
   expect(apiRequests).toEqual([]);
-  await page.getByRole("button", { name: "Gitea Next", exact: false }).click();
+  for(const name of ["Cursor","Claude","Cloudflare"]) {
+    await page.getByRole("button",{name:`${name} Watching`,exact:false}).click();
+    await expect(page.locator("#provider-detail")).toContainText("Watching");
+    await expect(page.locator("#provider-detail").getByRole("link",{name:/Read more/})).toHaveAttribute("target","_blank");
+  }
+  await page.getByRole("button", { name: "Gitea Later", exact: false }).click();
   await expect(
     page.getByRole("heading", {
       name: "A home for the crew on your own Gitea.",
@@ -606,8 +611,8 @@ test("setup preserves custom repository names across reloads and opens the selec
         json: {
           workspace: {
             ...workspace,
-            repository: "team/vercel-test-chat",
-            vault: "team/vercel-test-vault",
+            repository: "team/custom-test-chat",
+            vault: "team/custom-test-vault",
           },
         },
       });
@@ -617,17 +622,17 @@ test("setup preserves custom repository names across reloads and opens the selec
   await page.goto("/create/");
   await page
     .getByLabel("Chat repository", { exact: true })
-    .fill("vercel-test-chat");
+    .fill("custom-test-chat");
   await page
     .getByLabel("Private vault repository", { exact: true })
-    .fill("vercel-test-vault");
+    .fill("custom-test-vault");
   await page.reload();
   await expect(page.getByLabel("Chat repository", { exact: true })).toHaveValue(
-    "vercel-test-chat",
+    "custom-test-chat",
   );
   await expect(
     page.getByLabel("Private vault repository", { exact: true }),
-  ).toHaveValue("vercel-test-vault");
+  ).toHaveValue("custom-test-vault");
   await page
     .getByRole("button", { name: "Create workspace", exact: true })
     .click();
@@ -636,10 +641,10 @@ test("setup preserves custom repository names across reloads and opens the selec
   ).toBeVisible();
   expect(submitted).toEqual({
     organization: "team",
-    repositoryName: "vercel-test-chat",
-    vaultName: "vercel-test-vault",
+    repositoryName: "custom-test-chat",
+    vaultName: "custom-test-vault",
   });
   await expect(
     page.getByRole("link", { name: "Open your workspace" }),
-  ).toHaveAttribute("href", "/w/team?repo=vercel-test-chat");
+  ).toHaveAttribute("href", "/w/team?repo=custom-test-chat");
 });

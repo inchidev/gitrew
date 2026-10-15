@@ -1,13 +1,13 @@
 # Gitrew — your Git crew
 
 A place for the people, conversations and context behind your code.
-**GitHub first. Gitea next to explore. GitLab later.**
+**GitHub team chat first. Cloudflare and celld.**
 
 [Open Gitrew](https://gitrew.inchi.dev) · [Roadmap](ROADMAP.md) · [Source](https://github.com/inchidev/gitrew)
 
-Gitrew currently provides channels, threads, private groups and DMs through GitHub, plus repository issue browsing and links to organization Project boards. A GitHub organization is the workspace. GitHub Discussions hold channel messages; a private vault stores encrypted private conversations and access records. Each installation owns its GitHub App and credentials.
+Gitrew currently provides channels, threads, private groups and DMs through GitHub, plus repository issue browsing and links to organization Project boards. A GitHub organization is the workspace. GitHub Discussions hold channel messages; a private vault stores access-controlled private conversations and access records. Each installation owns its GitHub App and credentials.
 
-The next workflow connects conversations to repository issues and Projects, then to a reviewed agent task and pull request. Copilot execution is planned. Cursor, Claude/Scion and Cloudflare Artifacts are research references, not shipped integrations. Gitea and GitLab do not connect yet.
+The current focus is a Slack-like chat experience: live updates, presence, typing, notifications and voice huddles. Agent handoffs, Copilot execution, Gitea and GitLab are deferred. [Documentation](docs/README.md) covers usage, installation and operations.
 
 ## Develop
 
@@ -22,8 +22,7 @@ npm run check
 ## Deploy your own
 
 - [Cloudflare Worker + D1](docs/cloudflare-backend.md)
-- [Vercel + private Blob storage](docs/vercel.md)
-- [Local celld Docker installation](docs/celld.md)
+- [VPS / celld Docker installation](docs/vps.md)
 
 The frontend and backend deploy together. Set a random `SETUP_TOKEN` of at least 32 characters before setup. Keep it: it encrypts credentials and sessions. Open `/create/` at the final HTTPS address, register the organization-owned GitHub App, sign in and install it on selected repositories. Provision a fresh `gitrew-chat` / `gitrew-vault` pair. Give the App access to any source repositories you want to see in Issues & Projects.
 
@@ -31,6 +30,6 @@ Gitrew is MIT licensed. Hosting, GitHub plans and AI usage are paid to your chos
 
 ## Architecture
 
-Nuxt 4 + Vue + Nuxt UI frontend; a Workers-compatible backend with encrypted sessions and configuration in D1 (Cloudflare/celld) or private Blob storage (Vercel). Messages stay on GitHub. The production site uses an organization-owned installation; it is not an open signup sandbox.
+Nuxt 4 + Vue + Nuxt UI frontend; a Workers-compatible backend with encrypted sessions and configuration in D1 (Cloudflare/celld) and Durable Object live coordination. Messages stay on GitHub. The production site uses an organization-owned installation; it is not an open signup sandbox.
 
 [Architecture](docs/architecture.md) · [inchidev installation verification](docs/inchidev-install.md) · [Legacy client-only setup](docs/self-hosting.md)

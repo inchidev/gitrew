@@ -1,26 +1,36 @@
 <script setup lang="ts">
 const colorMode = useColorMode();
-const providers = [
+const providers: {
+  id: string;
+  name: string;
+  state: string;
+  title: string;
+  description: string;
+  next: string;
+  boundary: string;
+  icon: string;
+  href?: string;
+}[] = [
   {
     id: "github",
     name: "GitHub",
-    state: "GitHub first",
+    state: "Available",
     title: "Your GitHub organization becomes your workspace.",
     description:
       "Sign in with GitHub. Talk in channels, private groups and DMs, with conversations stored in GitHub Discussions.",
-    next: "Next: turn a selected conversation into linked work, hand it to Copilot and follow the result here.",
+    next: "Our focus: faster messages, presence, typing, notifications and voice huddles for your GitHub crew.",
     boundary:
-      "Chat, repository issues and links to Project boards are available. Conversation handoffs and Copilot task execution are planned.",
+      "Channels, threads, private groups, DMs, repository issues and Project links are available. We are finishing the everyday chat experience before agent workflows.",
     icon: "i-octicon-mark-github-16",
   },
   {
     id: "gitea",
     name: "Gitea",
-    state: "Next",
+    state: "Later",
     title: "A home for the crew on your own Gitea.",
     description:
       "Keep your code on the lightweight Git server you run. We want the same conversations-to-code workflow for independent teams.",
-    next: "First we will prove sign-in, message storage, threads and private access with a small Gitea prototype. A celld and Coolify deployment is part of the self-hosting direction.",
+    next: "On hold while we finish the GitHub chat experience. A future prototype will validate sign-in, threads and private access.",
     boundary: "Planned. Gitrew does not connect to Gitea yet.",
     icon: "i-octicon-repo-16",
   },
@@ -31,7 +41,7 @@ const providers = [
     title: "Bring the conversation to your GitLab group.",
     description:
       "Connect a group, projects, issues, merge requests and pipelines, on GitLab.com or your own installation.",
-    next: "We will use the GitHub and Gitea work to find the right integration boundaries, then validate GitLab permissions and feature differences.",
+    next: "On hold while we finish the GitHub chat experience. Hosted and self-hosted GitLab need separate permission checks.",
     boundary: "Planned. Gitrew does not connect to GitLab yet.",
     icon: "i-octicon-git-pull-request-16",
   },
@@ -42,63 +52,75 @@ const active = computed(() =>
 );
 const stages = [
   {
-    title: "Talk it through",
-    description: "A channel for your team, a thread for the details.",
+    title: "Talk with your crew",
+    description:
+      "Channels, threads, private groups and DMs beside your repositories.",
     status: "Available now",
-    icon: "i-octicon-comment-discussion-16",
   },
   {
-    title: "Make it work",
-    description:
-      "Turn selected messages into an issue. Link the repo and Project.",
-    status: "Next",
-    icon: "i-octicon-issue-opened-16",
+    title: "Stay in the conversation",
+    description: "Faster updates, presence, typing and notifications.",
+    status: "Current focus",
   },
   {
-    title: "Give it to Copilot",
+    title: "Drop into a huddle",
     description:
-      "Review the task and shared context, then follow its progress and PR.",
-    status: "Planned",
-    icon: "i-octicon-copilot-16",
+      "Voice conversations with your team, using your own media provider.",
+    status: "Current focus",
   },
   {
-    title: "See what shipped",
+    title: "Keep it yours",
     description:
-      "Bring checks, review and the merged result back to the conversation.",
-    status: "Planned",
-    icon: "i-octicon-git-merge-16",
+      "Documented installation, backups and upgrades for your own organization.",
+    status: "Current focus",
   },
 ];
-const watchlist = [
+providers.push(
   {
+    id: "cursor",
     name: "Cursor",
-    focus: "Origin & cloud agents",
+    state: "Watching",
+    title: "Following Cursor Origin and cloud agents.",
     description:
-      "Following Origin, Cursor’s Git forge in early beta, and how cloud agents turn repository tasks into changes ready for review.",
+      "Origin explores a Git forge built for agents. We are following its repository and collaboration ideas.",
+    next: "A research reference for later. Our current work stays focused on team chat.",
+    boundary: "No Cursor integration or agent execution is included.",
+    icon: "i-octicon-code-16",
     href: "https://cursor.com/docs/origin",
   },
   {
+    id: "claude",
     name: "Claude",
-    focus: "Coding agents & source control",
+    state: "Watching",
+    title: "Following Claude and agent-scale source control.",
     description:
-      "Following Claude Code and Anthropic’s Scion research into source control at agent scale. Scion is an internal system, not a public integration.",
+      "Claude Code and Anthropic’s Scion research offer ideas for how agents work with repositories.",
+    next: "Scion is internal research. We are watching, while we finish the GitHub chat experience.",
+    boundary: "No Claude integration is included.",
+    icon: "i-octicon-terminal-16",
     href: "https://www.anthropic.com/engineering/redesigning-source-control",
   },
   {
+    id: "cloudflare",
     name: "Cloudflare",
-    focus: "Artifacts, AI Gateway & Sandboxes",
+    state: "Watching",
+    title: "Following Cloudflare’s programmable Git direction.",
     description:
-      "Following programmable Git repositories, model access and isolated coding environments as a possible future agent backend.",
+      "Artifacts, AI Gateway and Sandboxes explore repository storage, model access and execution environments.",
+    next: "We are watching these separate building blocks for future work.",
+    boundary:
+      "The Cloudflare hosting option works today. Agentic Git integrations remain research.",
+    icon: "i-octicon-cloud-16",
     href: "https://blog.cloudflare.com/next-git-platform-on-cloudflare/",
   },
-];
+);
 useHead({
   title: "Gitrew — your Git crew",
   meta: [
     {
       name: "description",
       content:
-        "A place for the people behind the code. Open-source team chat for GitHub today. Gitea and GitLab are next, with a conversation-to-code workflow on the roadmap.",
+        "Open-source team chat for your GitHub organization. Channels, threads, private groups and DMs. Run your own Gitrew on Cloudflare or a VPS.",
     },
   ],
 });
@@ -142,9 +164,6 @@ useHead({
     <main>
       <section class="hero" aria-labelledby="landing-title">
         <div class="hero-copy">
-          <p class="intro-line">
-            <UIcon name="i-octicon-git-branch-16" /> Open source. GitHub first.
-          </p>
           <h1 id="landing-title">A place for<br />your Git crew.</h1>
           <p class="hero-description">
             Team conversations beside your GitHub repositories. Keep the people,
@@ -158,12 +177,12 @@ useHead({
               trailing
               size="lg"
             /><a href="#providers"
-              >Find your Git platform <UIcon name="i-octicon-arrow-down-16"
+              >Explore platforms <UIcon name="i-octicon-arrow-down-16"
             /></a>
           </div>
           <p class="hero-note">
             Channels, private groups, DMs and threads today.<br />Browse issues
-            and boards. Copilot handoffs come next.
+            and boards. Built around your team’s conversations.
           </p>
         </div>
         <div
@@ -193,14 +212,6 @@ useHead({
               </p>
             </div>
           </div>
-          <div class="scene-future">
-            <UIcon name="i-octicon-git-pull-request-16" />
-            <div>
-              <span>Where we’re heading</span
-              ><strong>Conversation → issue → Copilot → PR</strong>
-            </div>
-            <span class="scene-label">Planned</span>
-          </div>
           <NuxtLink to="/login" class="scene-composer"
             >Join your crew <UIcon name="i-octicon-arrow-right-16"
           /></NuxtLink>
@@ -214,12 +225,19 @@ useHead({
       >
         <div class="section-heading">
           <div>
-            <p class="section-kicker">Choose your platform</p>
-            <h2 id="providers-title">Same crew. Different Git homes.</h2>
+            <p class="section-kicker">Platforms & our radar</p>
+            <h2 id="providers-title">GitHub today. More to explore.</h2>
           </div>
-          <p>We’re starting with GitHub. Select a provider to see the plan.</p>
+          <p>
+            Select a platform to see what works, what waits and what we’re
+            watching.
+          </p>
         </div>
-        <div class="provider-row" role="group" aria-label="Git providers">
+        <div
+          class="provider-row"
+          role="group"
+          aria-label="Platforms and research references"
+        >
           <UButton
             v-for="provider in providers"
             :key="provider.id"
@@ -259,10 +277,12 @@ useHead({
                   <UIcon name="i-octicon-arrow-right-16" /></NuxtLink
                 ><a
                   v-else
-                  href="https://github.com/inchidev/gitrew/issues"
+                  :href="
+                    active.href || 'https://github.com/inchidev/gitrew/issues'
+                  "
                   target="_blank"
                   rel="noopener noreferrer"
-                  >Follow development <UIcon name="i-octicon-link-external-16"
+                  >Read more <UIcon name="i-octicon-link-external-16"
                 /></a>
               </div></div
           ></Transition>
@@ -277,11 +297,11 @@ useHead({
         <div class="section-heading">
           <div>
             <p class="section-kicker">The idea</p>
-            <h2 id="direction-title">Give the conversation a way forward.</h2>
+            <h2 id="direction-title">A place to work together every day.</h2>
           </div>
           <p>
-            Gitrew is becoming a place to talk,<br />decide, and follow the work
-            to completion.
+            We’re finishing the chat experience first: <br />messages, presence,
+            notifications and huddles.
           </p>
         </div>
         <ol class="workflow">
@@ -292,35 +312,10 @@ useHead({
           </li>
         </ol>
         <p class="direction-note">
-          Your Git platform keeps the development record. Gitrew connects it to
-          the conversation. Sharing private context with a repository or agent
-          will always be an explicit choice.
+          GitHub holds your conversations and development record. Your Gitrew
+          installation brings the team together. Agent workflows and additional
+          Git providers can wait.
         </p>
-      </section>
-
-      <section class="watch-section" aria-labelledby="watch-title">
-        <div class="section-heading">
-          <div>
-            <p class="section-kicker">On our radar</p>
-            <h2 id="watch-title">Watching where agents take the work.</h2>
-          </div>
-          <p>Research directions. These are not shipped Gitrew integrations.</p>
-        </div>
-        <div class="watch-list">
-          <a
-            v-for="item in watchlist"
-            :key="item.name"
-            :href="item.href"
-            target="_blank"
-            rel="noopener noreferrer"
-            ><div class="watch-name">
-              <h3>{{ item.name }}</h3>
-              <UIcon name="i-octicon-link-external-16" />
-            </div>
-            <p class="watch-focus">{{ item.focus }}</p>
-            <p>{{ item.description }}</p></a
-          >
-        </div>
       </section>
 
       <section class="ownership-section" aria-labelledby="ownership-title">
@@ -328,13 +323,14 @@ useHead({
           <p class="section-kicker">Make room for your crew</p>
           <h2 id="ownership-title">Open source. Your installation.</h2>
           <p>
-            Run Gitrew for your own organization. Cloudflare and Vercel are
-            supported deployment paths. We’re testing celld locally as the next
-            path to self-hosting and Coolify.
+            Run Gitrew for your own organization on Cloudflare or your own
+            server with celld. The VPS guide includes the local celld Docker
+            Compose example and the checks needed before public hosting with
+            Coolify.
           </p>
           <p class="ownership-note">
-            Gitrew is free and MIT licensed. Hosting and AI usage are billed by
-            the services you choose.
+            Gitrew is free and MIT licensed. Hosting and optional voice services
+            are billed by the services you choose.
           </p>
         </div>
         <div class="ownership-actions">
@@ -342,10 +338,11 @@ useHead({
             >Set up a workspace
             <UIcon name="i-octicon-arrow-right-16" /></NuxtLink
           ><a
-            href="https://github.com/inchidev/gitrew/blob/main/docs/celld.md"
+            href="https://github.com/inchidev/gitrew/blob/main/docs/README.md"
             target="_blank"
             rel="noopener noreferrer"
-            >celld installation notes <UIcon name="i-octicon-link-external-16"
+            >Installation & operations docs
+            <UIcon name="i-octicon-link-external-16"
           /></a>
         </div>
       </section>
@@ -377,6 +374,13 @@ useHead({
   justify-content: space-between;
   gap: 20px;
   border-bottom: 1px solid var(--ui-border);
+}
+.site-header .brand {
+  font-size: 26px;
+}
+.site-header .brand :deep(.brand-mark) {
+  width: 32px;
+  height: 32px;
 }
 .site-header nav {
   display: flex;
