@@ -20,6 +20,7 @@ First Gitrew release: GitHub organization chat on Cloudflare, with a local celld
 - Cloudflare Worker, D1 and SQLite Durable Object configuration; local Docker Compose packaging with celld 0.6.2 and persistent state.
 - Guides for setup, usage, huddles, notifications, upgrades, backups and recovery.
 - Repository security settings, weekly Dependabot updates, CODEOWNERS and protected-main PR/CI policy.
+- GitHub Actions updates for checkout and the retired manual Pages workflow. Node types remain aligned with Node 24; TypeScript 7 is deferred because it breaks the current Vue typechecker.
 
 ### Scope and verification
 
