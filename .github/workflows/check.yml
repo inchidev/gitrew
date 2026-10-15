@@ -1,0 +1,32 @@
+name: Check client
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build:oauth
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - run: npx playwright test -c playwright.backend.config.ts
+      - run: npm run build:vercel
+      - run: node scripts/check-vercel-build.mjs
+      - name: Build Worker despite provider preset auto-detection
+        run: npm run build:worker
+        env:
+          NITRO_PRESET: cloudflare_module
+      - run: npx wrangler deploy --dry-run --outdir artifacts/worker-dry-run

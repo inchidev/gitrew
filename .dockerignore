@@ -1,0 +1,15 @@
+node_modules
+.git
+.nuxt*
+.output
+dist
+.wrangler
+.vercel
+.env*
+.dev.vars*
+.celld
+.gitrew-setup
+.gitwok-setup
+artifacts
+test-results
+playwright-report

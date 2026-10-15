@@ -1,0 +1,67 @@
+{
+  "name": "gitrew",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "A team chat client for GitHub Discussions.",
+  "license": "MIT",
+  "scripts": {
+    "dev": "nuxt dev --host 127.0.0.1",
+    "build": "nuxt generate",
+    "postinstall": "nuxt prepare",
+    "typecheck": "nuxt typecheck && tsc -p oauth/tsconfig.json && tsc -p scripts/tsconfig.json && tsc -p backend/tsconfig.json",
+    "preview": "nuxt preview --host 127.0.0.1",
+    "test": "vitest run tests/*.test.ts",
+    "test:e2e": "playwright test",
+    "check": "npm run test && npm run typecheck && npm run build",
+    "build:oauth": "esbuild oauth/worker.ts --bundle --minify --format=esm --platform=browser --target=es2022 --outfile=dist/oauth-worker.mjs",
+    "prebuild": "node scripts/build-bootstrap.mjs",
+    "predev": "node scripts/build-bootstrap.mjs",
+    "setup": "node scripts/build-bootstrap.mjs && node scripts/setup-workspace.mjs",
+    "build:worker": "node scripts/build-worker.mjs",
+    "dev:worker": "wrangler dev",
+    "deploy": "npm run build:worker && wrangler deploy",
+    "test:e2e:backend": "playwright test -c playwright.backend.config.ts",
+    "build:vercel": "node scripts/build-vercel.mjs"
+  },
+  "dependencies": {
+    "@fontsource/be-vietnam-pro": "^5.2.8",
+    "@nuxt/ui": "4.11.3",
+    "@primer/primitives": "^11.10.0",
+    "@tanstack/vue-query": "5.104.2",
+    "@vercel/blob": "^2.8.2",
+    "@vueuse/core": "15.0.0",
+    "@vueuse/nuxt": "15.0.0",
+    "dayjs": "1.11.23",
+    "libsodium-wrappers": "^0.8.4",
+    "nuxt": "4.6.1",
+    "tailwindcss": "4.3.3",
+    "vue": "3.5.44",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20261014.1",
+    "@iconify-json/lucide": "1.2.144",
+    "@iconify-json/octicon": "^1.2.39",
+    "@playwright/test": "^1.64.0",
+    "@types/node": "^24.19.2",
+    "esbuild": "0.28.2",
+    "miniflare": "^5.20261012.0-beta",
+    "prettier": "^3.9.10",
+    "typescript": "5.9.3",
+    "undici": "8.12.1",
+    "vitest": "^5.0.4",
+    "vue-tsc": "3.3.13",
+    "wrangler": "^4.151.0"
+  },
+  "cloudflare": {
+    "bindings": {
+      "DB": {
+        "description": "Stores encrypted sessions, GitHub App configuration and workspace connections. Conversation messages stay in GitHub."
+      },
+      "SETUP_TOKEN": {
+        "description": "Choose a random setup key of at least 32 characters. Enter it once on your deployed site to register your own GitHub App. Keep it: it encrypts stored credentials."
+      }
+    }
+  }
+}

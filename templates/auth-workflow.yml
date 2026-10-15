@@ -1,0 +1,26 @@
+name: Gitrew sign-in
+on:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+  issues: write
+concurrency:
+  group: ${{ startsWith(github.event.issue.title, 'Gitrew vault ') && 'gitrew-vault' || format('gitrew-auth-{0}', github.event.issue.user.id) }}
+  cancel-in-progress: false
+  queue: max
+jobs:
+  sign-in:
+    if: startsWith(github.event.issue.title, 'Gitrew auth ') || startsWith(github.event.issue.title, 'Gitrew vault ')
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: node scripts/action-auth.ts
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          MAILBOX_PRIVATE_KEY: ${{ secrets.MAILBOX_PRIVATE_KEY }}
+          GITREW_APP_PRIVATE_KEY: ${{ secrets.GITREW_APP_PRIVATE_KEY }}

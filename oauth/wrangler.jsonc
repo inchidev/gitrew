@@ -1,0 +1,14 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "gitrew-oauth",
+  "main": "worker.ts",
+  "compatibility_date": "2026-10-14",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true, "head_sampling_rate": 1, "redact_query_string": true },
+  "vars": {
+    "GITHUB_CLIENT_ID": "",
+    "GITHUB_APP_SLUG": "",
+    "CLIENT_URL": "https://gitrew.inchi.dev/",
+  },
+  // GITHUB_CLIENT_SECRET is a Worker secret, never a public variable.
+}

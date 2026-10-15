@@ -1,0 +1,26 @@
+node_modules/
+dist/
+.nuxt/
+.nuxt-e2e/
+.nuxt-build/
+.nuxt-backend-e2e/
+.output/
+.wrangler/
+.vercel/
+.dev.vars
+output/
+.env
+.env.*
+!.env.example
+artifacts/
+playwright-report/
+test-results/
+*.local
+public/bootstrap/auth-bundle.json
+.DS_Store
+
+.gitrew-setup/
+.celld/
+
+# Retired setup recovery material (may contain credentials).
+.gitwok-setup/

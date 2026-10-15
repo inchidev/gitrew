@@ -1,0 +1,3 @@
+# Choose a random setup key of at least 32 characters. Keep it after setup:
+# it also protects stored App credentials and sessions. Never commit the real key.
+SETUP_TOKEN=
