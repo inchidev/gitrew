@@ -3,7 +3,7 @@ import type RealtimeKitClient from "@cloudflare/realtimekit";
 const props = defineProps<{ token: string; channel: string }>();
 const emit = defineEmits<{ leave: [] }>();
 const element = useTemplateRef<
-  HTMLElement & { meeting?: RealtimeKitClient; showSetupScreen?: boolean }
+  HTMLElement & { meeting?: RealtimeKitClient }
 >("meetingElement");
 const error = ref("");
 const ready = ref(false);
@@ -78,7 +78,7 @@ onMounted(async () => {
     defineCustomElements(window, { resourcesUrl: "/rtk/" });
     const initialized = await Client.init({
       authToken: props.token,
-      defaults: { audio: true, video: false },
+      defaults: { audio: false, video: false },
     });
     if (disposed) {
       await initialized.leave();
@@ -100,7 +100,11 @@ onMounted(async () => {
     });
     if (element.value) {
       element.value.meeting = meeting;
-      element.value.showSetupScreen = true;
+    }
+    await meeting.join();
+    if (disposed) {
+      await meeting.leave();
+      return;
     }
     ready.value = true;
     await refreshDevices();
@@ -175,10 +179,40 @@ onBeforeUnmount(() => {
       </div>
       <UAlert v-if="audioError" color="error" :title="audioError" />
     </div>
-    <rtk-meeting
-      ref="meetingElement"
-      show-setup-screen="true"
-      class="rtk-surface"
-    />
+    <p v-if="ready" class="px-4 pb-4 text-sm text-muted">
+      You joined with your microphone off. Unmute when you’re ready to speak.
+    </p>
+    <rtk-participants-audio ref="meetingElement" />
   </div>
 </template>
+
+<style scoped>
+.huddle-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.huddle-panel > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 16px;
+}
+.huddle-panel header > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 600px) {
+  .field-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

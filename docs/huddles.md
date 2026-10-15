@@ -1,6 +1,6 @@
 # Voice huddles
 
-The backend authorizes the conversation before issuing a participant token. Choose one provider per installation; API credentials stay on the server. Huddles are voice first. Camera, screen sharing, recording, ringing and background/locked-phone call continuity are not part of this implementation.
+The backend authorizes the conversation before issuing a participant token. Choose one provider per installation; API credentials stay on the server. Huddles are voice first. Join with the microphone off, listen, then choose Unmute to request microphone access and speak. The RealtimeKit panel uses only its participant-audio component, without a camera/setup screen. Camera, screen sharing, recording, ringing and background/locked-phone call continuity are not part of this implementation.
 
 ## Cloudflare RealtimeKit
 
