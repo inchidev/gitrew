@@ -275,7 +275,8 @@ async function create() {
         <ol class="list-decimal pl-5 space-y-2 text-sm">
           <li>
             Invite your teammate to the GitHub organization and wait for them to
-            accept.
+            accept. If this installation requires a GitHub Team, add them to
+            that team and grant the team read access to the chat repository.
           </li>
           <li>
             Open your workspace → Workspace members and add their GitHub
@@ -288,8 +289,10 @@ async function create() {
         </ol>
         <p class="text-muted text-sm">
           Do not give teammates GitHub repository access to {{ ready.vault }}.
-          Members receive read access to {{ ready.repository }} when they sign
-          in. Shared channels are visible to organization members.
+          Team-restricted installations require the owner's team grant to
+          {{ ready.repository }}; other installations grant members read access
+          when they sign in. Shared channels are visible to admitted workspace
+          members with chat repository access.
         </p>
         <UButton
           :to="legacyWorkspacePath(ready.repository)!"

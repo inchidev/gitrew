@@ -2,10 +2,13 @@
 
 ## Unreleased
 
+## 0.2.0 — 2026-10-15
+
 - Restrict workspace entry and authenticated API, realtime, huddle and push operations by GitHub Team; preserve organization-owner administration and team-based repository grants.
 - Support coordinated domain migration through APP_ORIGIN, redirect the old inchidev frontend, and add independent inchi/AfterPrompt deployment configurations.
+- Configure separate RealtimeKit voice huddles for the AfterPrompt installation and explain team grants during onboarding.
 
-- Separate the public gitrew.com landing and installation guide from independent workspace deployments; document our planned inchi/AfterPrompt domains and the pending team access boundary.
+- Separate the public gitrew.com landing and installation guide from independent workspace deployments at inchi.gitrew.com and afterprompt.gitrew.com.
 
 - Provide 192px/512px PNG, maskable and Apple touch icons so Chrome recognizes Gitrew as installable; retain the existing PWA identity and start URL.
 - Respect device safe areas in chat, channels, threads, sign-in, setup and the landing page; match browser chrome colors to the active page and light/dark theme.

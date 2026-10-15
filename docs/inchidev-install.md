@@ -1,6 +1,6 @@
 # Fresh inchidev installation — 2026-10-15
 
-Site: https://gitrew.inchi.dev · source: https://github.com/inchidev/gitrew
+Sites: https://inchi.gitrew.com and https://afterprompt.gitrew.com · public guide: https://gitrew.com · source: https://github.com/inchidev/gitrew
 
 The maintained site is an independent, closed inchidev workspace. It uses the private organization-owned `gitrew-inchidev` App, a new Cloudflare Worker and new D1 database. The production build uses `npm run build:worker` and `npx wrangler deploy --config wrangler.inchidev.jsonc`. That configuration belongs to this installation; independent copies should use the root `wrangler.jsonc` and their own resources.
 
@@ -36,3 +36,20 @@ PR #10 merged as338b6a1. Cloudflare build3158a5a1-1cdc-4066-ad00-ea460c2fa345 su
 The dedicated `Gitrew inchidev` RealtimeKit app uses the `gitrew_voice` preset with microphone publishing allowed and video/screenshare, recording, chat, plugins and polls disabled. Its account token expires in October2027 and is saved only as the Worker's `RTK_API_TOKEN` secret. Optional Web Push keys are configured; the private key backup is in ignored `.gitrew-setup/vapid.env`, mode0600. GitHub App Discussion, Discussion comment, Member, Membership and Organization subscriptions are saved. No key values are committed.
 
 Local celld became healthy with LIVE enabled and passed a separate localhost WebSocket/DO RPC probe. Unit/runtime55 tests and frontend10/backend8 browser tests passed. A real two-user audio/private-chat test, background push delivery and public Coolify deployment remain unverified. Agent workflows and Gitea/GitLab are deferred; Vercel support is removed.
+
+## Independent workspaces and domain migration — 2026-10-15
+
+The public `gitrew.com` Worker serves only the landing and installation guide. Each workspace has its own Worker, D1, Durable Object namespace, organization-owned GitHub App, chat/vault repositories, push keys and RealtimeKit app/token. Customer deployments use their own infrastructure and domain.
+
+| Workspace | Worker/config | Required team | Working repositories | Private storage |
+| --- | --- | --- | --- | --- |
+| `inchi.gitrew.com` | `gitrew` / `wrangler.inchidev.jsonc` | `inchi` | `gitrew`, `anycord` | `gitrew-chat`, `gitrew-vault` |
+| `afterprompt.gitrew.com` | `gitrew-afterprompt` / `wrangler.afterprompt.jsonc` | `afterprompt` | `afterprompt`, `afterprompt-warlocks` | `afterprompt-chat`, `afterprompt-vault` |
+
+The original `gitrew-inchidev` App now uses `inchi.gitrew.com` for its homepage, OAuth callback, setup and webhook. The old `gitrew.inchi.dev` frontend redirects to it. The new `gitrew-inchidev-afterprompt` App is installed with selected repository access. GitHub automatically includes the chat/vault repositories that its installation creates. Both new repositories are private with Discussions enabled.
+
+Organization owners retain administration. Ordinary members must belong to the configured GitHub Team; authenticated API, realtime, huddle and push access enforce that policy. Each team has Write on its working repositories and Read on its chat repository. Organization base repository access is None. The AfterPrompt vault audit lists only the owner and no team grants. To onboard a friend, add them to `inchidev/afterprompt`, then add their username through AfterPrompt's Workspace members for private conversations. No friend has been added by this rollout.
+
+Owner OAuth and general-channel access were verified in Chrome on both new domains. AfterPrompt showed one online participant via WebSocket and completed a real muted RealtimeKit join/disconnect without microphone permission. The provider confirmed zero participants after disconnect, with recording, streaming and transcription disabled. Its dedicated token expires on October 15, 2027 and is stored only as an encrypted Worker secret. These checks do not establish two-person audio/private-chat delivery, physical-device PWA behavior or background push delivery.
+
+The AfterPrompt setup key and VAPID backup are ignored local files under `.gitrew-setup`, mode0600. Preserve each installation's own secrets and state during upgrades; do not copy the main installation's credentials into AfterPrompt.
