@@ -353,7 +353,7 @@ useHead({
     <footer class="site-footer">
       <a href="https://inchi.dev" target="_blank" rel="noopener noreferrer"
         >Made by inchi</a
-      ><span>Gitrew · your Git crew</span
+      ><span>© {{ new Date().getFullYear() }} Inchi LLC · Gitrew</span
       ><a
         href="https://github.com/inchidev/gitrew"
         target="_blank"
