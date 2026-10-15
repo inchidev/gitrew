@@ -16,7 +16,7 @@ A CSRF-protected POST requests a single-use socket ticket. The backend checks cu
 
 Socket attachments contain identity, session ID, room and a four-minute authorization lease. Clients reconnect before expiration to reauthorize. Sign-out, GitHub authorization revocation and Gitrew member removal close matching sockets and end media leases. GitHub membership events also revoke affected live connections. External repository permission changes without an applicable webhook may take until the next authorization cycle; ordinary history requests always enforce their existing access checks.
 
-Typing accepts only a small validated event and is throttled. A client cannot set its sender identity or choose another channel over the socket. Presence and typing stay within the authorized conversation. No typing history is saved.
+Typing accepts only a small validated event and is throttled. A client cannot set its sender identity or choose another channel over the socket. Presence and typing stay within the authorized conversation. No typing history is saved. Read-only vault operations retain the full access audit but run concurrently, so multiple authorized clients can refresh or receive push after the same event. Private writes remain serialized.
 
 ## Existing GitHub Apps
 

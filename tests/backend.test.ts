@@ -1216,6 +1216,28 @@ describe("live conversation access", () => {
     ).toBe(false);
     live.socket.close();
   });
+  it("allows concurrent authorized private refreshes without weakening participant checks", async () => {
+    await provision();
+    const alice = await login(1),
+      bob = await login(2),
+      carol = await login(3);
+    const read = (session: Awaited<ReturnType<typeof login>>) =>
+      post(
+        "/api/vault",
+        {
+          organization: "team",
+          operation: { op: "read", conversation: "private-channel" },
+        },
+        sessionHeaders(session),
+      );
+    const results = await Promise.all([read(alice), read(bob), read(carol)]);
+    expect(results[0].status).toBe(200);
+    expect(results[1].status).toBe(200);
+    expect(results[2].ok).toBe(false);
+    expect(await results[2].text()).not.toContain(
+      "Private conversation content",
+    );
+  });
   it("authorizes huddles, scopes participant creation and protects lease cleanup", async () => {
     await provision();
     const bob = await login(2),
