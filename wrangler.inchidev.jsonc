@@ -3,7 +3,10 @@
   "name": "gitrew",
   "account_id": "ee47884b4794b0240647bfa7a3e56c0b",
   "workers_dev": false,
-  "routes": [{ "pattern": "gitrew.inchi.dev", "custom_domain": true }],
+  "routes": [
+    { "pattern": "inchi.gitrew.com", "custom_domain": true },
+    { "pattern": "gitrew.inchi.dev", "custom_domain": true },
+  ],
   "preview_urls": false,
   "main": "backend/cloudflare.ts",
   "compatibility_date": "2026-10-14",
@@ -12,7 +15,7 @@
     "directory": ".output/public",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*", "/health"],
+    "run_worker_first": true,
   },
   "d1_databases": [
     {
@@ -26,6 +29,8 @@
   },
   "migrations": [{ "tag": "live-v1", "new_sqlite_classes": ["LiveHub"] }],
   "vars": {
+    "APP_ORIGIN": "https://inchi.gitrew.com",
+    "ALLOWED_TEAM": "inchi",
     "PUBLIC_APP": "false",
     "SANDBOX_ORGANIZATION": "",
     "HUDDLE_PROVIDER": "realtimekit",

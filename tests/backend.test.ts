@@ -51,6 +51,8 @@ let failMediaCleanup = false;
 let chatReaders = new Set([1, 2, 3]);
 let selfMembershipState = "active";
 let failChatGrant = false;
+let teamState = "active";
+let teamStatus = 200;
 let customMembersInitialized = false;
 let failCustomChannel = false;
 let githubCalls: {
@@ -154,6 +156,8 @@ beforeEach(async () => {
   chatReaders = new Set([1, 2, 3]);
   selfMembershipState = "active";
   failChatGrant = false;
+  teamState = "active";
+  teamStatus = 200;
   revoked = false;
   wrongOwner = false;
   basePermission = "none";
@@ -247,6 +251,10 @@ beforeEach(async () => {
             : response({ role: "admin", state: selfMembershipState });
         if (url.pathname === "/orgs/team")
           return response({ default_repository_permission: basePermission });
+        if (
+          /^\/orgs\/team\/teams\/crew\/memberships\/user\d+$/.test(url.pathname)
+        )
+          return response({ state: teamState, role: "member" }, teamStatus);
         if (url.pathname.startsWith("/orgs/team/memberships/user")) {
           const id = Number(url.pathname.split("user").at(-1));
           if (id === 1 && ownerRole === "outside")
@@ -457,6 +465,88 @@ afterEach(async () => {
 });
 
 describe("Cloudflare backend", () => {
+  it("enforces team membership on session, proxy, vault, realtime, huddles and push, including removal", async () => {
+    await register();
+    await store.saveWorkspace({
+      organization: "team",
+      repository: "team/gitrew-chat",
+      vault: "team/gitrew-vault",
+      installationId: 9,
+      nonce: "workspace-nonce",
+      ready: true,
+      openRegistration: false,
+      memberPrivateChannels: false,
+    });
+    const owner = await login(1),
+      bob = await login(2);
+    await (
+      await mf.getD1Database("DB")
+    )
+      .prepare("UPDATE settings SET value=? WHERE key='app'")
+      .bind(await store.seal({ ...app, origin, allowedTeam: "crew" }, "app"))
+      .run();
+    expect(
+      (await request("/api/session", { headers: { Cookie: bob.cookie } }))
+        .status,
+    ).toBe(200);
+    chatReaders.delete(2);
+    const before = githubCalls.length;
+    expect(
+      (await request("/api/session", { headers: { Cookie: bob.cookie } }))
+        .status,
+    ).toBe(403);
+    expect(
+      githubCalls
+        .slice(before)
+        .some((c) => c.method === "PUT" && c.url.includes("/collaborators/")),
+    ).toBe(false);
+    chatReaders.add(2);
+    const ticket = await post(
+      "/api/live/ticket",
+      { organization: "team", channel: "general", kind: "public" },
+      sessionHeaders(bob),
+    );
+    expect(ticket.status).toBe(200);
+    const { ticket: socketTicket } = (await ticket.json()) as {
+      ticket: string;
+    };
+    const connected = await request("/api/live/socket?ticket=" + socketTicket, {
+      headers: { Cookie: bob.cookie, Origin: origin, Upgrade: "websocket" },
+    });
+    expect(connected.status).toBe(101);
+    connected.webSocket!.accept();
+    const closed = new Promise<number>((resolve) =>
+      connected.webSocket!.addEventListener("close", (event) =>
+        resolve(event.code),
+      ),
+    );
+    teamState = "pending";
+    expect(
+      (await request("/api/session", { headers: { Cookie: bob.cookie } }))
+        .status,
+    ).toBe(403);
+    expect(await closed).toBe(4001);
+    teamState = "active";
+    teamStatus = 503;
+    expect(
+      (await request("/api/session", { headers: { Cookie: bob.cookie } }))
+        .status,
+    ).toBe(502);
+    teamStatus = 404;
+    for (const path of [
+      "/api/github",
+      "/api/vault",
+      "/api/live/ticket",
+      "/api/huddle/join",
+      "/api/push",
+    ]) {
+      expect((await post(path, {}, sessionHeaders(bob))).status).toBe(403);
+    }
+    expect(
+      (await request("/api/session", { headers: { Cookie: owner.cookie } }))
+        .status,
+    ).toBe(200);
+  }, 20_000);
   it("returns sign-in to workspace, private channel and DM links while rejecting arbitrary destinations", async () => {
     await register();
     for (const [query, destination] of [

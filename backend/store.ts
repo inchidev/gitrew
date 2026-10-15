@@ -11,6 +11,10 @@ export const appSchema = z.object({
   webhook_secret: z.string().min(1),
   owner: z.object({ login: z.string() }),
   origin: z.url(),
+  allowedTeam: z
+    .string()
+    .regex(/^[a-z0-9][a-z0-9-]{0,99}$/)
+    .optional(),
 });
 export type App = z.infer<typeof appSchema>;
 export const credentialsSchema = z.object({

@@ -323,6 +323,11 @@ export async function ensureWorkspaceAccess(
       502,
       "Could not verify access to the private chat repository.",
     );
+  if (app.allowedTeam)
+    throw new HttpError(
+      403,
+      "Your GitHub team needs Read access to this workspace's chat repository. Ask an organization owner to grant it; individual access is not created automatically for team workspaces.",
+    );
   const token = await installationToken(
     {
       repository: workspace.repository,
