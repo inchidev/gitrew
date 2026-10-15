@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.2.0 — 2026-10-15
+
 - Restrict workspace entry and authenticated API, realtime, huddle and push operations by GitHub Team; preserve organization-owner administration and team-based repository grants.
 - Support coordinated domain migration through APP_ORIGIN, redirect the old inchidev frontend, and add independent inchi/AfterPrompt deployment configurations.
 
