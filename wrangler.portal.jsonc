@@ -1,0 +1,13 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "gitrew-com",
+  "account_id": "ee47884b4794b0240647bfa7a3e56c0b",
+  "compatibility_date": "2026-10-15",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{ "pattern": "gitrew.com", "custom_domain": true }],
+  "assets": {
+    "directory": ".output/public",
+    "not_found_handling": "404-page",
+  },
+}

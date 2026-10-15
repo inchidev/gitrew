@@ -21,7 +21,9 @@
     "build:worker": "node scripts/build-worker.mjs",
     "dev:worker": "wrangler dev",
     "deploy": "npm run build:worker && wrangler deploy",
-    "test:e2e:backend": "playwright test -c playwright.backend.config.ts"
+    "test:e2e:backend": "playwright test -c playwright.backend.config.ts",
+    "build:portal": "node scripts/build-portal.mjs",
+    "test:e2e:portal": "playwright test -c playwright.portal.config.ts"
   },
   "dependencies": {
     "@block65/webcrypto-web-push": "^2.0.0",

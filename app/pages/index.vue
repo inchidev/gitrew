@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const colorMode = useColorMode();
+const portal = useRuntimeConfig().public.siteMode === "portal";
 const providers: {
   id: string;
   name: string;
@@ -116,6 +117,7 @@ providers.push(
 );
 useHead({
   title: "Gitrew — your Git crew",
+  link: portal ? [{ rel: "canonical", href: "https://gitrew.com/" }] : [],
   meta: [
     {
       name: "description",
@@ -154,8 +156,8 @@ useHead({
           "
         />
         <UButton
-          to="/login"
-          label="Sign in"
+          :to="portal ? '/create/' : '/login'"
+          :label="portal ? 'Create workspace' : 'Sign in'"
           color="neutral"
           variant="outline"
         />
@@ -171,8 +173,8 @@ useHead({
           </p>
           <div class="hero-actions">
             <UButton
-              to="/w/inchidev"
-              label="Open Gitrew"
+              :to="portal ? '/create/' : '/login'"
+              :label="portal ? 'Create your workspace' : 'Open Gitrew'"
               icon="i-octicon-arrow-right-16"
               trailing
               size="lg"
@@ -212,8 +214,9 @@ useHead({
               </p>
             </div>
           </div>
-          <NuxtLink to="/login" class="scene-composer"
-            >Join your crew <UIcon name="i-octicon-arrow-right-16"
+          <NuxtLink :to="portal ? '/create/' : '/login'" class="scene-composer"
+            >{{ portal ? "Make room for your crew" : "Join your crew" }}
+            <UIcon name="i-octicon-arrow-right-16"
           /></NuxtLink>
         </div>
       </section>
@@ -272,8 +275,10 @@ useHead({
                 <p class="provider-boundary">
                   <UIcon name="i-octicon-info-16" />{{ active.boundary }}
                 </p>
-                <NuxtLink v-if="active.id === 'github'" to="/login"
-                  >Continue with GitHub
+                <NuxtLink
+                  v-if="active.id === 'github'"
+                  :to="portal ? '/create/' : '/login'"
+                  >{{ portal ? "Set up with GitHub" : "Continue with GitHub" }}
                   <UIcon name="i-octicon-arrow-right-16" /></NuxtLink
                 ><a
                   v-else
@@ -321,12 +326,17 @@ useHead({
       <section class="ownership-section" aria-labelledby="ownership-title">
         <div>
           <p class="section-kicker">Make room for your crew</p>
-          <h2 id="ownership-title">Open source. Your installation.</h2>
+          <h2 id="ownership-title">Your crew. Your address.</h2>
           <p>
-            Run Gitrew for your own organization on Cloudflare or your own
-            server with celld. The VPS guide includes the local celld Docker
-            Compose example and the checks needed before public hosting with
-            Coolify.
+            Start at gitrew.com, then make a home for your team at example.com
+            or gitrew.example.com. Each workspace runs its own Gitrew on
+            Cloudflare or a server with celld, with its own GitHub App and
+            conversation repositories.
+          </p>
+          <p>
+            Your team signs in at your workspace address. Gitrew.com helps you
+            get started; your conversations and credentials belong to your
+            installation.
           </p>
           <p class="ownership-note">
             Gitrew is free and MIT licensed. Hosting and optional voice services

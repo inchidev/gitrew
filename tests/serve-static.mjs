@@ -32,7 +32,7 @@ createServer(async (request, response) => {
       })
       .end(content);
   } catch {
-    if (!extname(pathname)) {
+    if (!extname(pathname) && process.env.PORTAL_TEST !== "true") {
       response.writeHead(200, { "Content-Type": "text/html", "Cache-Control": "no-store" }).end(await readFile(resolve(root, "200.html")));
     } else response.writeHead(404).end();
   }
