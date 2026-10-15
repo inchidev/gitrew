@@ -17,5 +17,9 @@
       "database_id": "gitrew-local",
     },
   ],
+  "durable_objects": {
+    "bindings": [{ "name": "LIVE", "class_name": "LiveHub" }],
+  },
+  "migrations": [{ "tag": "live-v1", "new_sqlite_classes": ["LiveHub"] }],
   "vars": { "PUBLIC_APP": "false", "SANDBOX_ORGANIZATION": "" },
 }

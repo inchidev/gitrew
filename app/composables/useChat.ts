@@ -28,9 +28,9 @@ export function useChat(
 ) {
   const queryClient = useQueryClient();
   const online = useOnline();
+  const liveConnected = ref(false);
   const visibility = useDocumentVisibility();
-  let pendingInitialChannel =
-    requestedChannel?.value || "";
+  let pendingInitialChannel = requestedChannel?.value || "";
   const selectedChannel = ref(pendingInitialChannel);
   const selectedThread = ref("");
   const search = ref("");
@@ -85,7 +85,7 @@ export function useChat(
       )
         return false;
       return Math.max(
-        60_000,
+        liveConnected.value ? 300_000 : 60_000,
         query.state.error instanceof GitHubError
           ? query.state.error.retryAfterMs
           : 0,
@@ -106,7 +106,11 @@ export function useChat(
       new VaultTransport(mailbox!.value!, token.value).listChannels(signal),
     retry: false,
     refetchInterval: () =>
-      online.value && visibility.value === "visible" ? 120_000 : false,
+      online.value && visibility.value === "visible"
+        ? liveConnected.value
+          ? 300_000
+          : 120_000
+        : false,
   });
   const channels = computed(() =>
     preview.value
@@ -155,12 +159,14 @@ export function useChat(
       )
         return false;
       return Math.max(
-        ["private", "dm"].includes(
-          channels.value.find((c) => c.id === selectedChannel.value)?.kind ||
-            "",
-        )
-          ? 120_000
-          : 20_000,
+        liveConnected.value
+          ? 300_000
+          : ["private", "dm"].includes(
+                channels.value.find((c) => c.id === selectedChannel.value)
+                  ?.kind || "",
+              )
+            ? 120_000
+            : 20_000,
         query.state.error instanceof GitHubError
           ? query.state.error.retryAfterMs
           : 0,
@@ -235,10 +241,11 @@ export function useChat(
       (authenticated.value && Boolean(channel.value) && online.value),
   );
 
-  if (requestedChannel) watch(requestedChannel, (id) => {
-    pendingInitialChannel = id;
-    selectedChannel.value = id;
-  });
+  if (requestedChannel)
+    watch(requestedChannel, (id) => {
+      pendingInitialChannel = id;
+      selectedChannel.value = id;
+    });
   watch(scope, () => {
     pendingInitialChannel = requestedChannel?.value || pendingInitialChannel;
     selectedChannel.value = pendingInitialChannel;
@@ -268,7 +275,8 @@ export function useChat(
           channelsQuery.isPending.value ||
           channelsQuery.isError.value ||
           (mailbox?.value?.vault &&
-            (vaultChannelsQuery.isPending.value || vaultChannelsQuery.isError.value)))
+            (vaultChannelsQuery.isPending.value ||
+              vaultChannelsQuery.isError.value)))
       )
         return;
       pendingInitialChannel = "";
@@ -281,7 +289,6 @@ export function useChat(
       pendingInitialChannel = "";
     selectedThread.value = "";
     search.value = "";
-
   });
   watch(messages, () => {
     if (
@@ -377,6 +384,7 @@ export function useChat(
   }
   return {
     online,
+    liveConnected,
     channels,
     channel,
     selectedChannel,

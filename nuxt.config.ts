@@ -20,6 +20,9 @@ export default defineNuxtConfig({
     process.env.NUXT_BUILD_DIR ||
     (process.env.npm_lifecycle_event === "build" ? ".nuxt-build" : ".nuxt"),
   devtools: { enabled: false },
+  vue: {
+    compilerOptions: { isCustomElement: (tag) => tag.startsWith("rtk-") },
+  },
   modules: ["@nuxt/ui", "@vueuse/nuxt"],
   ui: { experimental: { componentDetection: true } },
   css: ["~/assets/css/main.css"],
@@ -47,6 +50,14 @@ export default defineNuxtConfig({
         { name: "referrer", content: "no-referrer" },
       ],
       link: [
+        {
+          rel: "manifest",
+          href: `${process.env.BASE_PATH || "/"}manifest.webmanifest`,
+        },
+        {
+          rel: "apple-touch-icon",
+          href: `${process.env.BASE_PATH || "/"}brand/gitrew-mark.png`,
+        },
         {
           rel: "icon",
           type: "image/svg+xml",

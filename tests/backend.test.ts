@@ -47,6 +47,7 @@ let customRepos = new Map<
   }
 >();
 let chatPrivate = true;
+let failMediaCleanup = false;
 let chatReaders = new Set([1, 2, 3]);
 let selfMembershipState = "active";
 let failChatGrant = false;
@@ -137,18 +138,19 @@ const sessionHeaders = (session: { cookie: string; csrf: string }) => ({
 
 beforeAll(async () => {
   await build({
-    entryPoints: ["backend/worker.ts"],
+    entryPoints: ["backend/cloudflare.ts"],
     bundle: true,
     platform: "browser",
     format: "esm",
     target: "es2022",
-    external: ["node:*"],
+    external: ["node:*", "cloudflare:*"],
     outfile: "artifacts/backend-test-worker.mjs",
   });
 });
 beforeEach(async () => {
   currentUser = 1;
   chatPrivate = true;
+  failMediaCleanup = false;
   chatReaders = new Set([1, 2, 3]);
   selfMembershipState = "active";
   failChatGrant = false;
@@ -183,10 +185,16 @@ beforeEach(async () => {
       compatibilityDate: "2026-10-14",
       compatibilityFlags: ["nodejs_compat"],
       d1Databases: ["DB"],
+      durableObjects: { LIVE: { className: "LiveHub", useSQLite: true } },
       bindings: {
         SETUP_TOKEN: secret,
         PUBLIC_APP: "false",
         SANDBOX_ORGANIZATION: "team",
+        HUDDLE_PROVIDER: "realtimekit",
+        RTK_ACCOUNT_ID: "account",
+        RTK_APP_ID: "app",
+        RTK_API_TOKEN: "test-only-media-secret",
+        RTK_PRESET: "voice",
       },
       serviceBindings: { ASSETS: () => new MFResponse("client") },
       outboundService: async (req) => {
@@ -196,6 +204,21 @@ beforeEach(async () => {
         const raw = await req.text();
         const body = raw ? JSON.parse(raw) : undefined;
         githubCalls.push({ url: req.url, authorization, method, body });
+        if (url.hostname === "api.cloudflare.com") {
+          if (url.pathname.endsWith("/active-session/kick") && failMediaCleanup)
+            return response({ success: false }, 503);
+          if (url.pathname.endsWith("/participants") && method === "POST")
+            return response({
+              success: true,
+              data: {
+                id: crypto.randomUUID(),
+                token: "test-only-participant-token",
+              },
+            });
+          if (url.pathname.endsWith("/meetings") && method === "POST")
+            return response({ success: true, data: { id: "test-meeting" } });
+          return response({ success: true, data: {} });
+        }
         if (url.pathname.startsWith("/app-manifests/"))
           return response({
             ...app,
@@ -248,7 +271,7 @@ beforeEach(async () => {
             description: string;
             has_discussions: boolean;
           };
-          if (!repo.name.startsWith("vercel-test-"))
+          if (!repo.name.startsWith("custom-test-"))
             throw new Error("Unexpected repository creation");
           const saved = { ...repo, id: customRepos.size + 50 };
           customRepos.set(repo.name, saved);
@@ -256,7 +279,7 @@ beforeEach(async () => {
         }
         if (url.pathname === "/orgs/team/members")
           return response([{ id: 1, login: "user1" }]);
-        const customRepo = /^\/repos\/team\/(vercel-test-[^/]+)(.*)$/.exec(
+        const customRepo = /^\/repos\/team\/(custom-test-[^/]+)(.*)$/.exec(
           url.pathname,
         );
         if (customRepo) {
@@ -327,6 +350,21 @@ beforeEach(async () => {
         }
         if (url.pathname === "/graphql") {
           const query = (body as { query: string }).query;
+          if (query.includes("query Room"))
+            return response({
+              data: {
+                node: {
+                  __typename: "Discussion",
+                  repository: {
+                    nameWithOwner:
+                      (body as { variables: { id: string } }).variables.id ===
+                      "general"
+                        ? "team/gitrew-chat"
+                        : "other/repository",
+                  },
+                },
+              },
+            });
           if (query.includes("discussions(first:1)")) {
             if (failCustomChannel)
               return response({
@@ -334,7 +372,7 @@ beforeEach(async () => {
               });
             expect(
               (body as { variables: { name: string } }).variables.name,
-            ).toBe("vercel-test-chat");
+            ).toBe("custom-test-chat");
             return response({
               data: {
                 repository: {
@@ -948,8 +986,8 @@ describe("Cloudflare backend", () => {
     const session = await login();
     const names = {
       organization: "team",
-      repositoryName: "vercel-test-chat",
-      vaultName: "vercel-test-vault",
+      repositoryName: "custom-test-chat",
+      vaultName: "custom-test-vault",
     };
     const create = (body: unknown) =>
       post("/api/workspaces", body, sessionHeaders(session));
@@ -957,25 +995,25 @@ describe("Cloudflare backend", () => {
     expect((await create(names)).ok).toBe(false);
     const checkpoint = await store.workspace("team");
     expect(checkpoint?.ready).toBe(false);
-    expect(checkpoint?.repository).toBe("team/vercel-test-chat");
-    expect(checkpoint?.vault).toBe("team/vercel-test-vault");
+    expect(checkpoint?.repository).toBe("team/custom-test-chat");
+    expect(checkpoint?.vault).toBe("team/custom-test-vault");
     expect(
-      (await create({ ...names, vaultName: "vercel-test-another" })).status,
+      (await create({ ...names, vaultName: "custom-test-another" })).status,
     ).toBe(409);
     failCustomChannel = false;
     const resumed = await create(names);
     expect(resumed.status).toBe(200);
     expect(await resumed.json()).toMatchObject({
       workspace: {
-        repository: "team/vercel-test-chat",
-        vault: "team/vercel-test-vault",
+        repository: "team/custom-test-chat",
+        vault: "team/custom-test-vault",
       },
     });
     expect((await store.workspace("team"))?.nonce).toBe(checkpoint?.nonce);
     expect((await store.workspace("team"))?.ready).toBe(true);
-    expect(customRepos.get("vercel-test-chat")?.private).toBe(true);
+    expect(customRepos.get("custom-test-chat")?.private).toBe(true);
     expect((await store.workspace("team"))?.openRegistration).toBe(false);
-    expect(customRepos.get("vercel-test-vault")?.private).toBe(true);
+    expect(customRepos.get("custom-test-vault")?.private).toBe(true);
     const creates = githubCalls.filter(
       (c) =>
         c.method === "POST" && new URL(c.url).pathname === "/orgs/team/repos",
@@ -986,14 +1024,14 @@ describe("Cloudflare backend", () => {
       githubCalls.some((c) => /\/repos\/team\/gitrew-(chat|vault)/.test(c.url)),
     ).toBe(false);
     const token = githubCalls.findLast((c) => c.url.endsWith("/access_tokens"));
-    expect(token?.body).toMatchObject({ repositories: ["vercel-test-vault"] });
+    expect(token?.body).toMatchObject({ repositories: ["custom-test-vault"] });
     const loaded = await request("/api/session", {
       headers: { Cookie: session.cookie },
     });
     expect(await loaded.json()).toMatchObject({
       workspace: {
-        repository: "team/vercel-test-chat",
-        vault: "team/vercel-test-vault",
+        repository: "team/custom-test-chat",
+        vault: "team/custom-test-vault",
       },
     });
   });
@@ -1017,7 +1055,7 @@ describe("Cloudflare backend", () => {
       ).toBe(400);
     }
     expect(customRepos.size).toBe(0);
-    customRepos.set("vercel-test-vault", {
+    customRepos.set("custom-test-vault", {
       id: 99,
       private: true,
       description: "unrelated",
@@ -1027,8 +1065,8 @@ describe("Cloudflare backend", () => {
       "/api/workspaces",
       {
         organization: "team",
-        repositoryName: "vercel-test-chat",
-        vaultName: "vercel-test-vault",
+        repositoryName: "custom-test-chat",
+        vaultName: "custom-test-vault",
       },
       sessionHeaders(session),
     );
@@ -1038,7 +1076,7 @@ describe("Cloudflare backend", () => {
         (c) => c.method === "POST" && c.url.endsWith("/orgs/team/repos"),
       ),
     ).toBe(false);
-    expect(customRepos.has("vercel-test-chat")).toBe(false);
+    expect(customRepos.has("custom-test-chat")).toBe(false);
   });
   it("refuses unsafe organization base access and preserves unrelated repositories", async () => {
     await register();
@@ -1064,5 +1102,261 @@ describe("Cloudflare backend", () => {
         (c) => c.method === "POST" && c.url.includes("/orgs/team/repos"),
       ),
     ).toHaveLength(0);
+  });
+});
+
+describe("live conversation access", () => {
+  const room = { organization: "team", channel: "general", kind: "public" };
+  async function provision() {
+    await register();
+    await store.saveWorkspace({
+      organization: "team",
+      repository: "team/gitrew-chat",
+      vault: "team/gitrew-vault",
+      installationId: 7,
+      openRegistration: false,
+      memberPrivateChannels: false,
+      nonce: "live-test",
+      ready: true,
+    });
+  }
+  async function ticket(
+    session: Awaited<ReturnType<typeof login>>,
+    selected = room,
+  ) {
+    const result = await post(
+      "/api/live/ticket",
+      selected,
+      sessionHeaders(session),
+    );
+    return result;
+  }
+  async function connect(
+    session: Awaited<ReturnType<typeof login>>,
+    selected = room,
+  ) {
+    const result = await ticket(session, selected);
+    expect(result.status).toBe(200);
+    const { ticket: raw } = (await result.json()) as { ticket: string };
+    const response = await request(`/api/live/socket?ticket=${raw}`, {
+      headers: { Cookie: session.cookie, Origin: origin, Upgrade: "websocket" },
+    });
+    expect(response.status).toBe(101);
+    response.webSocket!.accept();
+    return { socket: response.webSocket!, raw };
+  }
+  it("rejects forged public rooms, private nonparticipants and cross-origin socket upgrades", async () => {
+    await provision();
+    const carol = await login(3);
+    expect((await ticket(carol, { ...room, channel: "outside" })).status).toBe(
+      403,
+    );
+    expect(
+      (
+        await ticket(carol, {
+          ...room,
+          channel: "private-channel",
+          kind: "private",
+        })
+      ).status,
+    ).toBe(403);
+    const result = await ticket(carol);
+    const { ticket: raw } = (await result.json()) as { ticket: string };
+    expect(
+      (
+        await request(`/api/live/socket?ticket=${raw}`, {
+          headers: {
+            Cookie: carol.cookie,
+            Origin: "https://evil.test",
+            Upgrade: "websocket",
+          },
+        })
+      ).status,
+    ).toBe(403);
+  });
+  it("binds one-use tickets to their session and rechecks private membership before consuming", async () => {
+    await provision();
+    const bob = await login(2),
+      carol = await login(3);
+    const result = await ticket(bob);
+    const { ticket: raw } = (await result.json()) as { ticket: string };
+    expect(
+      (
+        await request(`/api/live/socket?ticket=${raw}`, {
+          headers: {
+            Cookie: carol.cookie,
+            Origin: origin,
+            Upgrade: "websocket",
+          },
+        })
+      ).status,
+    ).toBe(403);
+    const live = await connect(bob);
+    expect(
+      (
+        await request(`/api/live/socket?ticket=${live.raw}`, {
+          headers: { Cookie: bob.cookie, Origin: origin, Upgrade: "websocket" },
+        })
+      ).status,
+    ).toBe(400);
+    const pending = await ticket(bob, {
+      ...room,
+      channel: "private-channel",
+      kind: "private",
+    });
+    expect(pending.status).toBe(200);
+    const data = (await pending.json()) as { ticket: string };
+    membership.members = membership.members.filter((m) => m.id !== 2);
+    expect(
+      (
+        await request(`/api/live/socket?ticket=${data.ticket}`, {
+          headers: { Cookie: bob.cookie, Origin: origin, Upgrade: "websocket" },
+        })
+      ).ok,
+    ).toBe(false);
+    live.socket.close();
+  });
+  it("allows concurrent authorized private refreshes without weakening participant checks", async () => {
+    await provision();
+    const alice = await login(1),
+      bob = await login(2),
+      carol = await login(3);
+    const read = (session: Awaited<ReturnType<typeof login>>) =>
+      post(
+        "/api/vault",
+        {
+          organization: "team",
+          operation: { op: "read", conversation: "private-channel" },
+        },
+        sessionHeaders(session),
+      );
+    const results = await Promise.all([read(alice), read(bob), read(carol)]);
+    expect(results[0].status).toBe(200);
+    expect(results[1].status).toBe(200);
+    expect(results[2].ok).toBe(false);
+    expect(await results[2].text()).not.toContain(
+      "Private conversation content",
+    );
+  });
+  it("authorizes huddles, scopes participant creation and protects lease cleanup", async () => {
+    await provision();
+    const bob = await login(2),
+      carol = await login(3);
+    const privateRoom = {
+      ...room,
+      channel: "private-channel",
+      kind: "private",
+    };
+    expect(
+      (
+        await post(
+          "/api/huddle/join",
+          { room: privateRoom },
+          sessionHeaders(carol),
+        )
+      ).status,
+    ).toBe(403);
+    const joined = await post(
+      "/api/huddle/join",
+      { room: privateRoom },
+      sessionHeaders(bob),
+    );
+    expect(joined.status).toBe(200);
+    const data = (await joined.json()) as { lease: string };
+    expect(data).toMatchObject({
+      provider: "realtimekit",
+      token: "test-only-participant-token",
+    });
+    const participant = githubCalls.find(
+      (c) => c.url.endsWith("/participants") && c.method === "POST",
+    );
+    expect(participant?.body).toMatchObject({
+      name: "user2",
+      preset_name: "voice",
+    });
+    expect(
+      (
+        await post(
+          "/api/huddle/leave",
+          { room, lease: data.lease },
+          sessionHeaders(carol),
+        )
+      ).status,
+    ).toBe(200);
+    expect(
+      githubCalls.some((c) => c.url.endsWith("/active-session/kick")),
+    ).toBe(false);
+    expect(
+      (
+        await post(
+          "/api/huddle/leave",
+          { room: privateRoom, lease: data.lease },
+          sessionHeaders(bob),
+        )
+      ).status,
+    ).toBe(200);
+    expect(
+      githubCalls.some((c) => c.url.endsWith("/active-session/kick")),
+    ).toBe(true);
+    expect(
+      (
+        await post(
+          "/api/huddle/heartbeat",
+          { room: privateRoom, lease: data.lease },
+          sessionHeaders(bob),
+        )
+      ).status,
+    ).toBe(410);
+  });
+  it("keeps typing within a room, uses the server identity, and closes on sign-out", async () => {
+    await provision();
+    const alice = await login(1),
+      bob = await login(2),
+      carol = await login(3);
+    const a = await connect(alice, {
+        ...room,
+        channel: "private-channel",
+        kind: "private",
+      }),
+      b = await connect(bob, {
+        ...room,
+        channel: "private-channel",
+        kind: "private",
+      }),
+      c = await connect(carol);
+    const leaked: unknown[] = [];
+    c.socket.addEventListener("message", (e) => {
+      const data = JSON.parse(String(e.data));
+      if (data.type === "typing") leaked.push(data);
+    });
+    const typing = new Promise<Record<string, unknown>>((resolve) =>
+      a.socket.addEventListener("message", (e) => {
+        const data = JSON.parse(String(e.data));
+        if (data.type === "typing") resolve(data);
+      }),
+    );
+    b.socket.send(
+      JSON.stringify({
+        type: "typing",
+        active: true,
+        userId: 3,
+        channel: "general",
+      }),
+    );
+    expect(await typing).toMatchObject({
+      type: "typing",
+      userId: 2,
+      login: "user2",
+    });
+    expect(leaked).toEqual([]);
+    const closed = new Promise<number>((resolve) =>
+      b.socket.addEventListener("close", (e) => resolve(e.code)),
+    );
+    expect((await post("/api/logout", {}, sessionHeaders(bob))).status).toBe(
+      200,
+    );
+    expect(await closed).toBe(4001);
+    a.socket.close();
+    c.socket.close();
   });
 });

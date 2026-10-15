@@ -1,7 +1,7 @@
 # Architecture
 
 This is the recommended frontend/API deployment. See the provider guides for
-[Cloudflare](cloudflare-backend.md) and [Vercel](vercel.md), or the separate
+[Cloudflare](cloudflare-backend.md) and [celld](celld.md), or the separate
 [retired static/Actions architecture](legacy-architecture.md).
 
 ## Ownership and runtime
@@ -10,15 +10,14 @@ An organization is a workspace. An independent deployment includes its frontend,
 API, encrypted metadata storage and organization-owned GitHub App. Its operator
 controls the deployed source and credentials. It does not call a Gitrew-operated
 authentication service. Cloudflare serves static Nuxt assets and API routes from
-one Worker, with D1. Vercel serves static assets and a Node.js function, with a
-private Blob store. Both run the same backend authorization and vault code.
+one Worker, with D1 and a hibernating LiveHub Durable Object. celld runs the same Worker-compatible backend, D1 binding and Durable Object on the self-hosting path. Vercel support is removed. See [realtime](realtime.md), [huddles](huddles.md) and [notifications](notifications.md).
 
 ```text
 Browser (Nuxt SPA)
   │ same-origin HTTPS, session cookie + CSRF proof
   ▼
 Your API
-  ├── encrypted D1 / private Blob: App keys, OAuth state, sessions, setup checkpoints
+  ├── encrypted D1: App keys, OAuth state, sessions, setup checkpoints
   ├── user's GitHub token → permitted ordinary GitHub operations
   └── scoped App installation token → private gitrew-vault
                                        workspace + conversation ACL checks
@@ -102,12 +101,7 @@ send retains its nonce within the tab. There is no persistent offline outbox.
 
 ## Storage and operator trust
 
-D1 encrypts App credentials and session tokens with AES-GCM. Vercel Blob stores
-one AES-GCM encrypted metadata snapshot with uncached reads and ETag conditional
-writes. This Blob implementation is intended for small teams: the snapshot is
-capped at 2 MiB, and concurrent metadata changes may return retryable conflicts.
-Both providers also store expiring OAuth state, setup checkpoints and operational
-locks/rate counters. Conversations remain in GitHub.
+D1 encrypts App credentials and session tokens with AES-GCM. It also stores expiring OAuth state, setup checkpoints and operational locks/rate counters. Optional push subscriptions are encrypted and session bound. The Durable Object stores media meeting/participant leases and socket attachments; it coordinates live invalidations, presence and typing. Conversation history remains in GitHub; there is no persistent D1 message mirror.
 
 This is not E2EE. GitHub, workspace administrators and the backend operator can
 read private content. A frontend operator can alter the JavaScript users receive;
@@ -125,13 +119,8 @@ illustrative preview makes no authenticated API requests.
 
 Vue Query holds remote history in memory. LocalStorage contains account-scoped
 conversation/thread drafts and preferences; these remain after logout. Private
-history is not persisted. Private messages refresh every two minutes or manually;
+history is not persisted. Connected clients receive WebSocket invalidations and recover with a five-minute refresh. Without realtime, private messages refresh every two minutes or manually; workspace messages refresh every20 seconds while visible. Search covers loaded history. Presence/typing are conversation scoped. Optional Web Push and RealtimeKit/LiveKit voice huddles need installation credentials and live verification.
 workspace messages refresh every 20 seconds while visible. Search covers loaded
 history. There is no presence, typing, push or WebSocket service.
 
-Unit tests use simulated GitHub APIs; Cloudflare tests run workerd with local D1,
-and Vercel tests run the Node HTTP adapter with an in-memory conditional Blob
-transport. Browser tests mock API responses. Package validation exercises the
-built Vercel handler and dry-runs Worker bundles. These checks do not establish
-live GitHub approvals, real Blob behavior or fresh-team installation. The provider
-guides keep live verification records separate from automated checks.
+Unit tests use simulated GitHub APIs; runtime tests use workerd and local D1/DO. Browser tests mock API responses. These checks do not establish live GitHub approvals, media delivery, background push or fresh-team installation. Provider guides keep live verification records separate from automated checks.
