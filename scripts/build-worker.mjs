@@ -14,7 +14,7 @@ for (const args of [
     "--platform=browser",
     "--target=es2022",
     "--external:node:*",
-    "--outfile=dist/backend-worker.mjs",
+    "--outfile=artifacts/backend-worker.mjs",
   ],
 ]) {
   const result = spawnSync("npm", args, {

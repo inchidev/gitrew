@@ -8,7 +8,7 @@ RUN npm run build:worker
 FROM node:24-bookworm-slim
 WORKDIR /app
 COPY --from=celld /usr/local/bin/celld /usr/local/bin/celld
-COPY --from=build /app/dist/backend-worker.mjs ./dist/backend-worker.mjs
+COPY --from=build /app/artifacts/backend-worker.mjs ./dist/backend-worker.mjs
 COPY --from=build /app/.output/public ./.output/public
 # celld 0.6.2 redirects directory indexes but does not serve their trailing-slash URL.
 # Serve these client routes through its SPA fallback instead.
