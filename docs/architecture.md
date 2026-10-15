@@ -34,7 +34,11 @@ validated and fixed in the provisioning checkpoint. Separate deployments may use
 one organization with different repositories; each deployment still supports
 one workspace per organization. Both names are preflighted before creating either
 repository. Chat access is granted separately from the vault: active organization
-members receive read access to the chat repository on sign-in. The grant uses a
+members receive read access to the chat repository on sign-in unless the deployment
+sets `ALLOWED_TEAM`. Team-restricted installations require the team's repository
+grant instead of creating individual grants. All authenticated operations enforce
+current team membership; GitHub organization owners remain trusted administrators.
+The organization-wide grant uses a
 short-lived installation token scoped to the chat repository with Administration
 write permission, revoked afterward. Existing access is retained without a new grant.
 The OSS source repository holds client/backend code, not customer conversations.

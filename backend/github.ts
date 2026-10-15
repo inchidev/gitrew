@@ -1,6 +1,7 @@
 import { Buffer } from "node:buffer";
 import { z } from "zod";
 import { boundedJson, HttpError } from "./security";
+import { requireTeamAccess } from "./access";
 import {
   type App,
   type Credentials,
@@ -164,5 +165,6 @@ export async function authenticated(
   const actor = await api.api("/user", actorSchema);
   if (actor.id !== session.userId)
     throw new HttpError(401, "This session could not be verified.");
+  await requireTeamAccess(api, app, actor.login);
   return { api, actor };
 }

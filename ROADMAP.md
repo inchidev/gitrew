@@ -11,9 +11,10 @@ Huddles use the installation's own Cloudflare RealtimeKit credentials or LiveKit
 ## Hosting and documentation
 
 Separate the public `gitrew.com` landing/installer from workspace deployments.
-Move our inchidev workspace to `inchi.gitrew.com` with coordinated GitHub App
-origin changes, and create `afterprompt.gitrew.com` after implementing GitHub
-Team access checks. Customers choose their own domain and infrastructure.
+Our workspace addresses are `inchi.gitrew.com` and `afterprompt.gitrew.com`, with
+GitHub Team access checks and independent installation resources. Customers
+choose their own domain and infrastructure. Validate the final owner/member
+flows on each maintained deployment separately.
 
 Focus on Cloudflare and celld: Worker + D1 + Durable Objects. Vercel support is removed. Keep installation, user, architecture, notifications, media, backup/recovery and upgrade documentation together in [docs](docs/README.md). Local Docker Compose is a compatibility test; prove a public celld/Coolify deployment before calling that production ready.
 

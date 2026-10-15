@@ -5,8 +5,8 @@ Gitrew uses one codebase with two deployment modes.
 | Address | Purpose | Infrastructure |
 | --- | --- | --- |
 | `gitrew.com` | Public landing and `/create/` installation guide | Static assets; no GitHub credentials, D1 or workspace API |
-| `inchi.gitrew.com` | Planned address for our inchidev workspace | Its own Worker, D1, LiveHub and GitHub App |
-| `afterprompt.gitrew.com` | Planned workspace for the AfterPrompt team | Separate Worker, D1, LiveHub, App and chat/vault repositories |
+| `inchi.gitrew.com` | Our inchidev workspace, restricted to the `inchi` team | Its own Worker, D1, LiveHub and GitHub App |
+| `afterprompt.gitrew.com` | Workspace for the `afterprompt` team | Separate Worker, D1, LiveHub, App and chat/vault repositories |
 | `example.com` or `gitrew.example.com` | Customer-owned workspace | Customer's Cloudflare account or celld server |
 
 The public `/create/` page explains deployment, links to Cloudflare and VPS
@@ -33,25 +33,40 @@ organization need distinct chat/vault repository names.
 
 ## Our workspace rollout
 
-The existing inchidev workspace is currently at `https://gitrew.inchi.dev`.
-`inchi.gitrew.com` is its target address, not a second copy of its conversations.
-Before moving it, update the GitHub App's homepage, OAuth callback, setup/manifest
-return URL and webhook endpoint together with the backend's configured origin.
+The inchidev workspace moves from `https://gitrew.inchi.dev` to
+`https://inchi.gitrew.com`, retaining its database, conversations and GitHub App.
+The maintained `wrangler.inchidev.jsonc` declares `APP_ORIGIN` for the new address
+and keeps the old domain as a frontend redirect. Update the GitHub App's homepage,
+OAuth callback, setup URL and webhook endpoint together with this override.
 Old-origin session cookies and installed PWAs do not transfer to a new origin:
 members sign in and install again; push subscriptions must be registered again.
-Retain the old endpoint until the new login and webhook path are verified.
+The redirect runs before static assets (`assets.run_worker_first: true`). API
+requests must use the configured origin; old cookies are not forwarded.
 
 AfterPrompt will use `afterprompt-chat` and `afterprompt-vault`, with App access
 selected for the relevant AfterPrompt repositories. The intended GitHub Team
-slug is `afterprompt`; the team has not yet been created.
+slug is `afterprompt`. The maintained `wrangler.afterprompt.jsonc` deploys its
+independent resources, with a distinct `APP_NAME` for App registration.
 
-**Team isolation is pending implementation.** Current Gitrew grants shared-chat
-access to active organization members on sign-in. Selecting source repositories
-or creating a GitHub Team alone does not restrict workspace entry. Add a
-fail-closed team membership policy to every authenticated workspace operation,
-including realtime, push and huddles, and test removal before launching a
-team-only workspace. Do not give the ordinary team vault repository access.
-Organization owners and workspace operators remain trusted administrators.
+Set `ALLOWED_TEAM` to a GitHub Team slug to restrict a deployment. Every session
+and authenticated API operation rechecks current organization and team membership;
+pending memberships and failed permission checks do not grant access. OAuth,
+realtime ticket creation/consumption, huddles and push delivery enforce the same
+policy. Membership webhooks close affected live sessions; socket leases also
+expire within four minutes and huddle leases within 90 seconds without renewal.
+Organization owners remain trusted administrators and can enter without team
+membership. An unknown/deleted team admits no ordinary members.
+
+Give the team Read access to its chat repository and only the required rights to
+its source repositories. Team-restricted deployments do not automatically grant
+individual chat repository access. Removing a team membership therefore also
+removes the inherited GitHub read grant, provided no separate direct/other-team
+grant exists. Audit those grants separately. **Never grant the ordinary team
+access to the vault**, which remains administrator-only.
+
+Without `ALLOWED_TEAM`, the existing organization-wide access policy remains.
+Keep the same policy configured across deployments/redeployments; removing it
+intentionally broadens workspace access to active organization members.
 
 The same policy can restrict the main inchi workspace if project members should
 not enter it. Organization base permissions remain None; teams receive explicit

@@ -23,7 +23,7 @@ npm run check
 
 **gitrew.com is the public product site:** a landing page and `/create/` installation guide. Teams use Gitrew at their own workspace address, such as `example.com` or `gitrew.example.com`. Each deployment includes the same frontend and backend, with its own GitHub App, D1, Durable Object and conversation repositories. There is no central Gitrew account or hosted workspace provisioning.
 
-Our workspace addresses are planned as `inchi.gitrew.com` and `afterprompt.gitrew.com`. Moving the current inchidev installation requires a coordinated GitHub App/OAuth/webhook migration. The AfterPrompt workspace additionally needs team-based authorization; current access checks admit organization members. See [deployment boundaries](docs/deployments.md).
+Our workspace addresses are `inchi.gitrew.com` and `afterprompt.gitrew.com`. These independent installations share the inchidev organization and restrict entry using the `inchi` and `afterprompt` GitHub teams. Organization owners retain administrative access. See [deployment boundaries](docs/deployments.md).
 
 - [Cloudflare Worker + D1](docs/cloudflare-backend.md)
 - [VPS / celld Docker installation](docs/vps.md)

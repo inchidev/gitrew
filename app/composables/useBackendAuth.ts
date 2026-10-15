@@ -63,22 +63,29 @@ export function useBackendAuth() {
   async function initialize() {
     try {
       const url = new URL(window.location.href);
-      const config = await backendJson<{ configured: boolean; sandbox: string }>("/api/config");
-      sandbox.value=config.sandbox;
+      const config = await backendJson<{
+        configured: boolean;
+        sandbox: string;
+      }>("/api/config");
+      sandbox.value = config.sandbox;
       if (!config.configured) {
-        if (
-          url.pathname !== "/create/"
-        )
-          await navigateTo("/create/");
+        if (url.pathname !== "/create/") await navigateTo("/create/");
         return;
       }
       if (url.searchParams.has("authError")) {
-        error.value = "GitHub sign-in was cancelled. Try again.";
+        error.value =
+          url.searchParams.get("authError") === "restricted"
+            ? "This workspace is limited to its GitHub team. Ask an organization owner to add you."
+            : "GitHub sign-in was cancelled. Try again.";
         url.searchParams.delete("authError");
         history.replaceState(null, "", url);
       }
       const destination = appReturnTo(url.searchParams.get("returnTo"));
-      const organization = url.pathname.match(/\/w\/([^/]+)/)?.[1] || destination?.match(/^\/w\/([^/?]+)/)?.[1] || url.searchParams.get("workspace")?.split("/")[0] || "";
+      const organization =
+        url.pathname.match(/\/w\/([^/]+)/)?.[1] ||
+        destination?.match(/^\/w\/([^/?]+)/)?.[1] ||
+        url.searchParams.get("workspace")?.split("/")[0] ||
+        "";
       await load(organization);
     } catch (e) {
       error.value =
@@ -92,10 +99,14 @@ export function useBackendAuth() {
     if (setup) query.set("setup", "1");
     else {
       const url = new URL(window.location.href);
-      const returnTo = appReturnTo(url.searchParams.get("returnTo")) || appReturnTo(url.pathname + url.search);
+      const returnTo =
+        appReturnTo(url.searchParams.get("returnTo")) ||
+        appReturnTo(url.pathname + url.search);
       if (returnTo) query.set("returnTo", returnTo);
     }
-    window.location.assign("/api/auth/start"+(query.size?"?"+query.toString():""));
+    window.location.assign(
+      "/api/auth/start" + (query.size ? "?" + query.toString() : ""),
+    );
   }
   async function signOut() {
     const current = token.value;

@@ -4,6 +4,11 @@ import {
   subscriptionSchema,
   type PushEnv,
 } from "./push";
+import {
+  deploymentApp,
+  requireTeamAccess,
+  WorkspaceAccessError,
+} from "./access";
 import { mediaProvider, type MediaEnv } from "./huddles";
 import type { LiveHub, LiveIdentity } from "./live-hub";
 import { authorizeRoom, roomSchema } from "./live-access";
@@ -103,6 +108,9 @@ export interface BackendEnv extends MediaEnv, PushEnv {
   PUBLIC_APP: string;
   SANDBOX_ORGANIZATION: string;
   PLATFORM?: "cloudflare" | "celld";
+  APP_ORIGIN?: string;
+  ALLOWED_TEAM?: string;
+  APP_NAME?: string;
 }
 
 export default {
@@ -112,6 +120,18 @@ export default {
     ctx?: ExecutionContext,
   ): Promise<Response> {
     const url = new URL(request.url);
+    if (
+      env.APP_ORIGIN &&
+      !url.pathname.startsWith("/api/") &&
+      ["GET", "HEAD"].includes(request.method)
+    ) {
+      const target = new URL(env.APP_ORIGIN);
+      if (target.protocol === "https:" && target.origin !== url.origin)
+        return Response.redirect(
+          new URL(url.pathname + url.search, target.origin).href,
+          308,
+        );
+    }
     if (
       url.protocol !== "https:" &&
       !["localhost", "127.0.0.1"].includes(url.hostname)
@@ -163,7 +183,8 @@ export default {
         503,
       );
     const store = env.STORE || new Store(env.DB!, env.SETUP_TOKEN || "");
-    let sessionId = "";
+    let sessionId = "",
+      sessionUserId = 0;
     try {
       await store.initialize();
       if (url.pathname === "/api/config" && request.method === "GET") {
@@ -203,9 +224,10 @@ export default {
         });
         const manifest = {
           name:
-            String(env.PUBLIC_APP) === "true"
+            env.APP_NAME ||
+            (String(env.PUBLIC_APP) === "true"
               ? "Gitrew Sandbox"
-              : `Gitrew ${input.organization}`,
+              : `Gitrew ${input.organization}`),
           url: url.origin + "/",
           redirect_url: url.origin + "/api/setup/callback",
           callback_urls: [url.origin + "/api/auth/callback"],
@@ -286,7 +308,7 @@ export default {
           return redirect("/create/", [setCookie(request, SETUP, "", 0)]);
         });
       }
-      const app = requireApp(await store.app());
+      const app = deploymentApp(requireApp(await store.app()), env);
       canonical(request, app);
       if (url.pathname === "/api/auth/start" && request.method === "GET") {
         await store.rateLimit(request, "login");
@@ -346,6 +368,19 @@ export default {
           "/user",
           actorSchema,
         );
+        try {
+          await requireTeamAccess(
+            new GitHub(credentials.accessToken),
+            app,
+            actor.login,
+          );
+        } catch (error) {
+          if (error instanceof WorkspaceAccessError)
+            return redirect("/login?authError=restricted", [
+              setCookie(request, FLOW, "", 0),
+            ]);
+          throw error;
+        }
         const created = await store.createSession(actor.id, credentials);
         return redirect(pending.returnTo, [
           setCookie(request, SESSION, created.raw, 7 * 86400),
@@ -435,6 +470,7 @@ export default {
       }
       const session = await store.session(cookie(request, SESSION));
       sessionId = session.id;
+      sessionUserId = session.userId;
       if (request.method !== "GET") {
         sameOrigin(request);
         if (
@@ -705,8 +741,19 @@ export default {
       }
       return json({ error: "Not found." }, 404);
     } catch (error) {
-      if (error instanceof HttpError && error.status === 401 && sessionId)
-        await store.logout(sessionId);
+      if (
+        error instanceof HttpError &&
+        (error.status === 401 || error instanceof WorkspaceAccessError) &&
+        sessionId
+      ) {
+        if (error.status === 401) await store.logout(sessionId);
+        const workspace = await store.defaultWorkspace();
+        if (workspace)
+          await env.LIVE?.getByName(workspace.organization).revoke(
+            sessionUserId,
+            sessionId,
+          );
+      }
       const status =
         error instanceof HttpError
           ? error.status
