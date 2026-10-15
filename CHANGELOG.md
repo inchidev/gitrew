@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Respect device safe areas in chat, channels, threads, sign-in, setup and the landing page; match browser chrome colors to the active page and light/dark theme.
+- Open/close mobile channel navigation with horizontal swipes while preserving scrolling, editing and OS edge gestures.
+- Document mobile GitHub web OAuth behavior and add Chromium/WebKit mobile regressions to CI.
+
 ## 0.1.1 — 2026-10-15
 
 - Update the development compiler to TypeScript 6.0.3 after the full CI suite passed. TypeScript 7 remains deferred because it is incompatible with the current Vue typechecker; Node declarations remain on Node 24.

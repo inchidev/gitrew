@@ -365,7 +365,8 @@ useHead({
 .gitrew-landing {
   max-width: 1240px;
   margin: auto;
-  padding: 0 40px;
+  padding: var(--safe-top) max(40px, var(--safe-right)) var(--safe-bottom)
+    max(40px, var(--safe-left));
 }
 .site-header {
   min-height: 84px;
@@ -819,7 +820,8 @@ h3 {
 }
 @media (max-width: 760px) {
   .gitrew-landing {
-    padding: 0 22px;
+    padding: var(--safe-top) max(22px, var(--safe-right)) var(--safe-bottom)
+      max(22px, var(--safe-left));
   }
   .site-header {
     min-height: 72px;
@@ -971,7 +973,8 @@ h3 {
 }
 @media (max-width: 360px) {
   .gitrew-landing {
-    padding: 0 16px;
+    padding: var(--safe-top) max(16px, var(--safe-right)) var(--safe-bottom)
+      max(16px, var(--safe-left));
   }
   h1 {
     font-size: 44px;

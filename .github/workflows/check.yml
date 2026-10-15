@@ -20,8 +20,10 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run build:oauth
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium webkit
       - run: npm run test:e2e
+      - name: Check mobile layout and navigation in WebKit
+        run: npx playwright test tests/e2e/mobile.spec.ts --browser webkit --output test-results/webkit-mobile
       - run: npx playwright test -c playwright.backend.config.ts
       - name: Build Worker despite provider preset auto-detection
         run: npm run build:worker

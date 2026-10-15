@@ -268,12 +268,32 @@ watch(auth.installer, (value) => {
   if (value) void navigateTo("/create/");
 });
 const channelsOpen = ref(false);
+const shell = useTemplateRef<HTMLElement>("shell");
 const appError = ref("");
 const feed = useTemplateRef("feed");
 const { copy, copied } = useClipboard();
 const colorMode = useColorMode();
 const isMobile = useMediaQuery("(max-width: 760px)");
 const threadOverlay = useMediaQuery("(max-width: 1000px)");
+useSidebarSwipe(
+  shell,
+  channelsOpen,
+  () =>
+    isMobile.value &&
+    !chat.parent.value &&
+    !route.query.thread &&
+    !threadPresent.value &&
+    !authOpen.value &&
+    !workspaceOpen.value &&
+    !ownOpen.value &&
+    !setupOpen.value &&
+    !conversationOpen.value &&
+    !membersOpen.value &&
+    !projectsOpen.value,
+);
+watch(isMobile, () => {
+  channelsOpen.value = false;
+});
 const globalSearch = useTemplateRef<HTMLElement>("globalSearch");
 const shortcutKey = computed(() =>
   import.meta.client && /Mac|iPhone|iPad/.test(navigator.platform)
@@ -442,6 +462,8 @@ watch(
   },
 );
 function openThread(id: string) {
+  channelsOpen.value = false;
+  if (id) threadPresent.value = true;
   const query = { ...route.query };
   if (id) query.thread = id;
   else delete query.thread;
@@ -583,6 +605,7 @@ function dayLabel(index: number) {
   </main>
   <div
     v-else
+    ref="shell"
     class="gitrew-shell"
     :class="{ 'has-thread': parent || threadPresent }"
   >
@@ -663,6 +686,7 @@ function dayLabel(index: number) {
       </div>
     </nav>
     <aside
+      id="channel-navigation"
       class="channel-sidebar"
       :class="{ 'is-open': channelsOpen }"
       aria-label="Workspace navigation"
@@ -795,6 +819,8 @@ function dayLabel(index: number) {
         <UButton
           icon="i-octicon-three-bars-16"
           aria-label="Open channels"
+          aria-controls="channel-navigation"
+          :aria-expanded="channelsOpen"
           color="neutral"
           variant="ghost"
           class="mobile-only"

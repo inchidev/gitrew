@@ -1,5 +1,5 @@
 <template>
-  <main class="min-h-screen px-5 py-12">
+  <main class="setup-page">
     <div class="max-w-xl mx-auto space-y-6">
       <NuxtLink to="/" class="brand"><BrandMark /><span>Gitrew</span></NuxtLink>
       <h1 class="text-3xl font-semibold">Create your own workspace</h1>

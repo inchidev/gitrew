@@ -5,6 +5,7 @@ Gitrew is a GitHub organization workspace for channels, threads, private groups 
 ## Start here
 
 - [User guide](usage.md): sign in, conversations, threads, notifications, huddles and issues.
+- [Mobile / PWA](mobile.md): safe areas, swipe navigation, mobile GitHub sign-in and device checks.
 - [Cloudflare installation](cloudflare-backend.md): Worker, D1, Durable Object and your own GitHub App.
 - [VPS / Coolify installation](vps.md): Docker Compose, HTTPS, storage and operational checks.
 - [Local celld instructions and verification](celld.md).
