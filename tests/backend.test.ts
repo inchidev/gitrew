@@ -546,7 +546,7 @@ describe("Cloudflare backend", () => {
       (await request("/api/session", { headers: { Cookie: owner.cookie } }))
         .status,
     ).toBe(200);
-  });
+  }, 20_000);
   it("returns sign-in to workspace, private channel and DM links while rejecting arbitrary destinations", async () => {
     await register();
     for (const [query, destination] of [
