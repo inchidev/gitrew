@@ -4,6 +4,9 @@ services:
     build: .
     ports:
       - "127.0.0.1:9877:9877"
+    env_file:
+      - path: .env
+        required: false
     volumes:
       - gitrew-state:/app/.celld
     mem_limit: 512m

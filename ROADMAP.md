@@ -1,33 +1,31 @@
 # Gitrew direction
 
-## Now: GitHub
+## Current priority: everyday GitHub team chat
 
-Ship an organization workspace with channels, threads, private groups and DMs. Run the fresh inchidev workspace against its own App and private chat/vault repositories. Source repositories stay distinct from conversation storage.
+Finish the Slack-like experience around a GitHub organization: channels, threads, private groups, DMs, live updates, presence, typing, notifications and voice huddles. Keep source repositories distinct from conversation storage. Validate privacy and reconnect behavior with two real organization members.
 
-## First milestone: conversation to work
+The realtime implementation uses a workspace Durable Object for authorized room subscriptions and live signals, with signed GitHub webhooks. GitHub remains the conversation store. Add a durable message cache only after designing deletion, replay/order, reconciliation and permission changes.
 
-1. Available: browse issues and open organization Project boards for selected accessible repositories.
-2. Turn explicitly selected messages into an issue with a preview of the shared context.
-3. Link issue, repository and Project back to the conversation.
-4. Prototype a Copilot task handoff with explicit consent, user authentication and visible status/PR. Verify API availability and plan requirements before implementing.
-5. Bring checks, review and outcome back into the thread.
+Huddles use the installation's own Cloudflare RealtimeKit credentials or LiveKit server; API keys stay server side. Web Push is opt in. Media and background push require separate live verification.
 
-Do not send private conversations to an issue, agent or third party automatically. GitHub is the first provider because conversations, repository work and Copilot can form one useful loop.
+## Hosting and documentation
 
-## Then: Gitea, then GitLab
+Focus on Cloudflare and celld: Worker + D1 + Durable Objects. Vercel support is removed. Keep installation, user, architecture, notifications, media, backup/recovery and upgrade documentation together in [docs](docs/README.md). Local Docker Compose is a compatibility test; prove a public celld/Coolify deployment before calling that production ready.
 
-Prove Gitea OAuth, repository access, message/thread storage and private membership with a small spike before promising parity. Gitea is particularly interesting for small independently hosted installations. GitLab follows after validating hosted/self-hosted group access, issues, merge requests and pipelines. Bitbucket is outside the current scope.
+Replace the landing illustration with a real product screenshot after the chat UI reaches a representative state. Use consented/sample content and keep private data out of public assets.
 
-## Hosting
+## Deferred
 
-Keep Cloudflare and Vercel installation paths. Test celld locally with the same Worker, D1 and static assets. A successful local test is not a production Coolify deployment: production also needs HTTPS, durable storage/backups, upgrades and authentication verification.
+- Conversation → issue → agent → PR → review. Existing issue browsing/creation and Project links remain available; new handoffs and Copilot execution wait.
+- Gitea and GitLab integrations. Both wait until the GitHub communication experience is complete. Bitbucket stays outside scope.
+- Native mobile distribution, mobile background calls, full installable PWA and advanced call features need their own validation.
 
-## Watch and learn
+## Watching
 
-- [Cursor Origin](https://cursor.com/docs/origin) and [cloud agents](https://cursor.com/docs/cloud-agent): early-beta Git forge, repository apps, remote environments and reviewable results.
+- [Cursor Origin](https://cursor.com/docs/origin) and [cloud agents](https://cursor.com/docs/cloud-agent).
 - [Claude / Anthropic Scion](https://www.anthropic.com/engineering/redesigning-source-control): agent-scale source control; Scion is internal research.
-- [Cloudflare Git platform direction](https://blog.cloudflare.com/next-git-platform-on-cloudflare/): Artifacts repository backend, Sandboxes for execution, AI Gateway for model routing. These are separate responsibilities.
-- [GitOrange](https://github.com/choyiny/gitorange), [Weft](https://github.com/celador/weft), [AgentBranches](https://github.com/alexeygrigorev/cloudflare-agent-git): evaluate repository models, agent operations and interface ideas before reuse.
-- [Anycord](https://github.com/inchidev/anycord), [Discoflare](https://github.com/vnmtvlv/discoflare): independent conversation products; references for communication and self-hosting, without requiring Git as their data model.
+- [Cloudflare Git platform direction](https://blog.cloudflare.com/next-git-platform-on-cloudflare/): Artifacts, Sandboxes and AI Gateway.
+- [GitOrange](https://github.com/choyiny/gitorange), [Weft](https://github.com/celador/weft), [AgentBranches](https://github.com/alexeygrigorev/cloudflare-agent-git).
+- [Anycord](https://github.com/inchidev/anycord), [Discoflare](https://github.com/vnmtvlv/discoflare): communication and self-hosting references.
 
-Research references are not compatibility promises or endorsements of production readiness.
+Watching is not an integration commitment. Never send private context to an issue, agent or third party automatically.

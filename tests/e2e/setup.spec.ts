@@ -22,7 +22,7 @@ test("static setup directs owners to private backend deployments on desktop and 
     page.getByRole("button", { name: "Authorize Gitrew Creator", exact: true }),
   ).toHaveCount(0);
   await expect(page.getByRole("link", { name: /Cloudflare/ })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Vercel/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Deploy to VPS/ })).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
   await expect(

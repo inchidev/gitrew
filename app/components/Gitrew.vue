@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import dayjs from "dayjs";
+import { backendJson } from "~/lib/backend";
 import { useClipboard, useLocalStorage } from "@vueuse/core";
 import { useGitHubAuth } from "~/composables/useGitHubAuth";
 import { useChat } from "~/composables/useChat";
@@ -113,6 +114,116 @@ const chat = useChat(
   vaultMailbox,
   requestedChannel,
 );
+const live = useLiveChat(auth.token, organization, chat.channel, () => {
+  // Coalesce webhook delivery and the immediate send acknowledgement.
+  clearTimeout(liveRefreshTimer);
+  liveRefreshTimer = setTimeout(() => chat.refresh(), 200);
+});
+let liveRefreshTimer: ReturnType<typeof setTimeout>;
+watch(live.connected, (value) => {
+  chat.liveConnected.value = value;
+});
+watch([chat.roomDraft, chat.threadDraft], () =>
+  live.sendTyping(Boolean(chat.roomDraft.value || chat.threadDraft.value)),
+);
+onBeforeUnmount(() => clearTimeout(liveRefreshTimer));
+const otherTypers = computed(() =>
+  live.typing.value.filter((name) => name !== login.value),
+);
+const push = usePushNotifications(
+  auth.token,
+  login,
+  organization,
+  chat.channel,
+);
+const huddle = ref<{
+  provider: "realtimekit" | "livekit";
+  token: string;
+  url: string;
+  lease: string;
+  channel: string;
+  room: {
+    organization: string;
+    channel: string;
+    kind: "public" | "private" | "dm";
+  };
+} | null>(null);
+const huddleError = ref(""),
+  huddleBusy = ref(false),
+  huddleOpen = ref(false);
+let huddleHeartbeat: ReturnType<typeof setInterval> | undefined;
+async function leaveHuddle() {
+  clearInterval(huddleHeartbeat);
+  const current = huddle.value;
+  huddle.value = null;
+  huddleOpen.value = false;
+  if (current)
+    try {
+      await backendJson("/api/huddle/leave", auth.token.value, {
+        room: current.room,
+        lease: current.lease,
+      });
+    } catch {
+      huddleError.value = "Huddle disconnected. Server cleanup will retry.";
+    }
+}
+async function joinHuddle() {
+  if (!chat.channel.value || huddleBusy.value) return;
+  if (huddle.value) {
+    huddleOpen.value = true;
+    return;
+  }
+  huddleBusy.value = true;
+  huddleError.value = "";
+  const sessionToken = auth.token.value;
+  const room = {
+    organization: organization.value,
+    channel: chat.channel.value.id,
+    kind: chat.channel.value.kind || ("public" as const),
+  };
+  try {
+    const result = await backendJson<{
+      provider: "realtimekit" | "livekit";
+      token: string;
+      url: string;
+      lease: string;
+    }>("/api/huddle/join", auth.token.value, { room });
+    if (sessionToken !== auth.token.value) {
+      await backendJson("/api/huddle/leave", sessionToken, {
+        room,
+        lease: result.lease,
+      }).catch(() => undefined);
+      return;
+    }
+    huddle.value = {
+      ...result,
+      room,
+      channel: chat.channel.value?.name || "Huddle",
+    };
+    huddleOpen.value = true;
+    huddleHeartbeat = setInterval(() => {
+      const current = huddle.value;
+      if (current)
+        void backendJson("/api/huddle/heartbeat", auth.token.value, {
+          room: current.room,
+          lease: current.lease,
+        }).catch(() => void leaveHuddle());
+    }, 30_000);
+  } catch (e) {
+    huddleError.value =
+      e instanceof Error ? e.message : "Could not join huddle";
+  } finally {
+    huddleBusy.value = false;
+  }
+}
+watch(huddleOpen, (open) => {
+  if (!open && huddle.value) void leaveHuddle();
+});
+watch(auth.token, () => void leaveHuddle());
+onBeforeUnmount(() => {
+  clearInterval(huddleHeartbeat);
+  void leaveHuddle();
+});
 const authOpen = ref(false);
 const signingOut = ref(false);
 const workspaceOpen = ref(false);
@@ -715,6 +826,33 @@ function dayLabel(index: number) {
         </div>
         <div class="header-actions">
           <UButton
+            v-if="auth.backend && !sample"
+            :icon="push.enabled.value ? 'i-lucide-bell-ring' : 'i-lucide-bell'"
+            :aria-label="
+              push.enabled.value
+                ? 'Disable conversation notifications'
+                : 'Enable conversation notifications'
+            "
+            color="neutral"
+            variant="ghost"
+            :loading="push.busy.value"
+            @click="push.toggle"
+          />
+          <UButton
+            v-if="auth.backend && !sample"
+            icon="i-lucide-headphones"
+            :aria-label="huddle ? 'Return to huddle' : 'Join huddle'"
+            :label="
+              live.huddleMembers.value.length
+                ? String(live.huddleMembers.value.length)
+                : undefined
+            "
+            color="neutral"
+            variant="ghost"
+            :loading="huddleBusy"
+            @click="joinHuddle"
+          />
+          <UButton
             v-if="sample"
             label="Sign in"
             aria-label="Sign in with GitHub"
@@ -778,6 +916,24 @@ function dayLabel(index: number) {
         role="status"
       >
         Loading conversations…
+      </div>
+      <div v-if="push.error.value" class="notice error-notice" role="alert">
+        {{ push.error.value }}
+        <a
+          href="https://github.com/inchidev/gitrew/blob/main/docs/notifications.md"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Notifications setup</a
+        >
+      </div>
+      <div v-if="huddleError" class="notice error-notice" role="alert">
+        {{ huddleError }}
+        <a
+          href="https://github.com/inchidev/gitrew/blob/main/docs/huddles.md"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Huddles setup</a
+        >
       </div>
       <div v-if="appError" class="notice error-notice" role="alert">
         {{ appError }}
@@ -865,6 +1021,17 @@ function dayLabel(index: number) {
           />
         </template>
       </div>
+      <div
+        v-if="live.connected.value"
+        class="px-4 py-1 text-xs text-muted"
+        role="status"
+      >
+        {{
+          otherTypers.length
+            ? `${otherTypers.join(", ")} typing…`
+            : `${live.members.value.length} online in this conversation`
+        }}
+      </div>
       <ChatComposer
         v-model="roomDraft"
         label="Message"
@@ -921,6 +1088,22 @@ function dayLabel(index: number) {
         />
       </aside>
     </Transition>
+    <UModal
+      v-model:open="huddleOpen"
+      title="Voice huddle"
+      description="A voice conversation with your crew."
+      :dismissible="false"
+    >
+      <template #body
+        ><HuddlePanel
+          v-if="huddle"
+          :provider="huddle.provider"
+          :token="huddle.token"
+          :url="huddle.url"
+          :channel="huddle.channel"
+          @leave="leaveHuddle"
+      /></template>
+    </UModal>
     <AuthModal
       :sandbox="
         auth.backend

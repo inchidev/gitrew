@@ -13,3 +13,5 @@ dist
 artifacts
 test-results
 playwright-report
+
+.playwright-cli/

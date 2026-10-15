@@ -2,7 +2,7 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "gitrew",
   "preview_urls": false,
-  "main": "backend/worker.ts",
+  "main": "backend/cloudflare.ts",
   "compatibility_date": "2026-10-14",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
@@ -14,6 +14,10 @@
   "d1_databases": [
     { "binding": "DB", "database_name": "gitrew", "database_id": "" },
   ],
+  "durable_objects": {
+    "bindings": [{ "name": "LIVE", "class_name": "LiveHub" }],
+  },
+  "migrations": [{ "tag": "live-v1", "new_sqlite_classes": ["LiveHub"] }],
   "vars": { "PUBLIC_APP": "false", "SANDBOX_ORGANIZATION": "" },
   "observability": {
     "enabled": true,

@@ -13,13 +13,13 @@ const open = defineModel<boolean>("open", { required: true });
         <BrandMark />
         <p>
           Deploy the frontend and its small backend together in your Cloudflare
-          or Vercel account. Register your own GitHub App through the guided
-          setup.
+          account or on your own server with celld. Register your own GitHub App
+          through the guided setup.
         </p>
         <ol>
           <li>
-            Choose a hosting provider and a deployment setup key. On Vercel,
-            create the private Blob store when prompted.
+            Choose Cloudflare or celld and keep a protected deployment setup
+            key. bind D1 and the realtime Durable Object.
           </li>
           <li>
             Open Create workspace on your deployed site and approve your App in
@@ -28,9 +28,9 @@ const open = defineModel<boolean>("open", { required: true });
           <li>Sign in, install your App and create the workspace.</li>
         </ol>
         <p class="text-muted">
-          Workspace channels live in private gitrew-chat; all private channels and DMs share
-          one administrator-only gitrew-vault. Updates are reviewed changes to
-          your copy; a template does not update itself.
+          Workspace channels live in private gitrew-chat; all private channels
+          and DMs share one administrator-only gitrew-vault. Updates are
+          reviewed changes to your copy; a template does not update itself.
         </p>
         <DeployButtons />
         <UButton

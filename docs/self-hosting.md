@@ -1,7 +1,7 @@
 # Host your own Gitrew
 
 Use the frontend/API deployment on [Cloudflare](cloudflare-backend.md) or
-[Vercel](vercel.md), then open `/create/` on your deployment. Both create private
+[celld](celld.md), then open `/create/` on your deployment. Both create private
 chat and vault repositories owned by your GitHub organization.
 
 Active organization members receive read access to the chat repository when they
