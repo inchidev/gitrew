@@ -11,6 +11,9 @@ Gitrew is a GitHub organization workspace for channels, threads, private groups 
 - [Huddles](huddles.md): your RealtimeKit credentials or LiveKit server.
 - [Notifications](notifications.md): Web Push keys, browser permission and privacy.
 - [Operations](operations.md): updates, backups, recovery and troubleshooting.
+- [Releases](releases.md): pinned source downloads, verification and maintainer procedure.
+- [Contributing](contributing.md): pull requests, required checks and branch policy.
+- [GitHub security settings](github-security.md): scanning, push protection and Dependabot.
 - [Architecture and security](architecture.md).
 - [Realtime contract](realtime.md): event flow, authorization and fallback behavior.
 - [inchidev installation record](inchidev-install.md): dated live verification, distinct from local tests.
