@@ -4,7 +4,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --no-audit --no-fund
 COPY . .
-RUN npm run build:worker && npx esbuild backend/celld.ts --bundle --format=esm --platform=browser --target=es2022 --external:node:* --outfile=artifacts/celld-worker.mjs
+RUN npm run build:worker && npx esbuild backend/celld.ts --bundle --format=esm --platform=browser --target=es2022 --external:node:* --external:cloudflare:* --outfile=artifacts/celld-worker.mjs
 FROM node:24-bookworm-slim
 WORKDIR /app
 COPY --from=celld /usr/local/bin/celld /usr/local/bin/celld

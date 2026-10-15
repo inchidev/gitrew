@@ -11,3 +11,7 @@ Tokens: system UI font deliberately matches the Primer-based application; neutra
 Signature: Git providers share one row; clicking changes the explanation below it, with a brief transition and a reduced-motion fallback. Status labels distinguish current GitHub chat from planned providers and agent handoffs. Card grids and decorative gradients are refused; product illustration is clearly labelled illustrative.
 
 Must keep: existing brand mark, sign-in, deployment paths, source link, light/dark theme. New copy and provider comparison are the core redesign. Technical coverage is reported in CRITIQUE.md; desktop and phone renders are in ignored artifacts/design.
+
+## User-directed chat focus — 2026-10-15
+
+Keep the current typography, green primary action, theme support, provider-detail interaction and explicitly illustrative hero. Increase the header logo modestly, remove the introductory line, move Cursor/Claude/Cloudflare into the provider switcher with Watching labels, replace the agent workflow pitch with everyday communication, and target Cloudflare/celld. The VPS button links to the honest Compose/operations guide; a real application screenshot comes later. No new visual-concept exploration is needed for this requested evolution.

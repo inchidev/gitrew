@@ -12,7 +12,7 @@ const configSchema = z.object({
     .object({ appSlug: z.string(), owner: z.string(), installUrl: z.url() })
     .nullable(),
   sandbox: z.string(),
-  platform: z.enum(["cloudflare", "vercel"]).default("cloudflare"),
+  platform: z.enum(["cloudflare", "celld"]).default("cloudflare"),
 });
 const config = shallowRef<z.infer<typeof configSchema> | null>(null);
 const organization = ref(""),
@@ -126,8 +126,8 @@ async function create() {
           v-if="!config.setupAvailable"
           title="Set the setup key first"
           :description="
-            config.platform === 'vercel'
-              ? 'In your Vercel project Settings → Environment Variables, add SETUP_TOKEN with a random value of at least 32 characters, then redeploy. Keep this key: it protects the saved App credentials and sessions.'
+            config.platform === 'celld'
+              ? 'Your celld container keeps its generated setup key in the persistent state volume. Read it with docker compose exec gitrew cat .celld/setup-token. Keep this key: it protects saved App credentials and sessions.'
               : 'In your Cloudflare Worker’s Settings, add a secret named SETUP_TOKEN with a random value of at least 32 characters. Keep this key: it protects the saved App credentials and sessions.'
           "
         />

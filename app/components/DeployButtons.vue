@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { cloudflareDeployUrl, vercelDeployUrl } from "../../shared/deploy";
+import { cloudflareDeployUrl } from "../../shared/deploy";
 </script>
 
 <template>
@@ -14,8 +14,9 @@ import { cloudflareDeployUrl, vercelDeployUrl } from "../../shared/deploy";
       variant="outline"
     />
     <UButton
-      label="Deploy to Vercel"
-      :to="vercelDeployUrl"
+      label="Deploy to VPS"
+      icon="i-octicon-server-16"
+      to="https://github.com/inchidev/gitrew/blob/main/docs/vps.md"
       target="_blank"
       rel="noopener noreferrer"
       color="neutral"
