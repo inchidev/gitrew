@@ -28,3 +28,4 @@ public/bootstrap/auth-bundle.json
 public/rtk/
 
 .playwright-cli/
+.nuxt-portal-e2e/

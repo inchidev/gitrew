@@ -2,6 +2,8 @@ import process from "node:process";
 import { existsSync, readFileSync } from "node:fs";
 import { z } from "zod";
 
+const portal = process.env.NUXT_PUBLIC_SITE_MODE === "portal";
+
 // Public configuration for independent template copies. No credentials belong here.
 const clientConfig = existsSync("gitrew-client.json")
   ? z
@@ -49,14 +51,25 @@ export default defineNuxtConfig({
             "A place for the people behind the code. Open-source team chat. GitHub first; Gitea and GitLab later.",
         },
         { name: "referrer", content: "no-referrer" },
-        { name: "apple-mobile-web-app-capable", content: "yes" },
-        { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+        ...(portal
+          ? []
+          : [
+              { name: "apple-mobile-web-app-capable", content: "yes" },
+              {
+                name: "apple-mobile-web-app-status-bar-style",
+                content: "default",
+              },
+            ]),
       ],
       link: [
-        {
-          rel: "manifest",
-          href: `${process.env.BASE_PATH || "/"}manifest.webmanifest`,
-        },
+        ...(!portal
+          ? [
+              {
+                rel: "manifest" as const,
+                href: `${process.env.BASE_PATH || "/"}manifest.webmanifest`,
+              },
+            ]
+          : []),
         {
           rel: "apple-touch-icon",
           href: `${process.env.BASE_PATH || "/"}icons/apple-touch-icon.png`,
@@ -71,6 +84,7 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     public: {
+      siteMode: portal ? "portal" : "workspace",
       backendEnabled: process.env.NUXT_PUBLIC_BACKEND_ENABLED === "true",
       oauthBrokerUrl: "",
       creatorRepository: "inchidev/gitrew-auth",
@@ -78,6 +92,21 @@ export default defineNuxtConfig({
       authRepository: clientConfig?.authRepository || "",
     },
   },
-  nitro: { prerender: { routes: ["/create/", "/login"] } },
+  hooks: {
+    "pages:extend"(pages) {
+      if (portal) {
+        const publicPages = pages.filter((page) =>
+          ["/", "/create"].includes(page.path),
+        );
+        pages.splice(0, pages.length, ...publicPages);
+      }
+    },
+  },
+  nitro: {
+    prerender: {
+      routes: portal ? ["/", "/create/"] : ["/create/", "/login"],
+      ...(portal ? { crawlLinks: false } : {}),
+    },
+  },
   typescript: { strict: true },
 });

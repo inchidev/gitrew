@@ -30,3 +30,7 @@ jobs:
         env:
           NITRO_PRESET: cloudflare_module
       - run: npx wrangler deploy --dry-run --outdir artifacts/worker-dry-run
+      - name: Check public site boundaries
+        run: npm run test:e2e:portal
+      - name: Check static product site packaging
+        run: npx wrangler deploy --config wrangler.portal.jsonc --dry-run --outdir artifacts/portal-dry-run
