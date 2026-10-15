@@ -6,8 +6,8 @@
 /backend/store.ts @vnmtvlv
 /backend/worker.ts @vnmtvlv
 /backend/workspace.ts @vnmtvlv
-/backend/blob-store.ts @vnmtvlv
-/backend/vercel.ts @vnmtvlv
+/backend/live-access.ts @vnmtvlv
+/backend/push.ts @vnmtvlv
 /oauth/ @vnmtvlv
 /app/lib/auth.ts @vnmtvlv
 /app/lib/creator.ts @vnmtvlv
