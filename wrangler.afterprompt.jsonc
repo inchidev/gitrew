@@ -31,6 +31,10 @@
     "ALLOWED_TEAM": "afterprompt",
     "PUBLIC_APP": "false",
     "SANDBOX_ORGANIZATION": "",
+    "HUDDLE_PROVIDER": "realtimekit",
+    "RTK_ACCOUNT_ID": "ee47884b4794b0240647bfa7a3e56c0b",
+    "RTK_APP_ID": "a283ff1a-0161-4d41-910c-068964628b1e",
+    "RTK_PRESET": "gitrew_voice",
   },
   "observability": {
     "enabled": true,
