@@ -27,3 +27,12 @@ The active checkout is now `Documents/gitrew` with a fresh Git history. The reti
 See [celld local verification](celld.md). celld0.6.2 served installation/client routes, initialized D1, rejected an incorrect setup key and retained its key after restart. This does not establish a production Coolify fleet or local GitHub OAuth flow.
 
 Unit/type/build checks, existing browser suites and Vercel packaging passed. Responsive renders and the final platform matrix passed their mechanical checks. No second-human-account private-message verification was performed, and no Copilot execution or Gitea/GitLab integration is claimed.
+
+
+## Live communication update — 2026-10-15
+
+PR #10 merged as338b6a1. Cloudflare build3158a5a1-1cdc-4066-ad00-ea460c2fa345 succeeded for that exact commit; the Check client workflow38705763145 passed. Production config reports realtime:true, huddles:realtimekit and push:true. Chrome owner sign-in remained valid, the general conversation showed1 online via WebSocket, and the backend issued a real RealtimeKit participant token. Its standard setup screen requested microphone permission; permission was not granted and no audio-delivery proof is claimed.
+
+The dedicated `Gitrew inchidev` RealtimeKit app uses the `gitrew_voice` preset with microphone publishing allowed and video/screenshare, recording, chat, plugins and polls disabled. Its account token expires in October2027 and is saved only as the Worker's `RTK_API_TOKEN` secret. Optional Web Push keys are configured; the private key backup is in ignored `.gitrew-setup/vapid.env`, mode0600. GitHub App Discussion, Discussion comment, Member, Membership and Organization subscriptions are saved. No key values are committed.
+
+Local celld became healthy with LIVE enabled and passed a separate localhost WebSocket/DO RPC probe. Unit/runtime55 tests and frontend10/backend8 browser tests passed. A real two-user audio/private-chat test, background push delivery and public Coolify deployment remain unverified. Agent workflows and Gitea/GitLab are deferred; Vercel support is removed.

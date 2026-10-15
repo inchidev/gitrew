@@ -8,7 +8,7 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{ leave: [] }>();
 const audio = useTemplateRef<HTMLDivElement>("audio");
-const muted = ref(false),
+const muted = ref(true),
   error = ref(""),
   connecting = ref(true);
 let room: Room | undefined,
@@ -36,7 +36,7 @@ onMounted(async () => {
       return;
     }
     await current.startAudio();
-    await current.localParticipant.setMicrophoneEnabled(true);
+
     connecting.value = false;
   } catch {
     error.value =

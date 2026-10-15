@@ -366,7 +366,7 @@ export async function vaultOperation(
   operation: unknown,
   nonce: string,
 ) {
-  return store.locked("vault:" + workspace.organization, async () => {
+  const run = async () => {
     const deadline = Date.now() + 60_000;
     let calls = 0;
     const request: typeof fetch = async (input, init) => {
@@ -444,5 +444,12 @@ export async function vaultOperation(
         headers: { Authorization: `Bearer ${token}` },
       }).catch(() => undefined);
     }
-  });
+  };
+  // Read-only operations still perform all membership, participant and vault
+  // collaborator checks. Only writes need serialization; serializing readers
+  // makes a realtime broadcast or push fan-out fail with lock conflicts.
+  const op = (operation as { op?: string } | null)?.op;
+  return ["list", "read", "members"].includes(op || "")
+    ? run()
+    : store.locked("vault:" + workspace.organization, run);
 }
