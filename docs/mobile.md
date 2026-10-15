@@ -2,6 +2,16 @@
 
 Basic installation and launch on an iPhone were confirmed by the owner on 2026-10-15. This confirms the basic PWA flow; it does not complete all physical-device checks in issue #2.
 
+## Desktop Chrome installation
+
+Chrome's address-bar **Open in app** button belongs to the browser and appears for an application already installed in that desktop Chrome profile. An iPhone installation or a Safari Dock app does not install it in Chrome on the Mac. Before installation, Chrome may show an install action according to its installability and engagement checks.
+
+Gitrew supplies 192×192 and 512×512 PNG manifest icons, a padded maskable icon and a separate 180×180 Apple touch icon, derived from the existing mark. A live Chrome diagnostic previously returned `manifest-missing-suitable-icon` when the manifest offered only a 1254×1254 image; the canonical icons resolve that failure. Its app ID, scope and start URL stay unchanged. Installation does not request notification permission. The push service worker remains network-only, with no offline page, message or API caching.
+
+See [Chrome install criteria](https://web.dev/articles/install-criteria). After installing Gitrew in Chrome, revisit a Gitrew URL in the same profile to use the browser's **Open in app** action.
+
+## Safe areas and navigation
+
 The viewport uses `viewport-fit=cover`. Toolbars, navigation, threads, the composer, sign-in and setup pages reserve the device's safe-area insets. The page background and `theme-color` follow the selected light/dark theme: workspace chrome uses the sidebar/toolbar surface, while sign-in and other pages use the page surface. The manifest provides a neutral light launch fallback; after the app loads, the page metadata follows the active theme. Browser and OS chrome rendering still needs checking on each supported device.
 
 On narrow screens, swipe right from the left gutter (20–88 CSS pixels from the left edge) to open channels. Swipe left across the sidebar or backdrop to close it. The outermost edge remains available for browser/OS navigation. Vertical scrolling, multi-touch, text selection, input editing, open threads and dialogs do not trigger channel navigation. The menu buttons remain available.

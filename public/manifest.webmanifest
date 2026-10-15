@@ -1,1 +1,31 @@
-{"name":"Gitrew","short_name":"Gitrew","description":"Your Git crew","id":"/","start_url":"/login","scope":"/","display":"standalone","background_color":"#ffffff","theme_color":"#ffffff","icons":[{"src":"/brand/gitrew-mark.png","sizes":"1254x1254","type":"image/png","purpose":"any"}]}
+{
+  "name": "Gitrew",
+  "short_name": "Gitrew",
+  "description": "Your Git crew",
+  "id": "/",
+  "start_url": "/login",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
