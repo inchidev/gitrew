@@ -11,6 +11,11 @@ weekly. Minor and patch npm version updates are grouped; major updates remain
 separate. This schedule is for version updates; security updates are enabled
 separately in GitHub. Dependabot PRs must pass the normal checks before merging.
 
+Node type declarations stay on the runtime's Node 24 major. TypeScript 7 version
+updates are deferred because `vue-tsc` 3.3.13 fails to load its removed compiler
+entry point (`typescript/lib/tsc`). Revisit these rules when upgrading Node or the
+Vue typechecker; these compatibility exceptions do not disable dependency alerts.
+
 ## Configure and verify
 
 In **Settings → Security → Advanced Security**, enable secret scanning and push
