@@ -41,6 +41,7 @@ export default defineNuxtConfig({
     head: {
       title: "Gitrew — your Git crew",
       htmlAttrs: { lang: "en" },
+      viewport: "width=device-width, initial-scale=1, viewport-fit=cover",
       meta: [
         {
           name: "description",
@@ -48,6 +49,8 @@ export default defineNuxtConfig({
             "A place for the people behind the code. Open-source team chat. GitHub first; Gitea and GitLab later.",
         },
         { name: "referrer", content: "no-referrer" },
+        { name: "apple-mobile-web-app-capable", content: "yes" },
+        { name: "apple-mobile-web-app-status-bar-style", content: "default" },
       ],
       link: [
         {

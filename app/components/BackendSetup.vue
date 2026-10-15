@@ -96,7 +96,7 @@ async function create() {
 }
 </script>
 <template>
-  <main class="min-h-screen px-5 py-12">
+  <main class="setup-page">
     <div class="max-w-xl mx-auto space-y-7">
       <NuxtLink to="/" class="brand"><BrandMark /><span>Gitrew</span></NuxtLink>
       <div>
