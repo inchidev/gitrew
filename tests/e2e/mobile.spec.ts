@@ -3,6 +3,68 @@ import { githubRoutes, session } from "./fixtures/github";
 
 test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
 
+test("desktop install manifest has decodable canonical icons and passes Chrome icon checks", async ({
+  page,
+  browserName,
+}) => {
+  await page.route("http://127.0.0.1:5180/config", (route) =>
+    route.fulfill({ status: 503, body: "{}" }),
+  );
+  await page.goto("/");
+  const icons = await page.evaluate(async () => {
+    const link = document.querySelector<HTMLLinkElement>(
+      'link[rel="manifest"]',
+    );
+    if (!link) throw new Error("Missing app manifest");
+    const manifest = await (await fetch(link.href)).json();
+    if (
+      manifest.id !== "/" ||
+      manifest.start_url !== "/login" ||
+      manifest.display !== "standalone"
+    )
+      throw new Error("Unexpected app identity");
+    const result: Array<{ size: number; purpose: string }> = [];
+    for (const icon of manifest.icons) {
+      const image = new Image();
+      image.src = new URL(icon.src, link.href).href;
+      await image.decode();
+      if (
+        image.naturalWidth !== image.naturalHeight ||
+        icon.sizes !== `${image.naturalWidth}x${image.naturalHeight}`
+      )
+        throw new Error("Incorrect icon dimensions");
+      result.push({ size: image.naturalWidth, purpose: icon.purpose });
+    }
+    const apple = document.querySelector<HTMLLinkElement>(
+      'link[rel="apple-touch-icon"]',
+    );
+    if (!apple) throw new Error("Missing Apple icon");
+    const image = new Image();
+    image.src = apple.href;
+    await image.decode();
+    if (image.naturalWidth !== 180 || image.naturalHeight !== 180)
+      throw new Error("Incorrect Apple icon dimensions");
+    return result;
+  });
+  expect(icons).toEqual(
+    expect.arrayContaining([
+      { size: 192, purpose: "any" },
+      { size: 512, purpose: "any" },
+      { size: 512, purpose: "maskable" },
+    ]),
+  );
+  if (browserName === "chromium") {
+    const cdp = await page.context().newCDPSession(page);
+    const result = await cdp.send("Page.getInstallabilityErrors");
+    // Playwright's isolated test context is incognito; that policy is expected.
+    expect(
+      result.installabilityErrors.filter(
+        (error) => error.errorId !== "in-incognito",
+      ),
+    ).toEqual([]);
+  }
+});
+
 async function swipe(page: Page, points: Array<[number, number]>) {
   // Exercise the installed DOM listeners. Physical OS gestures need a real device.
   await page.evaluate((path) => {

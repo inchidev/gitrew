@@ -59,7 +59,7 @@ export default defineNuxtConfig({
         },
         {
           rel: "apple-touch-icon",
-          href: `${process.env.BASE_PATH || "/"}brand/gitrew-mark.png`,
+          href: `${process.env.BASE_PATH || "/"}icons/apple-touch-icon.png`,
         },
         {
           rel: "icon",
