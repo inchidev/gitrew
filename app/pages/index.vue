@@ -217,9 +217,7 @@ useHead({
             <p class="section-kicker">Choose your platform</p>
             <h2 id="providers-title">Same crew. Different Git homes.</h2>
           </div>
-          <p>
-            We’re starting with GitHub.<br />Select a provider to see the plan.
-          </p>
+          <p>We’re starting with GitHub. Select a provider to see the plan.</p>
         </div>
         <div class="provider-row" role="group" aria-label="Git providers">
           <UButton
@@ -306,9 +304,7 @@ useHead({
             <p class="section-kicker">On our radar</p>
             <h2 id="watch-title">Watching where agents take the work.</h2>
           </div>
-          <p>
-            Research directions.<br />These are not shipped Gitrew integrations.
-          </p>
+          <p>Research directions. These are not shipped Gitrew integrations.</p>
         </div>
         <div class="watch-list">
           <a
@@ -519,7 +515,7 @@ h1 {
 }
 .scene-thread p {
   color: var(--ui-text-muted);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.7;
   margin-top: 4px;
 }

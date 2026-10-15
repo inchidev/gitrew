@@ -4,11 +4,11 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --no-audit --no-fund
 COPY . .
-RUN npm run build:worker
+RUN npm run build:worker && npx esbuild backend/celld.ts --bundle --format=esm --platform=browser --target=es2022 --external:node:* --outfile=artifacts/celld-worker.mjs
 FROM node:24-bookworm-slim
 WORKDIR /app
 COPY --from=celld /usr/local/bin/celld /usr/local/bin/celld
-COPY --from=build /app/artifacts/backend-worker.mjs ./dist/backend-worker.mjs
+COPY --from=build /app/artifacts/celld-worker.mjs ./dist/backend-worker.mjs
 COPY --from=build /app/.output/public ./.output/public
 # celld 0.6.2 redirects directory indexes but does not serve their trailing-slash URL.
 # Serve these client routes through its SPA fallback instead.

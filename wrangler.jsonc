@@ -1,6 +1,7 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "gitrew",
+  "preview_urls": false,
   "main": "backend/worker.ts",
   "compatibility_date": "2026-10-14",
   "compatibility_flags": ["nodejs_compat"],

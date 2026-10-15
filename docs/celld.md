@@ -23,3 +23,9 @@ docker compose down
 ```
 
 This preserves the state volume. Use your local Docker context explicitly if other contexts point to remote hosts. Production celld uses an object-store-backed deployment and durability design; review [celld documentation](https://github.com/denoland/celld/tree/v0.6.2/docs) before adapting the image to Coolify. Local dev mode is not the recommended production fleet setup.
+
+## Local verification, 2026-10-15
+
+Built the Docker image and ran it on the local Colima context. `/`, `/create/`, `/login/`, `/w/inchidev`, `/health` and `/api/config` returned200. Config initialized D1 and showed a fresh unconfigured installation. An incorrect setup key returned403. Restart retained the generated key and initialized storage. The container became healthy. No GitHub OAuth or second-member private-message flow was claimed by this local test.
+
+celld0.6.2 needed a small static-route adapter for trailing slashes; the Docker build uses that adapter while Cloudflare continues using the original Worker.
