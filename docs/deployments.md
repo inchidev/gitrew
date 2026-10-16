@@ -4,22 +4,22 @@ Gitrew uses one codebase with two deployment modes.
 
 | Address | Purpose | Infrastructure |
 | --- | --- | --- |
-| `gitrew.com` | Public landing and `/create/` installation guide | Static assets; no GitHub credentials, D1 or workspace API |
+| `gitrew.com` | Public landing and `/#install` installation links | Static assets; no GitHub credentials, D1 or workspace API |
 | `inchi.gitrew.com` | Our inchidev workspace, restricted to the `inchi` team | Its own Worker, D1, LiveHub and GitHub App |
 | `afterprompt.gitrew.com` | Workspace for the `afterprompt` team | Separate Worker, D1, LiveHub, App and chat/vault repositories |
 | `example.com` or `gitrew.example.com` | Customer-owned workspace | Customer's Cloudflare account or celld server |
 
-The public `/create/` page explains deployment, links to Cloudflare and VPS
-instructions, and lets an owner continue at their deployed HTTPS origin. GitHub
-App registration happens at `/create/` on that installation. Gitrew.com does not
-receive installation credentials, create hosted tenants or store conversations.
+The public `/#install` section links to Cloudflare and VPS instructions. After
+deployment, the owner opens `/create/` at their deployed HTTPS origin to register
+their GitHub App. The public `/create/` page is removed and returns 404. Gitrew.com
+does not receive installation credentials, create hosted tenants or store conversations.
 Members sign in at the workspace address supplied by their team.
 
 ## Public site
 
 Build with `npm run build:portal`; deploy with `wrangler.portal.jsonc`. The build
-sets `NUXT_PUBLIC_SITE_MODE=portal` and disables the backend. Only the landing and
-create pages are registered. Unknown paths, including workspace and API paths,
+sets `NUXT_PUBLIC_SITE_MODE=portal` and disables the backend. Only the landing
+page is registered. Unknown paths, including workspace and API paths,
 return 404. The public Worker has only static assets and no access to workspace
 resources. CI checks this mode separately from the workspace build.
 
@@ -32,6 +32,25 @@ Choose the final domain before registration. Distinct deployments in one GitHub
 organization need distinct chat/vault repository names. Every workspace
 repository name must start with `gitrew-` so Gitrew-managed storage is obvious
 at a glance (for example `gitrew-afterprompt-chat`).
+
+## What the Cloudflare button creates
+
+1. Cloudflare copies this source into **one new code repository** in the Git account selected in the deployment form. The private-repository checkbox applies to this code copy. It connects that repository to Workers Builds; pushes to its production branch build and deploy the installation. Changes to our upstream repository do not automatically sync into that copy.
+2. Cloudflare deploys **one Worker** containing the frontend and API, and provisions or connects its D1 database and LiveHub Durable Object binding. Use a separate database and setup key for each independent installation.
+3. At the new site's `/create/`, the owner supplies `SETUP_TOKEN` and approves the GitHub App manifest. **This creates one GitHub App for the installation**, after the Cloudflare deployment. Ordinary code redeployments reuse its encrypted configuration; they do not create another App.
+4. The owner installs that App in their GitHub organization and provisions the workspace. Gitrew creates **two private conversation repositories in that organization**: `gitrew-chat` and `gitrew-vault`, or other chosen names starting with `gitrew-`. These are separate from the code repository. The vault remains administrator-only.
+
+The Cloudflare GitHub integration that connects Workers Builds to the code copy
+is separate from the Gitrew App created during workspace setup.
+
+For a fresh button installation, the usual total is **three new repositories**:
+one code copy plus the chat/vault pair. The code copy may belong to a personal
+account while the conversation repositories belong to the organization. Members
+then sign in with GitHub at the deployed workspace address; they do not deploy
+anything or create another GitHub App.
+
+See [Cloudflare's Deploy button flow](https://developers.cloudflare.com/workers/platform/deploy-buttons/)
+and the [Cloudflare setup guide](cloudflare-backend.md).
 
 ## Our workspace rollout
 

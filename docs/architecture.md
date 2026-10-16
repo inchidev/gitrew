@@ -6,8 +6,8 @@ This is the recommended frontend/API deployment. See the provider guides for
 
 ## Ownership and runtime
 
-The public `gitrew.com` product site serves a landing page and `/create/`
-installation guide without a workspace backend. Teams use independently
+The public `gitrew.com` product site serves a landing page with installation
+links at `/#install`, without a workspace backend. Teams use independently
 deployed workspace domains. See [deployment boundaries](deployments.md).
 
 An organization is a workspace. An independent deployment includes its frontend,

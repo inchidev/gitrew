@@ -10,6 +10,7 @@ const mime = {
   ".json": "application/json",
   ".svg": "image/svg+xml",
   ".png": "image/png",
+  ".webp": "image/webp",
   ".woff": "font/woff",
   ".woff2": "font/woff2",
 };
@@ -33,7 +34,12 @@ createServer(async (request, response) => {
       .end(content);
   } catch {
     if (!extname(pathname) && process.env.PORTAL_TEST !== "true") {
-      response.writeHead(200, { "Content-Type": "text/html", "Cache-Control": "no-store" }).end(await readFile(resolve(root, "200.html")));
+      response
+        .writeHead(200, {
+          "Content-Type": "text/html",
+          "Cache-Control": "no-store",
+        })
+        .end(await readFile(resolve(root, "200.html")));
     } else response.writeHead(404).end();
   }
 }).listen(Number(process.env.PORT || 5179), "127.0.0.1");

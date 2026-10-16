@@ -495,7 +495,7 @@ test("the landing is public, and protected links preserve their destination at l
   await expect(page.getByRole("link", { name: "Try the demo" })).toHaveCount(0);
   await expect(page.locator('a[href*="/demo"]')).toHaveCount(0);
   await expect(
-    page.getByRole("link", { name: "Join your crew" }),
+    page.getByRole("link", { name: "Open Gitrew", exact: true }),
   ).toHaveAttribute("href", "/login");
   for (const path of ["/demo", "/demo/c/preview-general"]) {
     await page.goto(path);

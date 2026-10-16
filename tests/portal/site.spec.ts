@@ -11,38 +11,41 @@ test("product site offers installation without workspace authentication", async 
   });
   await page.goto("/");
   await expect(page.locator('a[href="/login"]')).toHaveCount(0);
+  await expect(page.locator('a[href="/create/"]')).toHaveCount(0);
   await expect(
-    page.getByRole("link", { name: "Set up with GitHub" }),
-  ).toHaveAttribute("href", "/create/");
+    page.getByRole("link", { name: "Create workspace", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: "Set up a workspace", exact: true }),
+  ).toHaveCount(0);
+  const install = page.getByRole("link", {
+    name: "Install yours",
+    exact: true,
+  });
+  await expect(install).toHaveCount(3);
+  for (const link of await install.all())
+    await expect(link).toHaveAttribute("href", "#install");
   await page
-    .getByRole("link", { name: "Create your workspace", exact: true })
+    .getByRole("link", { name: "Install yours", exact: true })
+    .first()
     .click();
-  await expect(
-    page.getByRole("heading", { name: "Create your workspace", exact: true }),
-  ).toBeVisible();
+  await expect(page).toHaveURL(/#install$/);
+  await expect(page.locator("#install")).toBeInViewport();
   await expect(
     page.getByRole("link", { name: "Deploy to Cloudflare", exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Deploy to VPS", exact: true }),
   ).toBeVisible();
-  const address = page.getByRole("textbox", { name: "Workspace address" });
-  await address.fill("https://gitrew.example.com");
-  await expect(
-    page.getByRole("link", { name: "Continue setup on your domain" }),
-  ).toHaveAttribute("href", "https://gitrew.example.com/create/");
-  await address.fill("javascript:alert(1)");
-  await expect(
-    page.getByRole("button", { name: "Continue setup on your domain" }),
-  ).toBeDisabled();
-  await address.fill("https://gitrew.com");
-  await expect(
-    page.getByRole("button", { name: "Continue setup on your domain" }),
-  ).toBeDisabled();
+  expect(await (await request.get("/sitemap.xml")).text()).not.toContain(
+    "/create/",
+  );
   expect(apiRequests).toEqual([]);
   for (const path of [
     "/api/config",
     "/api/session",
+    "/create",
+    "/create/",
     "/w/inchidev",
     "/login",
     "/manifest.webmanifest",
@@ -51,18 +54,41 @@ test("product site offers installation without workspace authentication", async 
     expect((await request.get(path)).status()).toBe(404);
   }
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/create/");
+  await page.goto("/");
+  await expect(page.locator("nav .install-link")).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
   await page.screenshot({
-    path: "test-results/portal-create-mobile.png",
+    path: "test-results/portal-landing-mobile.png",
     fullPage: true,
   });
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/");
+  const preview = page.locator(".product-preview img");
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 1000 });
+    for (const theme of ["light", "dark"]) {
+      await page.evaluate(
+        (value) => localStorage.setItem("nuxt-color-mode", value),
+        theme,
+      );
+      await page.reload();
+      await expect(preview).toHaveJSProperty("complete", true);
+      await expect
+        .poll(() =>
+          preview.evaluate((img: HTMLImageElement) => img.naturalWidth),
+        )
+        .toBeGreaterThan(0);
+      await expect
+        .poll(() => preview.evaluate((img: HTMLImageElement) => img.currentSrc))
+        .toContain(
+          `gitrew-chat-${theme}${width === 390 ? "-mobile" : ""}.webp`,
+        );
+    }
+  }
   await page.screenshot({
     path: "test-results/portal-landing-desktop.png",
     fullPage: true,
