@@ -26,13 +26,25 @@ test("entry is a dedicated sign-in page and an unavailable OAuth service fails c
   await expect(page.locator(".gitrew-shell")).toHaveCount(0);
 });
 
+test("sign-in without a workspace stays on entry instead of guessing an organization", async ({
+  page,
+}) => {
+  await session(page);
+  await githubRoutes(page);
+  await page.goto("/login");
+  await expect(page).not.toHaveURL(/\/w\//);
+  await expect(
+    page.getByRole("heading", { name: "# general" }),
+  ).toHaveCount(0);
+});
+
 test("authenticated drafts survive reload and offline state preserves the draft", async ({
   page,
   context,
 }) => {
   await session(page);
   await githubRoutes(page);
-  await page.goto("/login");
+  await page.goto("/login?workspace=inchidev/gitrew");
   const composer = page.getByRole("textbox", { name: "Message", exact: true });
   await expect(composer).toBeEnabled();
   await composer.fill("Draft for my real workspace");
@@ -57,7 +69,7 @@ test("authenticated thread links persist replies and display user HTML as text",
 }) => {
   await session(page);
   await githubRoutes(page);
-  await page.goto("/login");
+  await page.goto("/login?workspace=inchidev/gitrew");
   await page
     .getByRole("textbox", { name: "Message", exact: true })
     .fill("Room draft while reading a thread");
@@ -95,7 +107,7 @@ test("authenticated phone navigation and full-screen threads remain usable", asy
   await session(page);
   await githubRoutes(page);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/login");
+  await page.goto("/login?workspace=inchidev/gitrew");
   await expect(page.getByRole("heading", { name: "# general" })).toBeVisible();
   await page.getByRole("button", { name: "Open channels" }).click();
   await expect(

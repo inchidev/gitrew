@@ -99,7 +99,7 @@ async function swipe(page: Page, points: Array<[number, number]>) {
 async function openChat(page: Page) {
   await session(page);
   await githubRoutes(page);
-  await page.goto("/login");
+  await page.goto("/login?workspace=inchidev/gitrew");
   await expect(page.getByRole("heading", { name: "# general" })).toBeVisible();
 }
 

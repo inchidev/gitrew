@@ -44,7 +44,7 @@ test("GitHub OAuth completes with PKCE, sends directly to Discussions, and clear
       }),
     });
   });
-  await page.goto("/login");
+  await page.goto("/login?workspace=inchidev/gitrew");
   await page.getByRole("button", { name: "Continue with GitHub" }).click();
   await expect(
     page.getByText("A conversation from GitHub", { exact: true }),
@@ -93,7 +93,7 @@ test("failed sends preserve the draft, and refresh replaces edited and deleted m
 }) => {
   await session(page);
   const messages = await githubRoutes(page, true);
-  await page.goto("/login");
+  await page.goto("/login?workspace=inchidev/gitrew");
   await expect(
     page.getByText("A conversation from GitHub", { exact: true }),
   ).toBeVisible();
@@ -120,7 +120,7 @@ test("switching repositories isolates messages and keeps drafts in their origina
 }) => {
   await session(page);
   await githubRoutes(page);
-  await page.goto("/login");
+  await page.goto("/login?workspace=inchidev/gitrew");
   await expect(
     page.getByText("A conversation from GitHub", { exact: true }),
   ).toBeVisible();
@@ -183,7 +183,7 @@ test("prefixed storage stays out of project repositories and vaults stay out of 
     if (body.query.includes("query Channels"))
       channelReads.push(body.variables.name);
   });
-  await page.goto("/login");
+  await page.goto("/login?workspace=inchidev/gitrew");
   await expect(
     page.getByText("A conversation from GitHub", { exact: true }),
   ).toBeVisible();

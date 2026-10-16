@@ -5,24 +5,24 @@ Status reconciled on 2026-10-16. The priority is reliable everyday GitHub team c
 ## Shipped on main
 
 - Channels, threads, private groups and DMs backed by GitHub Discussions; authorized WebSocket updates, presence and typing; opt-in Web Push; voice-first RealtimeKit or LiveKit huddles. GitHub remains the conversation store.
-- Independent public landing/installer at `gitrew.com`, plus workspaces at `inchi.gitrew.com` and `afterprompt.gitrew.com`. Each workspace has its own App, Worker, D1, LiveHub, storage and optional media/push credentials, restricted to its GitHub Team. Customers use their own infrastructure and domain.
+- Independent public landing/installer at `gitrew.com`. Customer workspaces deploy on their own infrastructure and domain, each with its own App, Worker, D1, LiveHub, storage and optional media/push credentials, optionally restricted to a GitHub Team.
 - Manifest, canonical/maskable/Apple icons, safe areas, theme colors and mobile channel swipes. Basic iPhone installation/launch and automated Chromium/WebKit checks are verified; full physical-device acceptance remains open.
 - Required `gitrew-` names for new chat/vault storage and recognition of named storage in workspace, channel and project selectors ([PR #25](https://github.com/inchidev/gitrew/pull/25)). Existing production repository references already match their private prefixed repositories.
 
 - A shorter landing with direct installation links and real light/dark desktop/mobile product screenshots using sample conversations ([#29](https://github.com/inchidev/gitrew/issues/29)). The public `/create/` guide is removed; installed workspace setup is preserved.
 
-- Direct workspace entry, own-identity access diagnostics and a member-focused chat UI: no marketing/workspace creation or hosting prompts on working domains; persistent administrator-editable names and account appearance controls. Inchi and AfterPrompt keep their existing organization, App, storage and access policy.
+- Direct workspace entry, own-identity access diagnostics and a member-focused chat UI: no marketing/workspace creation or hosting prompts on working domains; persistent administrator-editable names and account appearance controls. Each installation keeps its existing organization, App, storage and access policy.
 
-All three Cloudflare deployments were verified after the prefix merge: successful builds of the same main commit, healthy workspace endpoints, anonymous sessions rejected, public-site API paths absent and the old inchi domain redirect intact. Feature configuration does not establish two-person audio, private delivery or background push. See the dated [installation record](docs/inchidev-install.md).
+The public deployment was verified after the prefix merge: successful build of the same main commit, healthy endpoints, anonymous sessions rejected and public-site API paths absent. Feature configuration does not establish two-person audio, private delivery or background push. The former inchidev workspace deployments (`inchi.gitrew.com`, `afterprompt.gitrew.com`) were retired on 2026-10-16: their Workers, D1 databases, storage repositories and installation record were removed.
 
-The latest pinned source release is [v0.2.0](https://github.com/inchidev/gitrew/releases/tag/v0.2.0); the prefix, dependency, landing and workspace-entry changes are newer on main and are listed in `CHANGELOG.md` under Unreleased.
+The latest pinned source release is [v0.3.0](https://github.com/inchidev/gitrew/releases/tag/v0.3.0).
 
 
 ## Remaining work
 
 | Work | Completion evidence | Tracking |
 | --- | --- | --- |
-| Two-member team-chat acceptance on both maintained workspaces | Allowed/wrong-team access, private/DM isolation, live delivery and reconnect, membership revocation, two-person audio and provider cleanup | [#1](https://github.com/inchidev/gitrew/issues/1) |
+| Two-member team-chat acceptance on a deployed workspace | Allowed/wrong-team access, private/DM isolation, live delivery and reconnect, membership revocation, two-person audio and provider cleanup | [#1](https://github.com/inchidev/gitrew/issues/1) |
 | Installed PWA and background notifications | Physical iOS/macOS/Android icons/layout/keyboard/gestures, standalone OAuth/session/deep links, opt-in/out and actual background push | [#2](https://github.com/inchidev/gitrew/issues/2) |
 | Encryption-key separation and rotation | Separate purpose keys, versioned migration, tested rotation and documented recovery | [#4](https://github.com/inchidev/gitrew/issues/4) |
 | Remaining upstream dependency alerts | UUID/esbuild fixes and exposure assessment are documented; update braces/node-forge when patched upstream releases are available and recheck GitHub alerts | [#26](https://github.com/inchidev/gitrew/issues/26) · [Assessment](docs/dependency-security.md) |

@@ -5,8 +5,6 @@ Gitrew uses one codebase with two deployment modes.
 | Address | Purpose | Infrastructure |
 | --- | --- | --- |
 | `gitrew.com` | Public landing and `/#install` installation links | Static assets; no GitHub credentials, D1 or workspace API |
-| `inchi.gitrew.com` | Our inchidev workspace, restricted to the `inchi` team | Its own Worker, D1, LiveHub and GitHub App |
-| `afterprompt.gitrew.com` | Workspace for the `afterprompt` team | Separate Worker, D1, LiveHub, App and chat/vault repositories |
 | `example.com` or `gitrew.example.com` | Customer-owned workspace | Customer's Cloudflare account or celld server |
 
 The public `/#install` section links to Cloudflare and VPS instructions. After
@@ -69,21 +67,14 @@ anything or create another GitHub App.
 See [Cloudflare's Deploy button flow](https://developers.cloudflare.com/workers/platform/deploy-buttons/)
 and the [Cloudflare setup guide](cloudflare-backend.md).
 
-## Our workspace rollout
+## Retired inchidev workspaces
 
-The inchidev workspace uses `https://inchi.gitrew.com`, retaining its database,
-conversations and GitHub App from the domain migration. The old
-`gitrew.inchi.dev` hostname was retired on 2026-10-16: its Worker custom domain
-and managed DNS record are removed, and no redirect is maintained.
-`wrangler.inchidev.jsonc` declares only the current hostname and its `APP_ORIGIN`.
-The App's homepage, OAuth callback, setup and webhook use that same origin.
-Old-origin session cookies and installed PWAs do not transfer: members sign in
-and install again; push subscriptions must be registered again.
-
-AfterPrompt uses `gitrew-afterprompt-chat` and `gitrew-afterprompt-vault`, with App access
-selected for the relevant AfterPrompt repositories. The configured GitHub Team
-slug is `afterprompt`. The maintained `wrangler.afterprompt.jsonc` deploys its
-independent resources, with a distinct `APP_NAME` for App registration.
+The former `inchi.gitrew.com` and `afterprompt.gitrew.com` installations were
+retired on 2026-10-16. Their Workers, D1 databases, chat/vault repositories
+and GitHub Apps were removed; the domains no longer resolve. The repository
+now ships the public `gitrew.com` site plus the customer deployment template
+(root `wrangler.jsonc`). `ALLOWED_TEAM` below documents the team-restriction
+feature for customer installations.
 
 Set `ALLOWED_TEAM` to a GitHub Team slug to restrict a deployment. Every session
 and authenticated API operation rechecks current organization and team membership;
@@ -105,7 +96,7 @@ Without `ALLOWED_TEAM`, the existing organization-wide access policy remains.
 Keep the same policy configured across deployments/redeployments; removing it
 intentionally broadens workspace access to active organization members.
 
-The same policy can restrict the main inchi workspace if project members should
+The same policy can restrict any workspace whose project members should
 not enter it. Organization base permissions remain None; teams receive explicit
 access to their project repositories. Public source repositories remain public.
 
@@ -114,4 +105,4 @@ access to their project repositories. Public source repositories remain public.
 A shared service that provisions workspaces on demand under `*.gitrew.com` would
 need a control plane, tenant authorization, provisioning, lifecycle management,
 quotas and an operating/billing model. The public landing and installer do not
-provide that service today. Our two subdomains are installations we operate.
+provide that service today. There is no hosted multi-tenant Gitrew service.

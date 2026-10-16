@@ -8,7 +8,7 @@
   "vars": {
     "GITHUB_CLIENT_ID": "",
     "GITHUB_APP_SLUG": "",
-    "CLIENT_URL": "https://inchi.gitrew.com/",
+    "CLIENT_URL": "https://workspace.example.com/",
   },
   // GITHUB_CLIENT_SECRET is a Worker secret, never a public variable.
 }

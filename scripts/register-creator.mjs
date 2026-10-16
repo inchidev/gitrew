@@ -1,8 +1,13 @@
 // Maintainer bootstrap for the shared installer App. Browser approval is required.
+// Pass the organization that owns the gitrew-auth mailbox repository.
 import { createServer } from "node:http";
 import { execFileSync } from "node:child_process";
-const organization = "inchidev",
-  repository = "inchidev/gitrew-auth",
+const organization = process.argv[2] || "",
+  repository = organization ? `${organization}/gitrew-auth` : "";
+if (!/^[\w-]+$/.test(organization))
+  throw new Error(
+    "Pass the creator organization: node scripts/register-creator.mjs your-org.",
+  );
   state = crypto.randomUUID();
 let base = "";
 const gh = (args) =>
@@ -90,7 +95,7 @@ const server = createServer(async (req, res) => {
     url: "https://gitrew.com/",
     redirect_url: base + "/callback",
     hook_attributes: {
-      url: "https://inchi.gitrew.com/unused-webhook",
+      url: "https://gitrew.com/unused-webhook",
       active: false,
     },
     public: true,
