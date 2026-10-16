@@ -69,7 +69,7 @@ test("product site offers installation without workspace authentication", async 
   });
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/");
-  const preview = page.locator(".product-preview img");
+  const live = page.locator(".live-workspace");
   for (const width of [390, 1440]) {
     await page.setViewportSize({ width, height: 1000 });
     for (const theme of ["light", "dark"]) {
@@ -78,17 +78,12 @@ test("product site offers installation without workspace authentication", async 
         theme,
       );
       await page.reload();
-      await expect(preview).toHaveJSProperty("complete", true);
-      await expect
-        .poll(() =>
-          preview.evaluate((img: HTMLImageElement) => img.naturalWidth),
-        )
-        .toBeGreaterThan(0);
-      await expect
-        .poll(() => preview.evaluate((img: HTMLImageElement) => img.currentSrc))
-        .toContain(
-          `gitrew-chat-${theme}${width === 390 ? "-mobile" : ""}.webp`,
-        );
+      await expect(live).toBeVisible();
+      for (const repo of ["nuxt/nuxt", "vuejs/core", "nuxt/ui"]) {
+        await expect(
+          live.getByRole("link", { name: new RegExp(repo.replace("/", "\\/")) }),
+        ).toHaveAttribute("href", `/github/${repo}`);
+      }
     }
   }
   await page.screenshot({
@@ -99,7 +94,9 @@ test("product site offers installation without workspace authentication", async 
 
 test("landing showcases guest communities", async ({ page }) => {
   await page.goto("/");
-  const card = page.getByRole("link", { name: /nuxt\/nuxt/ });
+  const card = page
+    .locator("#communities")
+    .getByRole("link", { name: /nuxt\/nuxt/ });
   await expect(card).toBeVisible();
   await card.click();
   await expect(page).toHaveURL("/github/nuxt/nuxt");
