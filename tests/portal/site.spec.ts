@@ -44,6 +44,8 @@ test("product site offers installation without workspace authentication", async 
   for (const path of [
     "/api/config",
     "/api/session",
+    "/api/access",
+    "/access/",
     "/create",
     "/create/",
     "/w/inchidev",

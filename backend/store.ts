@@ -32,6 +32,7 @@ export interface Session {
   credentials: Credentials;
 }
 export interface Workspace {
+  displayName?: string;
   organization: string;
   repository: string;
   vault: string;
@@ -105,6 +106,21 @@ export class Store extends EncryptedStore {
         400,
         "This request expired or has already been used. Start again.",
       );
+    return this.open(row.value, "state:" + id);
+  }
+  // Diagnostic snapshots contain only this browser's own access results.
+  // OAuth/setup state continues to use the single-use consume method.
+  async readAccess(id: string) {
+    if (!/^[a-f0-9]{64}$/.test(id))
+      throw new HttpError(401, "Sign in to check your access.");
+    const row = await this.db
+      .prepare(
+        "SELECT value FROM states WHERE id=? AND kind='access' AND expires>?",
+      )
+      .bind(id, Date.now())
+      .first<{ value: string }>();
+    if (!row)
+      throw new HttpError(401, "Your access check expired. Sign in again.");
     return this.open(row.value, "state:" + id);
   }
   async createSession(userId: number, credentials: Credentials) {

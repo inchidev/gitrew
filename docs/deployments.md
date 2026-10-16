@@ -13,7 +13,11 @@ The public `/#install` section links to Cloudflare and VPS instructions. After
 deployment, the owner opens `/create/` at their deployed HTTPS origin to register
 their GitHub App. The public `/create/` page is removed and returns 404. Gitrew.com
 does not receive installation credentials, create hosted tenants or store conversations.
-Members sign in at the workspace address supplied by their team.
+Members open the workspace address supplied by their team: `/` opens sign-in or
+chat directly. The working application does not render the product landing.
+`/create/` is initial owner setup; a ready installation sends it back to the app.
+`/access/` explains the current person's missing permissions. The public portal
+registers neither setup nor access routes.
 
 ## Public site
 
@@ -32,6 +36,19 @@ Choose the final domain before registration. Distinct deployments in one GitHub
 organization need distinct chat/vault repository names. Every workspace
 repository name must start with `gitrew-` so Gitrew-managed storage is obvious
 at a glance (for example `gitrew-afterprompt-chat`).
+
+## Workspace identity
+
+One installation stores one chat/vault pair per GitHub organization. Several
+independent installations may use the same organization with distinct pairs and
+policies; Inchi and AfterPrompt do this. The member interface always opens the
+installation's configured workspace and does not advertise multi-workspace
+creation or repository switching.
+
+`WORKSPACE_NAME` is an optional initial display name, including for celld. An
+administrator can save a different name in **Workspace settings**; the saved D1
+value takes precedence. This changes presentation only. GitHub organization slugs,
+repository names, routes and App identity retain their original values.
 
 ## What the Cloudflare button creates
 

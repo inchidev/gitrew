@@ -282,9 +282,7 @@ test("GitHub-only sign-in and private messages keep vault credentials and plaint
   await expect(
     page.getByRole("button", { name: "Leadership", exact: true }),
   ).toBeVisible({ timeout: 30_000 });
-  await expect(
-    page.getByRole("button", { name: "acme", exact: true }),
-  ).toBeVisible();
+  await expect(page.locator(".workspace-title")).toBeVisible();
   await page.getByRole("button", { name: "Leadership", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Leadership", exact: true }),
@@ -321,7 +319,10 @@ test("GitHub-only sign-in and private messages keep vault credentials and plaint
   expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain(
     "user-session-token",
   );
-  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await page
+    .getByRole("button", { name: "User settings", exact: true })
+    .click();
+  await page.getByRole("menuitem", { name: "Sign out", exact: true }).click();
   await expect(page.locator(".message")).toHaveCount(0);
 });
 

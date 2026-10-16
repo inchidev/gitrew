@@ -4,6 +4,7 @@ import {
   parseVaultOperation,
   validateMembers,
   canReadConversation,
+  WorkspaceMemberRequired,
   type VaultActor,
   type VaultConversation,
   type VaultMembers,
@@ -153,13 +154,17 @@ export async function executeVault(
   }
   const member = membership.members.some((m) => m.id === actor.id);
   if (!admin && (membership.blocked || []).includes(actor.id))
-    throw new Error("You are not a member of this workspace.");
+    throw new WorkspaceMemberRequired(
+      "You are not a member of this workspace.",
+    );
   if (
     !admin &&
     !member &&
     !(operation.op === "join" && membership.openRegistration === true)
   )
-    throw new Error("You are not a member of this workspace.");
+    throw new WorkspaceMemberRequired(
+      "You are not a member of this workspace.",
+    );
   // Include inherited organization and team access, not just direct invitations.
   // Fail closed if GitHub cannot prove that only declared administrators can read the repo.
   for (let page = 1; ; page++) {

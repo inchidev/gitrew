@@ -139,7 +139,7 @@ export async function oauthToken(
       : undefined,
   };
 }
-export async function authenticated(
+export async function identified(
   store: BackendStore,
   session: Session,
   app: App,
@@ -165,6 +165,14 @@ export async function authenticated(
   const actor = await api.api("/user", actorSchema);
   if (actor.id !== session.userId)
     throw new HttpError(401, "This session could not be verified.");
-  await requireTeamAccess(api, app, actor.login);
   return { api, actor };
+}
+export async function authenticated(
+  store: BackendStore,
+  session: Session,
+  app: App,
+) {
+  const identity = await identified(store, session, app);
+  await requireTeamAccess(identity.api, app, identity.actor.login);
+  return identity;
 }

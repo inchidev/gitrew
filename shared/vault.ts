@@ -125,3 +125,5 @@ export function canReadConversation(
       conversation.members.includes(actor.id))
   );
 }
+/** A missing Gitrew directory entry is distinct from an upstream failure. */
+export class WorkspaceMemberRequired extends Error {}

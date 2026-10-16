@@ -29,6 +29,7 @@
   },
   "migrations": [{ "tag": "live-v1", "new_sqlite_classes": ["LiveHub"] }],
   "vars": {
+    "WORKSPACE_NAME": "Inchi",
     "APP_ORIGIN": "https://inchi.gitrew.com",
     "ALLOWED_TEAM": "inchi",
     "PUBLIC_APP": "false",

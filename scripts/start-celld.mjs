@@ -11,6 +11,7 @@ try {
   await writeFile(".celld/setup-token", secret, { mode: 0o600, flag: "wx" });
 }
 const optional = [
+  "WORKSPACE_NAME",
   "HUDDLE_PROVIDER",
   "RTK_ACCOUNT_ID",
   "RTK_APP_ID",

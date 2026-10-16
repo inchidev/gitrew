@@ -16,6 +16,8 @@ export const backendWorkspaceSchema = z.object({
   publicKey: z.string(),
   openRegistration: z.boolean(),
   memberPrivateChannels: z.boolean(),
+  displayName: z.string().optional(),
+  administrator: z.boolean().default(false),
 });
 const sessionResponse = z.object({
   viewer: viewerSchema,
@@ -34,6 +36,8 @@ export function useBackendAuth() {
     installUrl = ref(""),
     sandbox = ref("");
   const activeMailbox = shallowRef<MailboxConfig | null>(null);
+  const displayName = ref("Gitrew");
+  const accessRequired = ref(false);
   const mailboxRepository = computed(
     () => activeMailbox.value?.repository || "",
   );
@@ -51,12 +55,21 @@ export function useBackendAuth() {
       return;
     }
     const body = await response.json();
+    if (!response.ok && [403, 502].includes(response.status)) {
+      accessRequired.value = true;
+      token.value = "";
+      viewer.value = null;
+      activeMailbox.value = null;
+      return;
+    }
     if (!response.ok)
       throw new Error(body.error || "Could not load your session.");
     const value = sessionResponse.parse(body);
     token.value = backendToken(value.csrf);
     viewer.value = value.viewer;
     activeMailbox.value = value.workspace;
+    displayName.value = value.workspace?.displayName || displayName.value;
+    accessRequired.value = false;
     installUrl.value = value.app.installUrl;
     sandbox.value = value.sandbox;
   }
@@ -66,13 +79,19 @@ export function useBackendAuth() {
       const config = await backendJson<{
         configured: boolean;
         sandbox: string;
+        displayName?: string;
       }>("/api/config");
       sandbox.value = config.sandbox;
+      displayName.value = config.displayName || "Gitrew";
       if (!config.configured) {
         if (url.pathname !== "/create/") await navigateTo("/create/");
         return;
       }
       if (url.searchParams.has("authError")) {
+        if (url.searchParams.get("authError") === "restricted") {
+          accessRequired.value = true;
+          return;
+        }
         error.value =
           url.searchParams.get("authError") === "restricted"
             ? "This workspace is limited to its GitHub team. Ask an organization owner to add you."
@@ -113,6 +132,7 @@ export function useBackendAuth() {
     token.value = "";
     viewer.value = null;
     activeMailbox.value = null;
+    accessRequired.value = false;
     query.clear();
     clearVaultSends();
     if (current) {
@@ -152,6 +172,8 @@ export function useBackendAuth() {
     installationLink,
     mailboxRepository,
     activeMailbox,
+    displayName,
+    accessRequired,
     selectMailbox,
     sandbox,
     backend: true as const,

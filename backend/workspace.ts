@@ -20,8 +20,14 @@ const gqlSchema = z.object({
   data: z.unknown().optional(),
   errors: z.array(z.unknown()).optional(),
 });
-export function workspaceConfig(workspace: Workspace, app: App) {
+export function workspaceConfig(
+  workspace: Workspace,
+  app: App,
+  fallbackName = "",
+) {
   return {
+    displayName:
+      workspace.displayName || fallbackName || workspace.organization,
     version: 1 as const,
     backend: true,
     repository: workspace.repository,
@@ -316,7 +322,7 @@ export async function ensureWorkspaceAccess(
         409,
         "The chat repository must be private. Ask an organization owner to fix its visibility.",
       );
-    return;
+    return role.role === "admin";
   }
   if (repository.status !== 404)
     throw new HttpError(
@@ -361,6 +367,7 @@ export async function ensureWorkspaceAccess(
       headers: { Authorization: `Bearer ${token}` },
     }).catch(() => undefined);
   }
+  return role.role === "admin";
 }
 
 export async function vaultOperation(

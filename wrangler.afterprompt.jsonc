@@ -26,6 +26,7 @@
   },
   "migrations": [{ "tag": "live-v1", "new_sqlite_classes": ["LiveHub"] }],
   "vars": {
+    "WORKSPACE_NAME": "AfterPrompt",
     "APP_ORIGIN": "https://afterprompt.gitrew.com",
     "APP_NAME": "Gitrew inchidev AfterPrompt",
     "ALLOWED_TEAM": "afterprompt",

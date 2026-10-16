@@ -309,7 +309,7 @@ for (const repositoryName of ["gitrew-chat", "gitrew-test-chat"]) {
       throw new Error("Unexpected API request " + path);
     });
     await page.goto("/?workspace=old-team/gitrew-chat&channel=private-channel");
-    await expect(page.locator(".workspace-switch")).toHaveText("team");
+    await expect(page.locator(".workspace-title")).toHaveText("team");
     await expect(
       page.getByText("Conversations are busy. Try again shortly."),
     ).toBeVisible();
@@ -387,7 +387,10 @@ for (const repositoryName of ["gitrew-chat", "gitrew-test-chat"]) {
       .click();
     await expect(huddle).toHaveCount(0);
     await expect.poll(() => huddleReleased).toBe(true);
-    await page.getByRole("button", { name: "Sign out", exact: true }).click();
+    await page
+      .getByRole("button", { name: "User settings", exact: true })
+      .click();
+    await page.getByRole("menuitem", { name: "Sign out", exact: true }).click();
     await expect(
       page.getByRole("button", { name: "Continue with GitHub" }),
     ).toBeVisible();
@@ -440,7 +443,7 @@ test("signed-out entry has no hidden chat shell at phone, tablet and desktop wid
   await expect(page.getByRole("button", { name: "Try a demo" })).toHaveCount(0);
 });
 
-test("the landing is public, and protected links preserve their destination at login", async ({
+test("workspace roots show sign-in directly, and protected links preserve their destination", async ({
   page,
 }) => {
   const apiRequests: string[] = [];
@@ -463,40 +466,16 @@ test("the landing is public, and protected links preserve their destination at l
   });
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "A place for your Git crew." }),
+    page.getByRole("heading", { name: "Sign in to Gitrew", exact: true }),
   ).toBeVisible();
-  expect(apiRequests).toEqual([]);
-  for (const name of ["Cursor", "Claude", "Cloudflare"]) {
-    await page
-      .getByRole("button", { name: `${name} Watching`, exact: false })
-      .click();
-    await expect(page.locator("#provider-detail")).toContainText("Watching");
-    await expect(
-      page.locator("#provider-detail").getByRole("link", { name: /Read more/ }),
-    ).toHaveAttribute("target", "_blank");
-  }
-  await page.getByRole("button", { name: "Gitea Later", exact: false }).click();
+  await expect(page.locator(".gitrew-landing")).toHaveCount(0);
   await expect(
-    page.getByRole("heading", {
-      name: "A home for the crew on your own Gitea.",
-    }),
-  ).toBeVisible();
+    page.getByRole("link", { name: "Create your own workspace" }),
+  ).toHaveCount(0);
   await expect(
-    page.getByText("Planned. Gitrew does not connect to Gitea yet."),
-  ).toBeVisible();
-  await page
-    .getByRole("button", { name: "GitLab Later", exact: false })
-    .click();
-  await expect(
-    page.getByRole("heading", {
-      name: "Bring the conversation to your GitLab group.",
-    }),
-  ).toBeVisible();
-  await expect(page.getByRole("link", { name: "Try the demo" })).toHaveCount(0);
-  await expect(page.locator('a[href*="/demo"]')).toHaveCount(0);
-  await expect(
-    page.getByRole("link", { name: "Open Gitrew", exact: true }),
-  ).toHaveAttribute("href", "/login");
+    page.getByRole("button", { name: "Continue with GitHub" }),
+  ).toBeEnabled();
+  expect(apiRequests).toContain("/api/config");
   for (const path of ["/demo", "/demo/c/preview-general"]) {
     await page.goto(path);
     await expect(page.locator("h1")).toContainText("404");
@@ -506,8 +485,6 @@ test("the landing is public, and protected links preserve their destination at l
   await expect(page).toHaveURL(/\/login$/);
   await page.goto("/");
   await expect(page.locator(".gitrew-shell")).toHaveCount(0);
-  await page.getByRole("link", { name: "Sign in", exact: true }).click();
-  await expect(page).toHaveURL(/\/login$/);
   await expect(
     page.getByRole("button", { name: "Continue with GitHub" }),
   ).toBeEnabled();
