@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.5.0 — 2026-10-17
+
+- Render the real workspace interface for anonymous readers at `/github/:owner/:repo`: discussion sidebar, message feed, threads and search through the shared Gitrew component, read-only with a guest sign-in call to action. No session, token or CSRF exists in the browser; the public API surface stays GET-only. The disabled-discussions notice explains the metadata cache and offers a retry.
+- Resolve the request organization on every backend call so one deployment can host several ready workspaces: explicit organization wins, a single workspace keeps its old default, several without a choice get a 400 asking to specify it. Login, access checks, webhooks (dispatched by installation), logout and live revocation are per-organization with a per-workspace team override. Single-workspace deployments behave exactly as before; no storage migration.
+- Record the hosted-workspaces design in `docs/hosted-workspaces.md`: shared workspaces on gitrew.com for any organization, one public GitHub App with per-organization installations, self-hosting stays the privacy option.
+
 ## 0.4.0 — 2026-10-16
 
 - Add anonymous read-only browsing of public GitHub owners and repositories at `/github/*`: one page per request with load-more, short-lived server cache, per-visitor budgets, and identical 404s for missing and private content. The public worker answers `/api/public/*` only. Requires a `PUBLIC_GITHUB_TOKEN` secret with no permissions; see `docs/public-browsing.md`.
