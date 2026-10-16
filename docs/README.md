@@ -22,4 +22,4 @@ Gitrew is a GitHub organization workspace for channels, threads, private groups 
 - [inchidev installation record](inchidev-install.md): dated live verification, distinct from local tests.
 - [Roadmap](../ROADMAP.md).
 
-Cloudflare and celld are the supported runtime targets. Vercel support was removed because this version relies on Durable Objects. The old static/Actions installation is retired.
+Cloudflare is deployed; celld is the alternative runtime target with a locally verified compatibility example. Public production celld/Coolify hosting remains [open work](https://github.com/inchidev/gitrew/issues/28). Vercel support was removed because this version relies on Durable Objects. The old static/Actions installation is retired. See the [roadmap](../ROADMAP.md) for shipped behavior and the remaining acceptance work.

@@ -29,3 +29,5 @@ This version adds `LiveHub` with a SQLite DO migration and encrypted push subscr
 ## Before claiming production readiness
 
 Verify fresh installation at the final HTTPS domain, two-user access isolation, live channel/DM delivery, reconnect/revocation, microphone/audio in two browsers, background push, restart, backup/restore and upgrade. Record what was actually verified in the installation record. Mocked APIs and localhost health do not establish those results.
+
+The complete installation backup/restore and upgrade drill remains tracked in [#27](https://github.com/inchidev/gitrew/issues/27). Encryption-key separation and rotation remain [#4](https://github.com/inchidev/gitrew/issues/4); keep the existing setup key until a tested rotation procedure ships.
