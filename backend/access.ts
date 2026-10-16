@@ -12,11 +12,13 @@ export async function requireTeamAccess(
   api: MembershipApi,
   app: App,
   login: string,
+  organization = app.owner.login,
+  allowedTeam = app.allowedTeam,
 ) {
-  if (!app.allowedTeam) return;
-  const organization = encodeURIComponent(app.owner.login);
+  if (!allowedTeam) return;
+  const encoded = encodeURIComponent(organization);
   const membership = await api.response(
-    `/orgs/${organization}/memberships/${encodeURIComponent(login)}`,
+    `/orgs/${encoded}/memberships/${encodeURIComponent(login)}`,
   );
   if (membership.status === 404)
     throw new WorkspaceAccessError(
@@ -37,11 +39,11 @@ export async function requireTeamAccess(
   // GitHub organization owners are trusted workspace administrators.
   if (role.role === "admin") return;
   const team = await api.response(
-    `/orgs/${organization}/teams/${encodeURIComponent(app.allowedTeam)}/memberships/${encodeURIComponent(login)}`,
+    `/orgs/${encoded}/teams/${encodeURIComponent(allowedTeam)}/memberships/${encodeURIComponent(login)}`,
   );
   if (team.status === 404)
     throw new WorkspaceAccessError(
-      `This workspace is limited to the ${app.allowedTeam} GitHub team.`,
+      `This workspace is limited to the ${allowedTeam} GitHub team.`,
     );
   if (!team.ok)
     throw new HttpError(

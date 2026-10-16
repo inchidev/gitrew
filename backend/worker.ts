@@ -29,6 +29,7 @@ import {
   type App,
   type BackendStore,
   type Session,
+  type Workspace,
 } from "./store";
 import {
   authenticated,
@@ -109,6 +110,69 @@ function canonical(request: Request, app: App) {
       403,
       "Use this deployment's configured Gitrew address.",
     );
+}
+// Organization from a validated application destination such as /w/acme.
+function orgFromReturnTo(returnTo: string | null): string | null {
+  const path = returnTo ? appReturnTo(returnTo) : null;
+  const match = path
+    ? /^\/w\/([a-z\d][a-z\d-]{0,38})(?:\/|$)/i.exec(path)
+    : null;
+  return match?.[1]?.toLowerCase() || null;
+}
+// Explicit organization wins. Without one, a deployment with a single ready
+// workspace keeps its old default; several workspaces require the caller to
+// choose instead of silently using the first.
+async function resolveWorkspace(
+  store: BackendStore,
+  selected: string | null,
+): Promise<Workspace | null> {
+  if (selected) return store.workspace(organizationSchema.parse(selected));
+  const ready = await store.readyWorkspaces();
+  if (ready.length === 1) return ready[0]!;
+  if (ready.length > 1)
+    throw new HttpError(
+      400,
+      "This deployment hosts several organizations. Specify the organization and retry.",
+    );
+  return null;
+}
+// Organization behind a single-use live ticket, without consuming it.
+async function peekTicketOrganization(
+  store: BackendStore,
+  url: URL,
+): Promise<string | null> {
+  if (url.pathname !== "/api/live/socket") return null;
+  try {
+    const peeked = (await store.peekState(
+      url.searchParams.get("ticket") || "",
+      "live",
+    )) as { room?: { organization?: unknown } } | null;
+    const raw = peeked?.room?.organization;
+    return typeof raw === "string" ? organizationSchema.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+// Best-effort organization for JSON bodies ({organization} or {room:{organization}}).
+async function peekBodyOrganization(request: Request): Promise<string | null> {
+  if (request.method === "GET" || request.method === "HEAD") return null;
+  try {
+    const text = await request.clone().text();
+    if (text.length > 32_768) return null;
+    const body = JSON.parse(text) as {
+      organization?: unknown;
+      room?: { organization?: unknown };
+    };
+    const raw =
+      typeof body?.organization === "string"
+        ? body.organization
+        : typeof body?.room?.organization === "string"
+          ? body.room.organization
+          : null;
+    return raw ? organizationSchema.parse(raw) : null;
+  } catch {
+    return null;
+  }
 }
 
 export interface BackendEnv extends MediaEnv, PushEnv {
@@ -422,10 +486,15 @@ export default {
           actorSchema,
         );
         try {
+          const callbackOrg =
+            orgFromReturnTo(pending.returnTo) || app.owner.login;
           await requireTeamAccess(
             new GitHub(credentials.accessToken),
             app,
             actor.login,
+            callbackOrg,
+            (await store.workspace(callbackOrg))?.allowedTeam ??
+              app.allowedTeam,
           );
         } catch {
           // Identity is known, but permission denial or verification failure
@@ -436,6 +505,7 @@ export default {
             app,
             actor,
             env.WORKSPACE_NAME,
+            orgFromReturnTo(pending.returnTo) || app.owner.login,
           );
           const diagnostic = await store.state("access", {
             report,
@@ -451,12 +521,12 @@ export default {
           if (previous) {
             await store.logout(previous.id);
             if (pushEnabled(env)) await new PushStore(env).revoke(previous.id);
-            const workspace = await store.defaultWorkspace();
-            if (workspace)
-              await env.LIVE?.getByName(workspace.organization).revoke(
-                previous.userId,
-                previous.id,
-              );
+            if (env.LIVE)
+              for (const ready of await store.readyWorkspaces())
+                await env.LIVE.getByName(ready.organization).revoke(
+                  previous.userId,
+                  previous.id,
+                );
           }
           return redirect("/access/", [
             setCookie(request, FLOW, "", 0),
@@ -501,16 +571,22 @@ export default {
           })
           .parse(JSON.parse(new TextDecoder().decode(raw)));
         const event = request.headers.get("X-GitHub-Event");
-        const workspace = await store.defaultWorkspace();
-        const hub = workspace && env.LIVE?.getByName(workspace.organization);
         if (
           event === "github_app_authorization" &&
           payload.action === "revoked" &&
           payload.sender
         ) {
           await store.revoke(payload.sender.id);
-          await hub?.revoke(payload.sender.id);
+          if (env.LIVE)
+            for (const ready of await store.readyWorkspaces())
+              await env.LIVE.getByName(ready.organization).revoke(
+                payload.sender.id,
+              );
         }
+        const workspace = payload.installation?.id
+          ? await store.workspaceByInstallation(payload.installation.id)
+          : null;
+        const hub = workspace && env.LIVE?.getByName(workspace.organization);
         if (
           workspace &&
           hub &&
@@ -575,8 +651,19 @@ export default {
         sessionId = current.id;
         sessionUserId = current.userId;
         const { api, actor } = await identified(store, current, app);
+        const accessWorkspace = await resolveWorkspace(
+          store,
+          url.searchParams.get("organization"),
+        );
         return json({
-          ...(await inspectAccess(store, api, app, actor, env.WORKSPACE_NAME)),
+          ...(await inspectAccess(
+            store,
+            api,
+            app,
+            actor,
+            env.WORKSPACE_NAME,
+            accessWorkspace?.organization ?? app.owner.login,
+          )),
           snapshot: false,
         });
       }
@@ -599,17 +686,28 @@ export default {
       if (url.pathname === "/api/logout" && request.method === "POST") {
         await store.logout(session.id);
         if (pushEnabled(env)) await new PushStore(env).revoke(session.id);
-        const workspace = await store.defaultWorkspace();
-        if (workspace)
-          await env.LIVE?.getByName(workspace.organization).revoke(
-            session.userId,
-            session.id,
-          );
+        if (env.LIVE)
+          for (const ready of await store.readyWorkspaces())
+            await env.LIVE.getByName(ready.organization).revoke(
+              session.userId,
+              session.id,
+            );
         return json({ signedOut: true }, 200, {
           "Set-Cookie": setCookie(request, SESSION, "", 0),
         });
       }
-      const { api, actor } = await authenticated(store, session, app);
+      const gateSelected =
+        url.searchParams.get("organization") ||
+        (await peekBodyOrganization(request)) ||
+        (await peekTicketOrganization(store, url));
+      const gateWorkspace = await resolveWorkspace(store, gateSelected);
+      const { api, actor } = await authenticated(
+        store,
+        session,
+        app,
+        gateSelected || gateWorkspace?.organization || app.owner.login,
+        gateWorkspace?.allowedTeam ?? app.allowedTeam,
+      );
       if (
         url.pathname === "/api/workspace/settings" &&
         request.method === "POST"
@@ -617,7 +715,10 @@ export default {
         const settings = workspaceSettingsSchema.parse(
           await boundedJson(request),
         );
-        const workspace = await store.defaultWorkspace();
+        const workspace = await resolveWorkspace(
+          store,
+          url.searchParams.get("organization"),
+        );
         if (!workspace?.ready)
           throw new HttpError(409, "Finish workspace setup first.");
         await ensureWorkspaceAccess(api, app, workspace, actor);
@@ -656,10 +757,10 @@ export default {
       if (url.pathname === "/api/session" && request.method === "GET") {
         const selected = url.searchParams.get("organization");
         const workspace = selected
-          ? await store.workspace(organizationSchema.parse(selected))
+          ? await resolveWorkspace(store, selected)
           : env.SANDBOX_ORGANIZATION
             ? await store.workspace(env.SANDBOX_ORGANIZATION)
-            : await store.defaultWorkspace();
+            : await resolveWorkspace(store, null);
         const administrator = workspace?.ready
           ? await ensureWorkspaceAccess(api, app, workspace, actor)
           : false;
@@ -836,9 +937,19 @@ export default {
               String((input.body as { query?: string })?.query || ""),
             ))
         ) {
-          const workspace = await store.defaultWorkspace();
-          if (workspace)
-            await env.LIVE?.getByName(workspace.organization)
+          // Best effort: a missing organization skips the broadcast instead
+          // of failing the proxied mutation.
+          let broadcast: Workspace | null = null;
+          try {
+            broadcast = await resolveWorkspace(
+              store,
+              url.searchParams.get("organization"),
+            );
+          } catch {
+            broadcast = null;
+          }
+          if (broadcast)
+            await env.LIVE?.getByName(broadcast.organization)
               .emit("", {
                 type: "refresh",
               })
@@ -910,12 +1021,12 @@ export default {
         sessionId
       ) {
         if (error.status === 401) await store.logout(sessionId);
-        const workspace = await store.defaultWorkspace();
-        if (workspace)
-          await env.LIVE?.getByName(workspace.organization).revoke(
-            sessionUserId,
-            sessionId,
-          );
+        if (env.LIVE)
+          for (const ready of await store.readyWorkspaces())
+            await env.LIVE.getByName(ready.organization).revoke(
+              sessionUserId,
+              sessionId,
+            );
       }
       const status =
         error instanceof WorkspaceMemberRequired

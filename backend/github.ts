@@ -171,8 +171,16 @@ export async function authenticated(
   store: BackendStore,
   session: Session,
   app: App,
+  organization = app.owner.login,
+  allowedTeam = app.allowedTeam,
 ) {
   const identity = await identified(store, session, app);
-  await requireTeamAccess(identity.api, app, identity.actor.login);
+  await requireTeamAccess(
+    identity.api,
+    app,
+    identity.actor.login,
+    organization,
+    allowedTeam,
+  );
   return identity;
 }

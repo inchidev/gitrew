@@ -175,6 +175,8 @@ export class PushStore extends EncryptedStore {
               credentials: await store.reloadCredentials(row.session_id),
             },
             app,
+            organization,
+            (await store.workspace(organization))?.allowedTeam ?? app.allowedTeam,
           );
           await authorizeRoom(store, app, api, actor, {
             organization,

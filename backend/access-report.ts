@@ -23,9 +23,10 @@ export async function inspectAccess(
   app: App,
   actor: z.infer<typeof actorSchema>,
   fallbackName = "",
+  organization = app.owner.login,
 ): Promise<AccessReport> {
-  const workspace = await store.workspace(app.owner.login);
-  const organization = workspace?.organization || app.owner.login;
+  const workspace = await store.workspace(organization);
+  const allowedTeam = workspace?.allowedTeam ?? app.allowedTeam;
   const checks: AccessCheck[] = [
     {
       id: "organization",
@@ -90,7 +91,7 @@ export async function inspectAccess(
     /* Unknown is a verification failure, never a grant. */
   }
   if (org.status === "passed") {
-    if (!app.allowedTeam || owner)
+    if (!allowedTeam || owner)
       Object.assign(team, {
         status: "not_required",
         detail: owner
@@ -105,12 +106,12 @@ export async function inspectAccess(
       });
       try {
         const response = await api.response(
-          `/orgs/${encodeURIComponent(organization)}/teams/${encodeURIComponent(app.allowedTeam)}/memberships/${encodeURIComponent(actor.login)}`,
+          `/orgs/${encodeURIComponent(organization)}/teams/${encodeURIComponent(allowedTeam)}/memberships/${encodeURIComponent(actor.login)}`,
         );
         if (response.status === 404)
           Object.assign(team, {
             status: "missing",
-            detail: `Ask an owner to add you to the ${app.allowedTeam} team.`,
+            detail: `Ask an owner to add you to the ${allowedTeam} team.`,
           });
         else if (response.ok) {
           const value = z
@@ -121,11 +122,11 @@ export async function inspectAccess(
             value.state === "active"
               ? {
                   status: "passed",
-                  detail: `You belong to the ${app.allowedTeam} team.`,
+                  detail: `You belong to the ${allowedTeam} team.`,
                 }
               : {
                   status: "missing",
-                  detail: `Accept your invitation to the ${app.allowedTeam} team.`,
+                  detail: `Accept your invitation to the ${allowedTeam} team.`,
                 },
           );
         }
@@ -152,7 +153,7 @@ export async function inspectAccess(
         if (response.status === 404)
           Object.assign(chat, {
             status: "missing",
-            detail: app.allowedTeam
+            detail: allowedTeam
               ? "Ask an owner to give your GitHub team Read access to this workspace's chat repository."
               : "Ask an owner to check your Read access and the App's access to this workspace's chat repository.",
           });

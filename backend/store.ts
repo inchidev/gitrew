@@ -33,6 +33,7 @@ export interface Session {
 }
 export interface Workspace {
   displayName?: string;
+  allowedTeam?: string;
   organization: string;
   repository: string;
   vault: string;
@@ -94,8 +95,18 @@ export class Store extends EncryptedStore {
       .run();
     return id;
   }
-  async consume(id: string, kind: string) {
+  // Non-destructive read for routing decisions (e.g. resolving the
+  // organization behind a live ticket before its single-use consume).
+  async peekState(id: string, kind: string): Promise<unknown | null> {
+    if (!/^[a-f0-9]{64}$/.test(id)) return null;
     const row = await this.db
+      .prepare("SELECT value FROM states WHERE id=? AND kind=? AND expires>?")
+      .bind(id, kind, Date.now())
+      .first<{ value: string }>();
+    if (!row) return null;
+    return this.open(row.value, "state:" + id);
+  }
+  async consume(id: string, kind: string) {    const row = await this.db
       .prepare(
         "DELETE FROM states WHERE id=? AND kind=? AND expires>? RETURNING value",
       )
@@ -215,6 +226,18 @@ export class Store extends EncryptedStore {
       )
       .first<{ value: string }>();
     return row ? (JSON.parse(row.value) as Workspace) : null;
+  }
+  async readyWorkspaces(): Promise<Workspace[]> {
+    const rows = await this.db
+      .prepare(
+        "SELECT value FROM workspaces WHERE json_extract(value,'$.ready')=1 ORDER BY organization",
+      )
+      .all<{ value: string }>();
+    return rows.results.map((row) => JSON.parse(row.value) as Workspace);
+  }
+  async workspaceByInstallation(id: number): Promise<Workspace | null> {
+    const workspaces = await this.readyWorkspaces();
+    return workspaces.find((workspace) => workspace.installationId === id) || null;
   }
   async locked<T>(id: string, action: () => Promise<T>): Promise<T> {
     const owner = random();
