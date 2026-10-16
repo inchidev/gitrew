@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Add anonymous read-only browsing of public GitHub owners and repositories at `/github/*`: one page per request with load-more, short-lived server cache, per-visitor budgets, and identical 404s for missing and private content. The public worker answers `/api/public/*` only. Requires a `PUBLIC_GITHUB_TOKEN` secret; see `docs/public-browsing.md`.
+
 ## 0.3.0 — 2026-10-16
 
 - Retire the old `gitrew.inchi.dev` migration hostname and remove it from deployment and legacy defaults. Retire the inchidev workspace deployments (`inchi.gitrew.com`, `afterprompt.gitrew.com`): remove their Workers, D1 databases, storage repositories, installation configs and installation record. The repository now ships the public `gitrew.com` site plus the customer deployment template.

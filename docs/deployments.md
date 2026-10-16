@@ -4,7 +4,7 @@ Gitrew uses one codebase with two deployment modes.
 
 | Address | Purpose | Infrastructure |
 | --- | --- | --- |
-| `gitrew.com` | Public landing and `/#install` installation links | Static assets; no GitHub credentials, D1 or workspace API |
+| `gitrew.com` | Public landing, `/#install` installation links and read-only public browsing at `/github/*` | Worker + D1 for cache/budgets; no GitHub credentials of visitors, no workspace API |
 | `example.com` or `gitrew.example.com` | Customer-owned workspace | Customer's Cloudflare account or celld server |
 
 The public `/#install` section links to Cloudflare and VPS instructions. After
