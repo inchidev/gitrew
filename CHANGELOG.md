@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Simplify the public landing, link directly to installation, remove its redundant `/create/` page, and replace the illustrative chat with real responsive product screenshots using sample content. Preserve setup on installed workspaces and document repository/App creation.
+
 - Resolve the UUID and nested esbuild dependency alerts with scoped, validated overrides; document the remaining unpatched braces/node-forge build dependencies and their assessed runtime boundary.
 
 - Require the `gitrew-` prefix for chat/vault repository names during setup, and recognize named workspace storage when listing workspaces, conversation sources and project repositories.

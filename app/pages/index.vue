@@ -137,6 +137,7 @@ useHead({
       <nav aria-label="Main navigation">
         <a href="#providers">Providers</a>
         <a href="#direction">The idea</a>
+        <a href="#install" class="install-link">Install yours</a>
         <UButton
           to="https://github.com/inchidev/gitrew"
           target="_blank"
@@ -156,8 +157,9 @@ useHead({
           "
         />
         <UButton
-          :to="portal ? '/create/' : '/login'"
-          :label="portal ? 'Create workspace' : 'Sign in'"
+          v-if="!portal"
+          to="/login"
+          label="Sign in"
           color="neutral"
           variant="outline"
         />
@@ -173,8 +175,8 @@ useHead({
           </p>
           <div class="hero-actions">
             <UButton
-              :to="portal ? '/create/' : '/login'"
-              :label="portal ? 'Create your workspace' : 'Open Gitrew'"
+              :to="portal ? '#install' : '/login'"
+              :label="portal ? 'Install yours' : 'Open Gitrew'"
               icon="i-octicon-arrow-right-16"
               trailing
               size="lg"
@@ -182,43 +184,40 @@ useHead({
               >Explore platforms <UIcon name="i-octicon-arrow-down-16"
             /></a>
           </div>
-          <p class="hero-note">
-            Channels, private groups, DMs and threads today.<br />Browse issues
-            and boards. Built around your team’s conversations.
-          </p>
         </div>
-        <div
-          class="crew-scene"
-          aria-label="Illustrative preview of a team conversation, not live messages"
-        >
-          <div class="scene-top">
-            <span><BrandMark /> inchidev</span
-            ><span class="scene-label">Illustrative preview</span>
-          </div>
-          <div class="scene-channel">
-            <UIcon name="i-octicon-hash-16" /><strong>building</strong
-            ><span>The people behind the repos</span>
-          </div>
-          <div class="scene-message">
-            <span class="scene-person">You</span>
-            <p>Can we test Gitrew on celld?</p>
-            <span class="scene-time">A conversation starts here</span>
-          </div>
-          <div class="scene-thread">
-            <UIcon name="i-octicon-comment-discussion-16" />
-            <div>
-              <strong>Yes — first, prove the local install.</strong>
-              <p>
-                Check D1, setup and restart. Share the results in
-                inchidev/gitrew.
-              </p>
-            </div>
-          </div>
-          <NuxtLink :to="portal ? '/create/' : '/login'" class="scene-composer"
-            >{{ portal ? "Make room for your crew" : "Join your crew" }}
-            <UIcon name="i-octicon-arrow-right-16"
-          /></NuxtLink>
-        </div>
+        <figure class="product-preview">
+          <a
+            :href="`/images/gitrew-chat-${colorMode.value === 'dark' ? 'dark' : 'light'}.webp`"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Open full Gitrew screenshot"
+          >
+            <picture>
+              <source
+                media="(max-width: 760px)"
+                :srcset="`/images/gitrew-chat-${colorMode.value === 'dark' ? 'dark' : 'light'}-mobile.webp`"
+                width="780"
+                height="1320"
+              />
+              <img
+                :src="`/images/gitrew-chat-${colorMode.value === 'dark' ? 'dark' : 'light'}.webp`"
+                alt="Gitrew channel with a sample team conversation, channels sidebar and message composer"
+                width="1800"
+                height="1360"
+                fetchpriority="high"
+              />
+            </picture>
+          </a>
+          <figcaption>
+            Gitrew with sample conversations.
+            <a
+              :href="`/images/gitrew-chat-${colorMode.value === 'dark' ? 'dark' : 'light'}.webp`"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Open full screenshot <UIcon name="i-octicon-link-external-16"
+            /></a>
+          </figcaption>
+        </figure>
       </section>
 
       <section
@@ -231,10 +230,6 @@ useHead({
             <p class="section-kicker">Platforms & our radar</p>
             <h2 id="providers-title">GitHub today. More to explore.</h2>
           </div>
-          <p>
-            Select a platform to see what works, what waits and what we’re
-            watching.
-          </p>
         </div>
         <div
           class="provider-row"
@@ -277,8 +272,8 @@ useHead({
                 </p>
                 <NuxtLink
                   v-if="active.id === 'github'"
-                  :to="portal ? '/create/' : '/login'"
-                  >{{ portal ? "Set up with GitHub" : "Continue with GitHub" }}
+                  :to="portal ? '#install' : '/login'"
+                  >{{ portal ? "Install yours" : "Continue with GitHub" }}
                   <UIcon name="i-octicon-arrow-right-16" /></NuxtLink
                 ><a
                   v-else
@@ -304,10 +299,6 @@ useHead({
             <p class="section-kicker">The idea</p>
             <h2 id="direction-title">A place to work together every day.</h2>
           </div>
-          <p>
-            We’re finishing the chat experience first: <br />messages, presence,
-            notifications and huddles.
-          </p>
         </div>
         <ol class="workflow">
           <li v-for="stage in stages" :key="stage.title">
@@ -323,31 +314,25 @@ useHead({
         </p>
       </section>
 
-      <section class="ownership-section" aria-labelledby="ownership-title">
+      <section
+        id="install"
+        class="ownership-section"
+        aria-labelledby="ownership-title"
+      >
         <div>
-          <p class="section-kicker">Make room for your crew</p>
+          <p class="section-kicker">Install</p>
           <h2 id="ownership-title">Your crew. Your address.</h2>
           <p>
-            Start at gitrew.com, then make a home for your team at example.com
-            or gitrew.example.com. Each workspace runs its own Gitrew on
-            Cloudflare or a server with celld, with its own GitHub App and
-            conversation repositories.
-          </p>
-          <p>
-            Your team signs in at your workspace address. Gitrew.com helps you
-            get started; your conversations and credentials belong to your
-            installation.
+            Run Gitrew on your domain with Cloudflare or celld. Your team signs
+            in with GitHub.
           </p>
           <p class="ownership-note">
-            Gitrew is free and MIT licensed. Hosting and optional voice services
-            are billed by the services you choose.
+            Free and MIT licensed. You pay your hosting and optional voice
+            provider.
           </p>
         </div>
         <div class="ownership-actions">
-          <DeployButtons /><NuxtLink to="/create/"
-            >Set up a workspace
-            <UIcon name="i-octicon-arrow-right-16" /></NuxtLink
-          ><a
+          <DeployButtons /><a
             href="https://github.com/inchidev/gitrew/blob/main/docs/README.md"
             target="_blank"
             rel="noopener noreferrer"
@@ -404,11 +389,12 @@ a {
 .site-header nav > a:not(.inline-flex) {
   color: var(--ui-text-muted);
   font-size: 14px;
+  white-space: nowrap;
 }
 .hero {
   display: grid;
-  grid-template-columns: 1fr 1.05fr;
-  gap: 70px;
+  grid-template-columns: 0.85fr 1.15fr;
+  gap: 48px;
   align-items: center;
   padding: 82px 0 84px;
 }
@@ -446,129 +432,37 @@ h1 {
   align-items: center;
   font-size: 14px;
 }
-.hero-note {
-  color: var(--ui-text-muted);
-  font-size: 14px;
-  line-height: 1.75;
-  margin-top: 20px;
+.product-preview {
+  min-width: 0;
 }
-.crew-scene {
+.product-preview > a {
+  display: block;
+  overflow: hidden;
   border: 1px solid var(--ui-border);
   border-radius: 12px;
-  overflow: hidden;
-  background: var(--ui-bg);
   box-shadow: 8px 8px 0 var(--ui-bg-muted);
+  cursor: zoom-in;
 }
-.scene-top {
-  min-height: 58px;
-  padding: 14px 22px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  border-bottom: 1px solid var(--ui-border);
-  background: var(--ui-bg-muted);
+.product-preview a:focus-visible {
+  outline: 2px solid var(--ui-primary);
+  outline-offset: 5px;
 }
-.scene-top > span:first-child {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  font-weight: 600;
-  font-size: 16px;
-}
-.scene-top .brand-mark {
-  width: 21px;
-  height: 21px;
-}
-.scene-label {
-  color: var(--ui-text-muted);
-  font-size: 12px;
-}
-.scene-channel {
-  padding: 21px 24px 14px;
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  flex-wrap: wrap;
-}
-.scene-channel > span:last-child {
-  flex-basis: 100%;
-  margin-left: 25px;
-  font-size: 12px;
-  color: var(--ui-text-muted);
-}
-.scene-message {
-  margin: 8px 24px 0;
-  padding: 18px 0;
-}
-.scene-person {
-  font-weight: 650;
-}
-.scene-message p {
-  font-size: 16px;
-  line-height: 1.65;
-  margin: 5px 0;
-}
-.scene-time {
-  color: var(--ui-text-muted);
-  font-size: 12px;
-}
-.scene-thread {
-  margin: 0 24px 22px;
-  padding: 14px 0 14px 15px;
-  border-left: 2px solid var(--ui-border-accented);
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-}
-.scene-thread > span {
-  margin-top: 3px;
-  flex-shrink: 0;
-}
-.scene-thread strong {
-  font-size: 14px;
-}
-.scene-thread p {
-  color: var(--ui-text-muted);
-  font-size: 14px;
-  line-height: 1.7;
-  margin-top: 4px;
-}
-.scene-future {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border-top: 1px dashed var(--ui-border);
-  padding: 19px 24px;
-  background: var(--ui-bg-muted);
-}
-.scene-future > span:first-child {
-  font-size: 21px;
-  flex-shrink: 0;
-}
-.scene-future > div {
-  flex: 1;
-}
-.scene-future > div > span {
+.product-preview img {
   display: block;
-  color: var(--ui-text-muted);
-  font-size: 12px;
-  margin-bottom: 4px;
+  width: 100%;
+  height: auto;
 }
-.scene-future strong {
-  display: block;
-  font-size: 12px;
-  line-height: 1.7;
-}
-.scene-composer {
-  display: flex;
-  justify-content: space-between;
-  margin: 18px 24px;
-  padding: 12px 14px;
-  border: 1px solid var(--ui-border);
-  border-radius: 6px;
+.product-preview figcaption {
+  margin-top: 16px;
   color: var(--ui-text-muted);
   font-size: 14px;
+  line-height: 1.6;
+}
+.product-preview figcaption a {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
 }
 section[id] {
   scroll-margin-top: 28px;
@@ -810,7 +704,17 @@ h3 {
 }
 @media (max-width: 1050px) {
   .hero {
-    gap: 35px;
+    grid-template-columns: 1fr;
+    gap: 28px;
+    padding: 48px 0;
+  }
+  .hero-description {
+    max-width: 560px;
+  }
+  .product-preview {
+    width: 100%;
+    max-width: 820px;
+    justify-self: center;
   }
   .provider-button {
     gap: 8px;
@@ -861,27 +765,13 @@ h3 {
   .hero-actions {
     gap: 18px;
   }
-  .hero-note {
-    margin-top: 17px;
+  .site-header nav > a.install-link {
+    display: inline-flex;
   }
-  .scene-top {
-    padding: 12px 18px;
-  }
-  .scene-channel {
-    padding: 17px 18px 12px;
-  }
-  .scene-message {
-    margin: 0 18px;
-    padding: 12px 0;
-  }
-  .scene-thread {
-    margin: 0 18px 17px;
-  }
-  .scene-future {
-    padding: 16px 18px;
-  }
-  .scene-composer {
-    margin: 15px 18px;
+  .product-preview {
+    max-width: 390px;
+    justify-self: center;
+    width: 100%;
   }
   .section-heading {
     align-items: flex-start;
@@ -970,6 +860,9 @@ h3 {
   }
 }
 @media (max-width: 480px) {
+  .site-header nav > a[aria-label="Gitrew source code"] {
+    display: none;
+  }
   .hero {
     padding-top: 32px;
     gap: 24px;

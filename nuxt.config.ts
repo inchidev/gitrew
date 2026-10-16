@@ -95,16 +95,14 @@ export default defineNuxtConfig({
   hooks: {
     "pages:extend"(pages) {
       if (portal) {
-        const publicPages = pages.filter((page) =>
-          ["/", "/create"].includes(page.path),
-        );
+        const publicPages = pages.filter((page) => page.path === "/");
         pages.splice(0, pages.length, ...publicPages);
       }
     },
   },
   nitro: {
     prerender: {
-      routes: portal ? ["/", "/create/"] : ["/create/", "/login"],
+      routes: portal ? ["/"] : ["/create/", "/login"],
       ...(portal ? { crawlLinks: false } : {}),
     },
   },

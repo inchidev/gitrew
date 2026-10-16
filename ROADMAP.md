@@ -9,9 +9,11 @@ Status reconciled on 2026-10-16. The priority is reliable everyday GitHub team c
 - Manifest, canonical/maskable/Apple icons, safe areas, theme colors and mobile channel swipes. Basic iPhone installation/launch and automated Chromium/WebKit checks are verified; full physical-device acceptance remains open.
 - Required `gitrew-` names for new chat/vault storage and recognition of named storage in workspace, channel and project selectors ([PR #25](https://github.com/inchidev/gitrew/pull/25)). Existing production repository references already match their private prefixed repositories.
 
+- A shorter landing with direct installation links and real light/dark desktop/mobile product screenshots using sample conversations ([#29](https://github.com/inchidev/gitrew/issues/29)). The public `/create/` guide is removed; installed workspace setup is preserved.
+
 All three Cloudflare deployments were verified after the prefix merge: successful builds of the same main commit, healthy workspace endpoints, anonymous sessions rejected, public-site API paths absent and the old inchi domain redirect intact. Feature configuration does not establish two-person audio, private delivery or background push. See the dated [installation record](docs/inchidev-install.md).
 
-The latest pinned source release is [v0.2.0](https://github.com/inchidev/gitrew/releases/tag/v0.2.0); the prefix and dependency fixes are newer on main and are listed in `CHANGELOG.md` under Unreleased.
+The latest pinned source release is [v0.2.0](https://github.com/inchidev/gitrew/releases/tag/v0.2.0); the prefix, dependency and landing changes are newer on main and are listed in `CHANGELOG.md` under Unreleased.
 
 ## Remaining work
 
@@ -23,7 +25,6 @@ The latest pinned source release is [v0.2.0](https://github.com/inchidev/gitrew/
 | Remaining upstream dependency alerts | UUID/esbuild fixes and exposure assessment are documented; update braces/node-forge when patched upstream releases are available and recheck GitHub alerts | [#26](https://github.com/inchidev/gitrew/issues/26) · [Assessment](docs/dependency-security.md) |
 | Installation recovery and upgrades | Isolated backup/restore drill covering secrets, D1/DO and GitHub conversation state, with tested upgrade/rollback limits | [#27](https://github.com/inchidev/gitrew/issues/27) |
 | Public celld/Coolify installation | Supported production runtime/durability, final HTTPS OAuth, member/realtime checks, persistent restart and restore/upgrade proof | [#28](https://github.com/inchidev/gitrew/issues/28) |
-| Real landing screenshot | Representative shipped UI with consented/sample content, no private data, readable responsive asset | [#29](https://github.com/inchidev/gitrew/issues/29) |
 
 Cloudflare is deployed. celld remains a local compatibility path until its public-hosting acceptance is completed; the current dev-mode Compose example is not production proof. Keep installation, user, architecture, notifications, media, backup/recovery and upgrade documentation together in [docs](docs/README.md). Vercel support is removed.
 
