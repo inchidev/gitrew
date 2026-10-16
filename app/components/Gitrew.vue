@@ -40,7 +40,7 @@ const repository = computed({
         : "") ||
       savedRepositories.value[login.value] ||
       runtime.public.defaultRepository ||
-      "inchidev/gitrew";
+      "";
     const owner = selected.split("/")[0]!;
     const mailboxOwner = auth.activeMailbox.value?.repository.split("/")[0];
     // Managed workspaces use a canonical private chat repository even after a legacy saved preference.
@@ -107,7 +107,7 @@ const sources = computed(() => {
     )
     .map((r) => r.full_name);
   return [...new Set([...all, repository.value])].filter(
-    (value) => !isManagedVault(value),
+    (value) => value.includes("/") && !isManagedVault(value),
   );
 });
 const vaultMailbox = computed(() =>

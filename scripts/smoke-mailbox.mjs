@@ -7,7 +7,7 @@ import {
   requestBody,
   unseal,
 } from "../shared/mailbox.ts";
-const repository = process.argv[2] || "inchidev/gitrew-auth";
+const repository = process.argv[2] || "";
 const kind = process.argv[3] || "probe";
 const creator = process.argv[4] === "creator";
 if (process.argv[4] && !creator)
@@ -16,7 +16,9 @@ if (
   !["probe", "device"].includes(kind) ||
   !/^[\w-]+\/gitrew-auth$/.test(repository)
 )
-  throw new Error("Invalid smoke test arguments.");
+  throw new Error(
+    "Pass a mailbox repository: node scripts/smoke-mailbox.mjs your-org/gitrew-auth [probe|device] [creator].",
+  );
 const gh = (args) => execFileSync("gh", args, { encoding: "utf8" });
 const config = JSON.parse(
   Buffer.from(

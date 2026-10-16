@@ -87,7 +87,6 @@ export default defineNuxtConfig({
       siteMode: portal ? "portal" : "workspace",
       backendEnabled: process.env.NUXT_PUBLIC_BACKEND_ENABLED === "true",
       oauthBrokerUrl: "",
-      creatorRepository: "inchidev/gitrew-auth",
       defaultRepository: clientConfig?.defaultRepository || "",
       authRepository: clientConfig?.authRepository || "",
     },

@@ -2,7 +2,6 @@
 import {
   appReturnTo,
   legacyWorkspacePath,
-  workspacePath,
 } from "../../shared/routes";
 const auth = useGitHubAuth();
 const route = useRoute();
@@ -32,7 +31,7 @@ const destination = computed(() => {
       )!
     : auth.backend
       ? "/create/"
-      : workspacePath("inchidev") + "?repo=gitrew";
+      : "";
 });
 watch(
   [auth.busy, auth.viewer, auth.token],
@@ -50,7 +49,7 @@ watch(
     if (!busy && viewer && token) {
       const target = destination.value;
       sessionStorage.removeItem("gitrew:return-to:v1");
-      void navigateTo(target, { replace: true });
+      if (target) void navigateTo(target, { replace: true });
     }
   },
   { immediate: true },

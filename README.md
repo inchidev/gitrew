@@ -23,8 +23,6 @@ npm run check
 
 **gitrew.com is the public product site:** a landing page with installation links at `/#install`. Teams use Gitrew at their own workspace address, such as `example.com` or `gitrew.example.com`. Each deployment includes the same frontend and backend, with its own GitHub App, D1, Durable Object and conversation repositories. There is no central Gitrew account or hosted workspace provisioning.
 
-Our workspace addresses are `inchi.gitrew.com` and `afterprompt.gitrew.com`. These independent installations share the inchidev organization and restrict entry using the `inchi` and `afterprompt` GitHub teams. Organization owners retain administrative access. See [deployment boundaries](docs/deployments.md).
-
 - [Cloudflare Worker + D1](docs/cloudflare-backend.md)
 - [VPS / celld Docker installation](docs/vps.md)
 
@@ -36,4 +34,4 @@ Gitrew is MIT licensed. Hosting, GitHub plans and AI usage are paid to your chos
 
 Nuxt 4 + Vue + Nuxt UI frontend; a Workers-compatible backend with encrypted sessions and configuration in D1 (Cloudflare/celld) and Durable Object live coordination. Messages stay on GitHub. The public product site and organization-owned workspace installations deploy independently from the same repository.
 
-[Architecture](docs/architecture.md) · [inchidev installation verification](docs/inchidev-install.md) · [Legacy client-only setup](docs/self-hosting.md)
+[Architecture](docs/architecture.md) · [Legacy client-only setup](docs/self-hosting.md)

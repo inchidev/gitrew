@@ -138,7 +138,7 @@ This is not E2EE. GitHub, workspace administrators and the backend operator can
 read private content. A frontend operator can alter the JavaScript users receive;
 keeping tokens server-side does not remove that trust. Independent deployment
 moves both frontend/backend operation and App ownership to the organization.
-An optionally shared deployment remains operated by its maintainers. The maintained inchidev installation is closed to active organization members. Other GitHub Apps may
+An optionally shared deployment remains operated by its maintainers. Other GitHub Apps may
 have independent repository access; organization owners must manage those grants.
 
 ## Client behavior and validation

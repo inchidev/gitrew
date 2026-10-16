@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 — 2026-10-16
 
-- Retire the old `gitrew.inchi.dev` migration hostname and remove it from deployment and legacy defaults. The application remains at `inchi.gitrew.com`.
+- Retire the old `gitrew.inchi.dev` migration hostname and remove it from deployment and legacy defaults. Retire the inchidev workspace deployments (`inchi.gitrew.com`, `afterprompt.gitrew.com`): remove their Workers, D1 databases, storage repositories, installation configs and installation record. The repository now ships the public `gitrew.com` site plus the customer deployment template.
 
 - Open installed workspaces directly at sign-in/chat, preserve protected destinations, and explain organization/team/chat/private-membership access with browser-bound diagnostics that do not authorize denied users.
 - Remove the workspace-creation rail, member hosting prompts, duplicated toolbar name and idle presence counter; put appearance/sign-out in the account menu. Add administrator-editable workspace display names with Inchi/AfterPrompt defaults, without changing GitHub or storage identifiers.
@@ -12,6 +12,8 @@
 - Resolve the UUID and nested esbuild dependency alerts with scoped, validated overrides; document the remaining unpatched braces/node-forge build dependencies and their assessed runtime boundary.
 
 - Require the `gitrew-` prefix for chat/vault repository names during setup, and recognize named workspace storage when listing workspaces, conversation sources and project repositories.
+
+- Remove hardcoded inchidev/Inchi/AfterPrompt references from client fallbacks, runtime config and maintainer scripts. Deployments resolve their configured workspace or stay on entry; installer scripts take the organization as an argument.
 
 ## 0.2.0 — 2026-10-15
 

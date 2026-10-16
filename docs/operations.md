@@ -19,11 +19,10 @@ owner reviews the upstream changes, imports them into a PR in their source
 repository, validates the build and backs up state before merging. Preserve the
 installation's generated Cloudflare resource IDs, domain, bindings and secrets.
 Workers Builds then deploys the production branch. A code redeploy reuses the
-existing GitHub App and conversation repositories. We update the three sites
-we operate; customers control updates to their own installations. There is no
+existing GitHub App and conversation repositories. Customers control updates to their own installations. There is no
 automatic upstream updater today.
 
-Review the change and its migrations, back up state, then deploy the same installation with the same origin and secrets. Cloudflare uses `npm run deploy`; the maintained inchidev copy uses `wrangler.inchidev.jsonc`. celld uses `docker --context colima compose up --build -d` for the local example; on your VPS use its local Docker daemon. Do not run `docker compose down -v` during upgrades.
+Review the change and its migrations, back up state, then deploy the same installation with the same origin and secrets. Cloudflare uses `npm run deploy` with the root `wrangler.jsonc`. celld uses `docker --context colima compose up --build -d` for the local example; on your VPS use its local Docker daemon. Do not run `docker compose down -v` during upgrades.
 
 This version adds `LiveHub` with a SQLite DO migration and encrypted push subscription tables created on use. It does not move conversation history from GitHub. Leave active huddles before changing provider/account credentials. Durable Object rollback/deletion needs its own provider recovery plan; a code rollback does not undo state migrations.
 

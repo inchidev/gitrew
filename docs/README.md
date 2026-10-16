@@ -4,7 +4,7 @@ Gitrew is a GitHub organization workspace for channels, threads, private groups 
 
 ## Start here
 
-- [Product site and workspaces](deployments.md): gitrew.com, our workspace subdomains and customer-owned domains.
+- [Product site and workspaces](deployments.md): gitrew.com and customer-owned workspace domains.
 - [Product screenshots](product-screenshots.md): sample content, responsive assets and local capture instructions.
 
 - [User guide](usage.md): sign in, conversations, threads, notifications, huddles and issues.
@@ -21,7 +21,6 @@ Gitrew is a GitHub organization workspace for channels, threads, private groups 
 - [Dependency security status](dependency-security.md): scoped overrides, validation and remaining upstream blockers.
 - [Architecture and security](architecture.md).
 - [Realtime contract](realtime.md): event flow, authorization and fallback behavior.
-- [inchidev installation record](inchidev-install.md): dated live verification, distinct from local tests.
 - [Roadmap](../ROADMAP.md).
 
 Cloudflare is deployed; celld is the alternative runtime target with a locally verified compatibility example. Public production celld/Coolify hosting remains [open work](https://github.com/inchidev/gitrew/issues/28). Vercel support was removed because this version relies on Durable Objects. The old static/Actions installation is retired. See the [roadmap](../ROADMAP.md) for shipped behavior and the remaining acceptance work.
