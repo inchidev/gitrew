@@ -3,7 +3,7 @@
 Gitrew releases pin the reviewed source for independent installations. Download the source archive and `SHA256SUMS` from the [latest GitHub release](https://github.com/inchidev/gitrew/releases/latest), or clone the desired version:
 
 ```sh
-git clone --branch v0.5.0 --depth 1 https://github.com/inchidev/gitrew.git
+git clone --branch v0.6.0 --depth 1 https://github.com/inchidev/gitrew.git
 cd gitrew
 npm ci
 ```

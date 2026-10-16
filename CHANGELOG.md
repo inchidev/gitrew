@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.6.0 — 2026-10-16
+
+- Fill the viewport on public repository pages: the anonymous workspace takes the full page under a slim bar with brand, breadcrumb, stars, Open on GitHub and an organization/repository search with the same validation as the public index.
+- Showcase guest communities on the landing: no-sign-in cards for nuxt/nuxt, vuejs/core and nuxt/ui open their read-only workspaces; navigation gains a Communities anchor.
+
 ## 0.5.0 — 2026-10-17
 
 - Render the real workspace interface for anonymous readers at `/github/:owner/:repo`: discussion sidebar, message feed, threads and search through the shared Gitrew component, read-only with a guest sign-in call to action. No session, token or CSRF exists in the browser; the public API surface stays GET-only. The disabled-discussions notice explains the metadata cache and offers a retry.
