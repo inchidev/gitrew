@@ -145,11 +145,12 @@ test("repository space reads discussions and threads without signing in", async 
   });
   await publicRoutes(page);
   await page.goto("/github/acme/widget");
-  await expect(page.getByText("Welcome", { exact: true })).toHaveCount(0);
-  await page.getByRole("button", { name: /general/ }).click();
   await expect(
-    page.getByText("First message", { exact: true }),
+    page.getByRole("button", { name: /general/ }).first(),
   ).toBeVisible();
+  await expect(page.getByText("Welcome", { exact: true })).toBeVisible();
+  await expect(page.getByText("First message", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "1 reply" }).click();
   await expect(page.getByText("A reply", { exact: true })).toBeVisible();
   expect(
     apiRequests.every((url) => url.includes("/api/public/github/")),

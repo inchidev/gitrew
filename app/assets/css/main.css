@@ -1298,3 +1298,107 @@ kbd {
   padding: 8px 0 8px 12px;
   border-left: 2px solid var(--ui-border);
 }
+.guest-workspace {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 0;
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 60vh;
+}
+.guest-workspace:has(.thread-panel) {
+  grid-template-columns: 260px minmax(0, 1fr) 320px;
+}
+.guest-workspace .channel-sidebar {
+  border-right: 1px solid var(--ui-border);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  background: var(--ui-bg-muted);
+}
+.guest-workspace .channel-heading {
+  margin: 4px 4px 0;
+}
+.guest-workspace .channels {
+  overflow: auto;
+  min-height: 0;
+}
+.guest-workspace .channel-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.guest-workspace .channel-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.guest-workspace .message-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px 20px;
+  min-width: 0;
+}
+.opening-post {
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: grid;
+  gap: 8px;
+}
+.opening-post h2 {
+  font-size: 18px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.opening-post p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+.guest-workspace .thread-panel {
+  border-left: 1px solid var(--ui-border);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  background: var(--ui-bg-muted);
+}
+.guest-workspace .thread-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.guest-workspace .thread-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: auto;
+  min-height: 0;
+}
+@media (max-width: 1000px) {
+  .guest-workspace,
+  .guest-workspace:has(.thread-panel) {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+  .guest-workspace .thread-panel {
+    grid-column: 1 / -1;
+    border-left: none;
+    border-top: 1px solid var(--ui-border);
+  }
+}
+@media (max-width: 700px) {
+  .guest-workspace,
+  .guest-workspace:has(.thread-panel) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .guest-workspace .channel-sidebar {
+    border-right: none;
+    border-bottom: 1px solid var(--ui-border);
+    max-height: 240px;
+  }
+}
