@@ -87,10 +87,10 @@ const server = createServer(async (req, res) => {
     name: "Gitrew Creator",
     description:
       "One-time Gitrew workspace installer. Revoke access after your own workspace App is configured.",
-    url: "https://gitrew.inchi.dev/",
+    url: "https://gitrew.com/",
     redirect_url: base + "/callback",
     hook_attributes: {
-      url: "https://gitrew.inchi.dev/unused-webhook",
+      url: "https://inchi.gitrew.com/unused-webhook",
       active: false,
     },
     public: true,

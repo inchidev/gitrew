@@ -71,15 +71,14 @@ and the [Cloudflare setup guide](cloudflare-backend.md).
 
 ## Our workspace rollout
 
-The inchidev workspace moves from `https://gitrew.inchi.dev` to
-`https://inchi.gitrew.com`, retaining its database, conversations and GitHub App.
-The maintained `wrangler.inchidev.jsonc` declares `APP_ORIGIN` for the new address
-and keeps the old domain as a frontend redirect. Update the GitHub App's homepage,
-OAuth callback, setup URL and webhook endpoint together with this override.
-Old-origin session cookies and installed PWAs do not transfer to a new origin:
-members sign in and install again; push subscriptions must be registered again.
-The redirect runs before static assets (`assets.run_worker_first: true`). API
-requests must use the configured origin; old cookies are not forwarded.
+The inchidev workspace uses `https://inchi.gitrew.com`, retaining its database,
+conversations and GitHub App from the domain migration. The old
+`gitrew.inchi.dev` hostname was retired on 2026-10-16: its Worker custom domain
+and managed DNS record are removed, and no redirect is maintained.
+`wrangler.inchidev.jsonc` declares only the current hostname and its `APP_ORIGIN`.
+The App's homepage, OAuth callback, setup and webhook use that same origin.
+Old-origin session cookies and installed PWAs do not transfer: members sign in
+and install again; push subscriptions must be registered again.
 
 AfterPrompt uses `gitrew-afterprompt-chat` and `gitrew-afterprompt-vault`, with App access
 selected for the relevant AfterPrompt repositories. The configured GitHub Team

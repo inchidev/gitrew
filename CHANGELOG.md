@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Retire the old `gitrew.inchi.dev` migration hostname and remove it from deployment and legacy defaults. The application remains at `inchi.gitrew.com`.
+
 - Open installed workspaces directly at sign-in/chat, preserve protected destinations, and explain organization/team/chat/private-membership access with browser-bound diagnostics that do not authorize denied users.
 - Remove the workspace-creation rail, member hosting prompts, duplicated toolbar name and idle presence counter; put appearance/sign-out in the account menu. Add administrator-editable workspace display names with Inchi/AfterPrompt defaults, without changing GitHub or storage identifiers.
 

@@ -54,6 +54,16 @@ Owner OAuth and general-channel access were verified in Chrome on both new domai
 
 The AfterPrompt setup key and VAPID backup are ignored local files under `.gitrew-setup`, mode0600. Preserve each installation's own secrets and state during upgrades; do not copy the main installation's credentials into AfterPrompt.
 
+## Retired migration hostname — 2026-10-16
+
+The earlier migration redirect at `gitrew.inchi.dev` is retired. Its Cloudflare
+Worker custom domain and managed DNS record were removed; `inchi.gitrew.com`
+remains the Inchi application address. The deployment configuration and legacy
+defaults no longer declare the retired hostname. The inchi.dev website's Gitrew
+catalogue entry and its live links already use `https://gitrew.com`; no website
+change was needed. Earlier dated verification below records the old redirect
+as it existed at that time.
+
 ## Required storage prefix and production verification — 2026-10-16
 
 [PR #25](https://github.com/inchidev/gitrew/pull/25) merged as `5013e99247331752bc2dc318e5aeb3dce0b3efd2` after required CI passed. New chat/vault names must start with `gitrew-`; the shared setup/API schema rejects unprefixed names. Workspace and project selectors recognize named storage such as the AfterPrompt pair. This change is on main after v0.2.0, under Unreleased; the v0.2.0 source archive is unchanged.

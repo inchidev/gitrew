@@ -5,7 +5,6 @@
   "workers_dev": false,
   "routes": [
     { "pattern": "inchi.gitrew.com", "custom_domain": true },
-    { "pattern": "gitrew.inchi.dev", "custom_domain": true },
   ],
   "preview_urls": false,
   "main": "backend/cloudflare.ts",
