@@ -33,11 +33,14 @@ const repos = useQuery({
   staleTime: 30_000,
 });
 const visibleRepositories = computed(() =>
-  (repos.data.value || []).filter(
-    (repo) =>
-      !["gitrew-vault", "gitrew-auth"].includes(repo.full_name.split("/")[1]!) &&
-      (!props.publicOnly || !repo.private),
-  ),
+  (repos.data.value || []).filter((repo) => {
+    const name = repo.full_name.split("/")[1]!.toLowerCase();
+    const isManagedVault =
+      name === "gitrew-vault" ||
+      name === "gitrew-auth" ||
+      /^gitrew-(.*-)?(vault|auth)$/.test(name);
+    return !isManagedVault && (!props.publicOnly || !repo.private);
+  }),
 );
 const organizations = computed(() => [
   ...new Set(
@@ -50,6 +53,9 @@ function connectOrganization(owner: string) {
   );
   const primary =
     values.find((repo) => repo.full_name === `${owner}/gitrew-chat`) ||
+    values.find((repo) =>
+      /^gitrew-(.*-)?chat$/.test(repo.full_name.split("/")[1]!.toLowerCase()),
+    ) ||
     values.find((repo) => repo.has_discussions) ||
     values[0];
   if (primary) connect(primary.full_name);
@@ -150,9 +156,9 @@ function connect(value: string) {
           "
         />
         <p>
-          Create a workspace with organization-wide channels, one administrator-only
-          gitrew-vault for private channels and DMs, and your own sign-in
-          workflow.
+          Create a workspace with organization-wide channels, one
+          administrator-only gitrew-vault for private channels and DMs, and your
+          own sign-in workflow.
         </p>
         <div class="flex flex-wrap gap-2 mt-3">
           <UButton

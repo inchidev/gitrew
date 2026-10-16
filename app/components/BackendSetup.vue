@@ -227,7 +227,7 @@ async function create() {
         /></UFormField>
         <UFormField
           label="Chat repository"
-          description="A new private repository for organization-wide channels. Choose a different name if the default is already used."
+          description="A new private repository for organization-wide channels. Must start with gitrew-; choose a different name if the default is already used."
         >
           <UInput
             v-model="repositoryNames.repositoryName"
@@ -237,7 +237,7 @@ async function create() {
         </UFormField>
         <UFormField
           label="Private vault repository"
-          description="A different, new private repository for private channels and DMs. Names are fixed when setup begins."
+          description="A different, new private repository for private channels and DMs. Must start with gitrew-. Names are fixed when setup begins."
         >
           <UInput
             v-model="repositoryNames.vaultName"

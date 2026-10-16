@@ -17,8 +17,10 @@ does not implement a model runtime or Copilot integration.
 4. Enter your GitHub organization and deployment setup key, then review and create
    the preconfigured App on GitHub. Its keys return directly to your backend.
 5. Sign in, install your App in the organization, choose repository names, then
-   create the workspace. Defaults are `gitrew-chat` and `gitrew-vault`; a second
-   deployment in the same organization needs different, unused names.
+   create the workspace. Defaults are `gitrew-chat` and `gitrew-vault`; names
+   must start with `gitrew-` so Gitrew-managed storage is obvious. A second
+   deployment in the same organization needs different, unused names such as
+   `gitrew-afterprompt-chat` and `gitrew-afterprompt-vault`.
 6. Have teammates accept their GitHub organization invitations, then use
    **Workspace members** in the sidebar to add their usernames. Create private
    channels/DMs with selected participants and share `/w/YOUR_ORGANIZATION`.
@@ -49,7 +51,7 @@ exact permissions in GitHub. Install on selected repositories; repositories
 created by the App become accessible to it automatically.
 
 Workspace setup creates private `gitrew-chat` and private `gitrew-vault` for all
-private channels and DMs. Organization base repository permission must be **None**;
+private channels and DMs. Custom names must also start with `gitrew-`. Organization base repository permission must be **None**;
 Gitrew checks this and does not change access to unrelated repositories. All vault
 repository access, including inherited access, must belong to declared admins.
 The backend verifies conversation ACLs and current GitHub organization roles on

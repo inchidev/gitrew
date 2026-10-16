@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Require the `gitrew-` prefix for chat/vault repository names during setup, and recognize named workspace storage when listing workspaces, conversation sources and project repositories.
+
 ## 0.2.0 — 2026-10-15
 
 - Restrict workspace entry and authenticated API, realtime, huddle and push operations by GitHub Team; preserve organization-owner administration and team-based repository grants.

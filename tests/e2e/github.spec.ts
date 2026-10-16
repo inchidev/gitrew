@@ -141,3 +141,85 @@ test("switching repositories isolates messages and keeps drafts in their origina
     .click();
   await expect(composer).toHaveValue("Draft for the public workspace");
 });
+
+test("prefixed storage stays out of project repositories and vaults stay out of workspaces and channel reads", async ({
+  page,
+}) => {
+  await session(page);
+  await githubRoutes(page);
+  const names = [
+    "gitrew",
+    "afterprompt",
+    "gitrew-afterprompt-chat",
+    "gitrew-afterprompt-vault",
+    "gitrew-afterprompt-auth",
+  ];
+  await page.route(
+    "https://api.github.com/user/installations/1/repositories**",
+    (route) =>
+      route.fulfill({
+        json: {
+          total_count: names.length,
+          repositories: names.map((name, id) => ({
+            id: id + 1,
+            full_name: `inchidev/${name}`,
+            private: name !== "gitrew",
+            has_discussions: true,
+          })),
+        },
+      }),
+  );
+  await page.route("https://api.github.com/repos/*/*/issues**", (route) =>
+    route.fulfill({ json: [] }),
+  );
+  await page.route("https://api.github.com/graphql", (route) => {
+    if (route.request().postDataJSON().query.includes("query Projects"))
+      return route.fulfill({
+        json: { data: { organization: { projectsV2: { nodes: [] } } } },
+      });
+    return route.fallback();
+  });
+  const channelReads: string[] = [];
+  page.on("request", (request) => {
+    if (request.url() !== "https://api.github.com/graphql") return;
+    const body = request.postDataJSON();
+    if (body.query.includes("query Channels"))
+      channelReads.push(body.variables.name);
+  });
+  await page.goto("/login");
+  await expect(
+    page.getByText("A conversation from GitHub", { exact: true }),
+  ).toBeVisible();
+  await page.locator(".workspace-switch").click();
+  const workspaces = page.getByRole("dialog", { name: "Your workspaces" });
+  await expect(
+    workspaces.getByRole("button", {
+      name: "inchidev/gitrew-afterprompt-chat",
+      exact: true,
+    }),
+  ).toBeVisible();
+  for (const name of ["gitrew-afterprompt-vault", "gitrew-afterprompt-auth"])
+    await expect(
+      workspaces.getByRole("button", { name: `inchidev/${name}`, exact: true }),
+    ).toHaveCount(0);
+  await workspaces
+    .getByRole("button", { name: "Organization: inchidev", exact: true })
+    .click();
+  await expect(page).toHaveURL(/repo=gitrew-afterprompt-chat/);
+  await expect(
+    page.getByText("Only the private workspace", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Conversation options" }).click();
+  await page.getByRole("menuitem", { name: "Projects and issues" }).click();
+  const projects = page.getByRole("dialog", { name: "Projects and issues" });
+  await projects.getByRole("combobox", { name: "Project repository" }).click();
+  await expect(page.getByRole("option")).toHaveCount(2);
+  await expect(
+    page.getByRole("option", { name: "inchidev/gitrew", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("option", { name: "inchidev/afterprompt", exact: true }),
+  ).toBeVisible();
+  expect(channelReads).toContain("gitrew-afterprompt-chat");
+  expect(channelReads.some((name) => /-(vault|auth)$/.test(name))).toBe(false);
+});

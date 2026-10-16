@@ -14,6 +14,10 @@ export const repositoryNameSchema = z
       ![".", ".."].includes(value) && !value.toLowerCase().endsWith(".git"),
     "Choose a repository name without a .git suffix.",
   )
+  .refine(
+    (value) => value.toLowerCase().startsWith("gitrew-"),
+    "Start repository names with gitrew- so Gitrew-managed storage is obvious.",
+  )
   .transform((value) => value.toLowerCase());
 
 export const workspaceRepositoryNamesSchema = z

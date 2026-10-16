@@ -29,7 +29,9 @@ Use the standard Cloudflare or celld guide. Frontend and API deploy together;
 there is no separate frontend project to maintain. Reuse the source, not an
 existing installation's configuration, setup key, sessions or GitHub App.
 Choose the final domain before registration. Distinct deployments in one GitHub
-organization need distinct chat/vault repository names.
+organization need distinct chat/vault repository names. Every workspace
+repository name must start with `gitrew-` so Gitrew-managed storage is obvious
+at a glance (for example `gitrew-afterprompt-chat`).
 
 ## Our workspace rollout
 
@@ -43,7 +45,7 @@ members sign in and install again; push subscriptions must be registered again.
 The redirect runs before static assets (`assets.run_worker_first: true`). API
 requests must use the configured origin; old cookies are not forwarded.
 
-AfterPrompt will use `afterprompt-chat` and `afterprompt-vault`, with App access
+AfterPrompt uses `gitrew-afterprompt-chat` and `gitrew-afterprompt-vault`, with App access
 selected for the relevant AfterPrompt repositories. The intended GitHub Team
 slug is `afterprompt`. The maintained `wrangler.afterprompt.jsonc` deploys its
 independent resources, with a distinct `APP_NAME` for App registration.
