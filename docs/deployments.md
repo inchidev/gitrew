@@ -46,7 +46,7 @@ The redirect runs before static assets (`assets.run_worker_first: true`). API
 requests must use the configured origin; old cookies are not forwarded.
 
 AfterPrompt uses `gitrew-afterprompt-chat` and `gitrew-afterprompt-vault`, with App access
-selected for the relevant AfterPrompt repositories. The intended GitHub Team
+selected for the relevant AfterPrompt repositories. The configured GitHub Team
 slug is `afterprompt`. The maintained `wrangler.afterprompt.jsonc` deploys its
 independent resources, with a distinct `APP_NAME` for App registration.
 

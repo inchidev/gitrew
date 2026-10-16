@@ -53,3 +53,23 @@ Organization owners retain administration. Ordinary members must belong to the c
 Owner OAuth and general-channel access were verified in Chrome on both new domains. AfterPrompt showed one online participant via WebSocket and completed a real muted RealtimeKit join/disconnect without microphone permission. The provider confirmed zero participants after disconnect, with recording, streaming and transcription disabled. Its dedicated token expires on October 15, 2027 and is stored only as an encrypted Worker secret. These checks do not establish two-person audio/private-chat delivery, physical-device PWA behavior or background push delivery.
 
 The AfterPrompt setup key and VAPID backup are ignored local files under `.gitrew-setup`, mode0600. Preserve each installation's own secrets and state during upgrades; do not copy the main installation's credentials into AfterPrompt.
+
+## Required storage prefix and production verification — 2026-10-16
+
+[PR #25](https://github.com/inchidev/gitrew/pull/25) merged as `5013e99247331752bc2dc318e5aeb3dce0b3efd2` after required CI passed. New chat/vault names must start with `gitrew-`; the shared setup/API schema rejects unprefixed names. Workspace and project selectors recognize named storage such as the AfterPrompt pair. This change is on main after v0.2.0, under Unreleased; the v0.2.0 source archive is unchanged.
+
+Cloudflare's active-version-to-build records confirmed that all three sites deployed this exact commit at 100% traffic:
+
+| Site / Worker | Active version | Successful build |
+| --- | --- | --- |
+| `inchi.gitrew.com` / `gitrew` | `c0996e09-31e9-436c-962d-654a85623e52` | `55e8cc4b-7c0d-49cd-a2b4-4bfce45f27d4` |
+| `gitrew.com` / `gitrew-com` | `8a26023d-d62c-4826-bc8f-620df6ddbfc1` | `cfc41238-38cd-437f-9337-1f0fa97818d4` |
+| `afterprompt.gitrew.com` / `gitrew-afterprompt` | `c025fb2e-86d4-42c3-a5e7-fde6d87cff90` | `1fb2ed7c-d25f-40e7-a199-9a95cb15dc6d` |
+
+Twenty-five live HTTP checks passed: public landing/create pages return 200; public workspace/API/login/PWA paths return 404; both workspaces serve the landing, create, canonical login, health, manifest and service worker; public config reports configured realtime, RealtimeKit and push; anonymous session endpoints return 401; the old `gitrew.inchi.dev` root returns 308 to `inchi.gitrew.com`.
+
+Read-only Cloudflare checks confirmed `APP_ORIGIN` and `ALLOWED_TEAM` remain correct for each workspace. Read-only D1 projections show both workspaces ready and referencing the exact private prefixed repositories listed above. No stored workspace or conversation migration was required.
+
+Local validation passed 59 unit/runtime tests, typechecking, 16 frontend Chromium tests, eight backend browser tests, one portal boundary test and five mobile WebKit tests. Added browser coverage verifies rejection of unprefixed names before submission, exclusion of named vault/auth repositories from workspace/channel discovery, selection of the named chat repository and exclusion of storage from project repository choices. CI also passed Worker and portal packaging dry runs.
+
+This rollout does not add two-member, physical-device, microphone/audio, background-push, public celld or recovery-drill evidence. The remaining work is tracked in the [roadmap](../ROADMAP.md), including [team-chat acceptance #1](https://github.com/inchidev/gitrew/issues/1), [PWA acceptance #2](https://github.com/inchidev/gitrew/issues/2), [key rotation #4](https://github.com/inchidev/gitrew/issues/4), [dependency alerts #26](https://github.com/inchidev/gitrew/issues/26), [recovery #27](https://github.com/inchidev/gitrew/issues/27), [public celld #28](https://github.com/inchidev/gitrew/issues/28) and [landing screenshot #29](https://github.com/inchidev/gitrew/issues/29).

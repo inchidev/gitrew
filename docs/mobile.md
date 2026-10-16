@@ -26,6 +26,8 @@ Keep the OAuth flow in the originating browser/PWA context. If the OS opens a se
 
 ## Device checks still needed
 
+[Issue #2](https://github.com/inchidev/gitrew/issues/2) tracks the remaining physical-device and installed-app acceptance. Manifest/icons, safe-area layout, theme colors, mobile swipes and Web Push plumbing are already implemented; do not treat this as an unstarted PWA feature.
+
 - iPhone Home Screen and Android installed app: portrait/landscape, top/bottom colors in both themes, keyboard open/closed and composer placement.
 - Swipe opening/closing without taking over feed scrolling, selection, editing, OS back or pinch zoom.
 - Fresh OAuth, return to a specific channel/DM, relaunch, logout and a switch between Safari/Chrome and the installed app.

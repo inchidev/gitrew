@@ -1,30 +1,39 @@
 # Gitrew direction
 
-## Current priority: everyday GitHub team chat
+Status reconciled on 2026-10-16. The priority is reliable everyday GitHub team chat, with live acceptance testing of the implemented experience.
 
-Finish the Slack-like experience around a GitHub organization: channels, threads, private groups, DMs, live updates, presence, typing, notifications and voice huddles. Keep source repositories distinct from conversation storage. Validate privacy and reconnect behavior with two real organization members.
+## Shipped on main
 
-The realtime implementation uses a workspace Durable Object for authorized room subscriptions and live signals, with signed GitHub webhooks. GitHub remains the conversation store. Add a durable message cache only after designing deletion, replay/order, reconciliation and permission changes.
+- Channels, threads, private groups and DMs backed by GitHub Discussions; authorized WebSocket updates, presence and typing; opt-in Web Push; voice-first RealtimeKit or LiveKit huddles. GitHub remains the conversation store.
+- Independent public landing/installer at `gitrew.com`, plus workspaces at `inchi.gitrew.com` and `afterprompt.gitrew.com`. Each workspace has its own App, Worker, D1, LiveHub, storage and optional media/push credentials, restricted to its GitHub Team. Customers use their own infrastructure and domain.
+- Manifest, canonical/maskable/Apple icons, safe areas, theme colors and mobile channel swipes. Basic iPhone installation/launch and automated Chromium/WebKit checks are verified; full physical-device acceptance remains open.
+- Required `gitrew-` names for new chat/vault storage and recognition of named storage in workspace, channel and project selectors ([PR #25](https://github.com/inchidev/gitrew/pull/25)). Existing production repository references already match their private prefixed repositories.
 
-Huddles use the installation's own Cloudflare RealtimeKit credentials or LiveKit server; API keys stay server side. Web Push is opt in. Media and background push require separate live verification.
+All three Cloudflare deployments were verified after the prefix merge: successful builds of the same main commit, healthy workspace endpoints, anonymous sessions rejected, public-site API paths absent and the old inchi domain redirect intact. Feature configuration does not establish two-person audio, private delivery or background push. See the dated [installation record](docs/inchidev-install.md).
 
-## Hosting and documentation
+The latest pinned source release is [v0.2.0](https://github.com/inchidev/gitrew/releases/tag/v0.2.0); the prefix change is newer on main and is listed in `CHANGELOG.md` under Unreleased.
 
-Separate the public `gitrew.com` landing/installer from workspace deployments.
-Our workspace addresses are `inchi.gitrew.com` and `afterprompt.gitrew.com`, with
-GitHub Team access checks and independent installation resources. Customers
-choose their own domain and infrastructure. Validate the final owner/member
-flows on each maintained deployment separately.
+## Remaining work
 
-Focus on Cloudflare and celld: Worker + D1 + Durable Objects. Vercel support is removed. Keep installation, user, architecture, notifications, media, backup/recovery and upgrade documentation together in [docs](docs/README.md). Local Docker Compose is a compatibility test; prove a public celld/Coolify deployment before calling that production ready.
+| Work | Completion evidence | Tracking |
+| --- | --- | --- |
+| Two-member team-chat acceptance on both maintained workspaces | Allowed/wrong-team access, private/DM isolation, live delivery and reconnect, membership revocation, two-person audio and provider cleanup | [#1](https://github.com/inchidev/gitrew/issues/1) |
+| Installed PWA and background notifications | Physical iOS/macOS/Android icons/layout/keyboard/gestures, standalone OAuth/session/deep links, opt-in/out and actual background push | [#2](https://github.com/inchidev/gitrew/issues/2) |
+| Encryption-key separation and rotation | Separate purpose keys, versioned migration, tested rotation and documented recovery | [#4](https://github.com/inchidev/gitrew/issues/4) |
+| Dependency alert remediation | Exposure assessed, compatible fixes/mitigations validated, unresolved upstream items explicit and GitHub alerts rechecked | [#26](https://github.com/inchidev/gitrew/issues/26) |
+| Installation recovery and upgrades | Isolated backup/restore drill covering secrets, D1/DO and GitHub conversation state, with tested upgrade/rollback limits | [#27](https://github.com/inchidev/gitrew/issues/27) |
+| Public celld/Coolify installation | Supported production runtime/durability, final HTTPS OAuth, member/realtime checks, persistent restart and restore/upgrade proof | [#28](https://github.com/inchidev/gitrew/issues/28) |
+| Real landing screenshot | Representative shipped UI with consented/sample content, no private data, readable responsive asset | [#29](https://github.com/inchidev/gitrew/issues/29) |
 
-Replace the landing illustration with a real product screenshot after the chat UI reaches a representative state. Use consented/sample content and keep private data out of public assets.
+Cloudflare is deployed. celld remains a local compatibility path until its public-hosting acceptance is completed; the current dev-mode Compose example is not production proof. Keep installation, user, architecture, notifications, media, backup/recovery and upgrade documentation together in [docs](docs/README.md). Vercel support is removed.
 
 ## Deferred
 
 - Conversation → issue → agent → PR → review. Existing issue browsing/creation and Project links remain available; new handoffs and Copilot execution wait.
-- Gitea and GitLab integrations. Both wait until the GitHub communication experience is complete. Bitbucket stays outside scope.
-- Native mobile distribution, mobile background calls, full installable PWA and advanced call features need their own validation.
+- Gitea and GitLab integrations wait until the GitHub communication experience is complete. Bitbucket stays outside scope.
+- Native mobile/App Store distribution, offline features, mobile background calls and advanced call features are outside the current online-only PWA milestone.
+- A durable conversation cache needs a design for deletion, replay/order, reconciliation and permission changes before implementation.
+- Shared hosted tenant provisioning needs a separate control plane, authorization, lifecycle, quotas and operating model. Our two workspaces are independent installations, not that service.
 
 ## Watching
 

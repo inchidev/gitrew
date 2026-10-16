@@ -2,6 +2,8 @@
 
 Gitrew's VPS target is celld: the same Worker-compatible API, D1-compatible storage, Durable Object live coordination and static Nuxt frontend. The committed Compose file is a local compatibility example. A successful localhost run does not prove a production Coolify deployment.
 
+Public production hosting and its acceptance checks are tracked in [#28](https://github.com/inchidev/gitrew/issues/28).
+
 ## Local Compose example
 
 ```sh
