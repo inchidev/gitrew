@@ -1161,3 +1161,140 @@ kbd {
 .user-bar > button {
   width: 100%;
 }
+
+/* Anonymous public browsing pages (/github/). Read-only; no workspace chrome. */
+.public-page {
+  min-height: 100dvh;
+  background: var(--ui-bg);
+  color: var(--ui-text);
+}
+.public-page > main {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 24px 20px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.public-page h1 {
+  font-size: 28px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.public-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--ui-border);
+}
+.public-header nav {
+  font-size: 14px;
+  color: var(--ui-text-muted);
+  overflow-wrap: anywhere;
+}
+.public-header nav a {
+  color: var(--ui-text);
+}
+.public-page .lede {
+  color: var(--ui-text-muted);
+  font-size: 15px;
+}
+.public-page .muted {
+  color: var(--ui-text-muted);
+  font-size: 13px;
+}
+.public-page .stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.browse-form {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.browse-form > *:first-child {
+  flex: 2 1 200px;
+}
+.browse-form > *:nth-child(2) {
+  flex: 2 1 200px;
+}
+.repo-list,
+.discussion-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.repo-card {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  color: inherit;
+  text-decoration: none;
+}
+.repo-card:hover {
+  border-color: var(--ui-border-accented);
+}
+.repo-name {
+  font-weight: 600;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+.repo-description {
+  color: var(--ui-text-muted);
+  font-size: 14px;
+}
+.repo-stars {
+  color: var(--ui-text-muted);
+  font-size: 13px;
+}
+.discussion-card {
+  width: 100%;
+  display: grid;
+  gap: 4px;
+  text-align: left;
+  padding: 14px 16px;
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.discussion-card:hover {
+  border-color: var(--ui-border-accented);
+}
+.discussion-title {
+  font-weight: 600;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+.public-page .thread {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 4px 0 8px 12px;
+  padding-left: 16px;
+  border-left: 2px solid var(--ui-border);
+}
+.public-message header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.public-message p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+.public-message.public-reply {
+  padding: 8px 0 8px 12px;
+  border-left: 2px solid var(--ui-border);
+}

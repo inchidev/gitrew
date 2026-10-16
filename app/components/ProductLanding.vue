@@ -180,6 +180,13 @@ useHead({
               icon="i-octicon-arrow-right-16"
               trailing
               size="lg"
+            /><UButton
+              to="/github/"
+              label="Browse public"
+              icon="i-lucide-globe"
+              color="neutral"
+              variant="outline"
+              size="lg"
             /><a href="#providers"
               >Explore platforms <UIcon name="i-octicon-arrow-down-16"
             /></a>

@@ -5,6 +5,7 @@ Gitrew is a GitHub organization workspace for channels, threads, private groups 
 ## Start here
 
 - [Product site and workspaces](deployments.md): gitrew.com and customer-owned workspace domains.
+- [Public browsing](public-browsing.md): read-only `/github/*` mode, operator token, cache and budgets.
 - [Product screenshots](product-screenshots.md): sample content, responsive assets and local capture instructions.
 
 - [User guide](usage.md): sign in, conversations, threads, notifications, huddles and issues.

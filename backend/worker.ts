@@ -57,6 +57,7 @@ import {
   vaultOperation,
   workspaceConfig,
 } from "./workspace";
+import { handlePublic } from "./public";
 
 const SESSION = "__Host-gitrew_session",
   FLOW = "__Host-gitrew_flow",
@@ -123,6 +124,8 @@ export interface BackendEnv extends MediaEnv, PushEnv {
   ALLOWED_TEAM?: string;
   APP_NAME?: string;
   WORKSPACE_NAME?: string;
+  PUBLIC_MODE?: string;
+  PUBLIC_GITHUB_TOKEN?: string;
 }
 
 export default {
@@ -154,11 +157,24 @@ export default {
     if (url.pathname === "/health")
       return json({ service: "gitrew", version: 1 });
     if (!url.pathname.startsWith("/api/")) {
+      // Public browsing is client-rendered for arbitrary owners and
+      // repositories, so its shell comes from the binding even when the
+      // deployment keeps 404s for every other unknown path.
+      if (
+        env.ASSETS &&
+        /^\/github\//.test(url.pathname) &&
+        ["GET", "HEAD"].includes(request.method)
+      ) {
+        return env.ASSETS.fetch(new Request(new URL("/200.html", url.origin), {
+          method: request.method,
+          headers: { Accept: "text/html" },
+        }));
+      }
       if (env.ASSETS) return env.ASSETS.fetch(request);
       // The sandbox publishes static files on GitHub Pages. Dynamic paths use
       // its public SPA shell; no cookies or private request headers are forwarded.
       if (
-        /^\/(w|demo)\//.test(url.pathname) &&
+        /^\/(w|demo|github)\//.test(url.pathname) &&
         ["GET", "HEAD"].includes(request.method)
       ) {
         try {
@@ -194,6 +210,25 @@ export default {
         { error: "Configure this deployment's private storage before setup." },
         503,
       );
+    // Anonymous public browsing needs no session, App or workspace. In public
+    // mode it is the only API surface; every other /api/* path stays 404.
+    if (url.pathname.startsWith("/api/public/")) {
+      try {
+        const response = await handlePublic(request, url, env);
+        if (response) return response;
+      } catch (error) {
+        if (error instanceof HttpError)
+          return json({ error: error.message }, error.status);
+        if (error instanceof z.ZodError)
+          return json({ error: "Invalid request." }, 400);
+        return json(
+          { error: "Gitrew could not complete this operation." },
+          502,
+        );
+      }
+    }
+    if (env.PUBLIC_MODE === "true")
+      return json({ error: "Not found." }, 404);
     const store = env.STORE || new Store(env.DB!, env.SETUP_TOKEN || "");
     let sessionId = "",
       sessionUserId = 0;

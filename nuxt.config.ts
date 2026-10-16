@@ -94,7 +94,9 @@ export default defineNuxtConfig({
   hooks: {
     "pages:extend"(pages) {
       if (portal) {
-        const publicPages = pages.filter((page) => page.path === "/");
+        const publicPages = pages.filter(
+          (page) => page.path === "/" || page.file?.includes("/pages/github/"),
+        );
         pages.splice(0, pages.length, ...publicPages);
       }
     },
