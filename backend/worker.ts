@@ -10,6 +10,9 @@ import {
   WorkspaceAccessError,
 } from "./access";
 import { mediaProvider, type MediaEnv } from "./huddles";
+import { accessReportSchema, workspaceSettingsSchema } from "../shared/access";
+import { WorkspaceMemberRequired } from "../shared/vault";
+import { displayName, inspectAccess } from "./access-report";
 import type { LiveHub, LiveIdentity } from "./live-hub";
 import { authorizeRoom, roomSchema } from "./live-access";
 import {
@@ -20,9 +23,16 @@ import {
 import { Buffer } from "node:buffer";
 import { repositoryNameSchema } from "../shared/workspace";
 import { z } from "zod";
-import { appSchema, Store, type App, type BackendStore } from "./store";
+import {
+  appSchema,
+  Store,
+  type App,
+  type BackendStore,
+  type Session,
+} from "./store";
 import {
   authenticated,
+  identified,
   GitHub,
   githubFetch,
   oauthToken,
@@ -50,7 +60,8 @@ import {
 
 const SESSION = "__Host-gitrew_session",
   FLOW = "__Host-gitrew_flow",
-  SETUP = "__Host-gitrew_setup";
+  SETUP = "__Host-gitrew_setup",
+  ACCESS = "__Host-gitrew_access";
 const setupSchema = z.object({
   setupToken: z.string().max(1024),
   organization: organizationSchema,
@@ -111,6 +122,7 @@ export interface BackendEnv extends MediaEnv, PushEnv {
   APP_ORIGIN?: string;
   ALLOWED_TEAM?: string;
   APP_NAME?: string;
+  WORKSPACE_NAME?: string;
 }
 
 export default {
@@ -189,7 +201,10 @@ export default {
       await store.initialize();
       if (url.pathname === "/api/config" && request.method === "GET") {
         const app = await store.app();
+        const workspace = await store.defaultWorkspace();
         return json({
+          displayName: displayName(workspace, app, env.WORKSPACE_NAME),
+          workspaceReady: Boolean(workspace?.ready),
           configured: Boolean(app),
           setupAvailable: (env.SETUP_TOKEN || "").length >= 32,
           app: publicApp(app),
@@ -339,7 +354,10 @@ export default {
           code_challenge_method: "S256",
           scope: "offline_access",
         }).toString();
-        return redirect(authorize.href, [setCookie(request, FLOW, state, 600)]);
+        return redirect(authorize.href, [
+          setCookie(request, FLOW, state, 600),
+          setCookie(request, ACCESS, "", 0),
+        ]);
       }
       if (url.pathname === "/api/auth/callback" && request.method === "GET") {
         const state = url.searchParams.get("state") || "",
@@ -374,17 +392,48 @@ export default {
             app,
             actor.login,
           );
-        } catch (error) {
-          if (error instanceof WorkspaceAccessError)
-            return redirect("/login?authError=restricted", [
-              setCookie(request, FLOW, "", 0),
-            ]);
-          throw error;
+        } catch {
+          // Identity is known, but permission denial or verification failure
+          // must not create a session. Keep only browser-bound diagnostics.
+          const report = await inspectAccess(
+            store,
+            new GitHub(credentials.accessToken),
+            app,
+            actor,
+            env.WORKSPACE_NAME,
+          );
+          const diagnostic = await store.state("access", {
+            report,
+            returnTo: appReturnTo(pending.returnTo),
+          });
+          let previous: Session | null = null;
+          try {
+            previous = await store.session(cookie(request, SESSION));
+          } catch (error) {
+            if (!(error instanceof HttpError) || error.status !== 401)
+              throw error;
+          }
+          if (previous) {
+            await store.logout(previous.id);
+            if (pushEnabled(env)) await new PushStore(env).revoke(previous.id);
+            const workspace = await store.defaultWorkspace();
+            if (workspace)
+              await env.LIVE?.getByName(workspace.organization).revoke(
+                previous.userId,
+                previous.id,
+              );
+          }
+          return redirect("/access/", [
+            setCookie(request, FLOW, "", 0),
+            setCookie(request, SESSION, "", 0),
+            setCookie(request, ACCESS, diagnostic, 600),
+          ]);
         }
         const created = await store.createSession(actor.id, credentials);
         return redirect(pending.returnTo, [
           setCookie(request, SESSION, created.raw, 7 * 86400),
           setCookie(request, FLOW, "", 0),
+          setCookie(request, ACCESS, "", 0),
         ]);
       }
       if (url.pathname === "/api/webhooks" && request.method === "POST") {
@@ -468,6 +517,34 @@ export default {
         }
         return json({ received: true });
       }
+      if (url.pathname === "/api/access" && request.method === "GET") {
+        await store.rateLimit(request, "access");
+        let current: Session;
+        try {
+          current = await store.session(cookie(request, SESSION));
+        } catch (error) {
+          if (!(error instanceof HttpError) || error.status !== 401)
+            throw error;
+          const snapshot = z
+            .object({
+              report: accessReportSchema,
+              returnTo: z.string().nullable(),
+            })
+            .parse(await store.readAccess(cookie(request, ACCESS)));
+          return json({
+            ...snapshot.report,
+            returnTo: appReturnTo(snapshot.returnTo),
+            snapshot: true,
+          });
+        }
+        sessionId = current.id;
+        sessionUserId = current.userId;
+        const { api, actor } = await identified(store, current, app);
+        return json({
+          ...(await inspectAccess(store, api, app, actor, env.WORKSPACE_NAME)),
+          snapshot: false,
+        });
+      }
       const session = await store.session(cookie(request, SESSION));
       sessionId = session.id;
       sessionUserId = session.userId;
@@ -498,6 +575,49 @@ export default {
         });
       }
       const { api, actor } = await authenticated(store, session, app);
+      if (
+        url.pathname === "/api/workspace/settings" &&
+        request.method === "POST"
+      ) {
+        const settings = workspaceSettingsSchema.parse(
+          await boundedJson(request),
+        );
+        const workspace = await store.defaultWorkspace();
+        if (!workspace?.ready)
+          throw new HttpError(409, "Finish workspace setup first.");
+        await ensureWorkspaceAccess(api, app, workspace, actor);
+        const members = z
+          .object({ admins: z.array(z.number()) })
+          .parse(
+            await vaultOperation(
+              store,
+              app,
+              workspace,
+              actor,
+              { op: "members" },
+              crypto.randomUUID(),
+            ),
+          );
+        if (!members.admins.includes(actor.id))
+          throw new HttpError(
+            403,
+            "Only workspace administrators can change settings.",
+          );
+        const updated = await store.locked(
+          "settings:" + workspace.organization,
+          async () => {
+            const current = await store.workspace(workspace.organization);
+            if (!current?.ready)
+              throw new HttpError(409, "Workspace setup is not ready.");
+            const value = { ...current, ...settings };
+            await store.saveWorkspace(value);
+            return value;
+          },
+        );
+        return json({
+          workspace: workspaceConfig(updated, app, env.WORKSPACE_NAME),
+        });
+      }
       if (url.pathname === "/api/session" && request.method === "GET") {
         const selected = url.searchParams.get("organization");
         const workspace = selected
@@ -505,14 +625,20 @@ export default {
           : env.SANDBOX_ORGANIZATION
             ? await store.workspace(env.SANDBOX_ORGANIZATION)
             : await store.defaultWorkspace();
-        if (workspace?.ready)
-          await ensureWorkspaceAccess(api, app, workspace, actor);
+        const administrator = workspace?.ready
+          ? await ensureWorkspaceAccess(api, app, workspace, actor)
+          : false;
         return json({
           viewer: actor,
           csrf: session.csrf,
           expiresAt: session.expires,
           app: publicApp(app),
-          workspace: workspace?.ready ? workspaceConfig(workspace, app) : null,
+          workspace: workspace?.ready
+            ? {
+                ...workspaceConfig(workspace, app, env.WORKSPACE_NAME),
+                administrator,
+              }
+            : null,
           sandbox: env.SANDBOX_ORGANIZATION || "",
         });
       }
@@ -647,7 +773,9 @@ export default {
           env.SANDBOX_ORGANIZATION || "",
           { repositoryName, vaultName },
         );
-        return json({ workspace: workspaceConfig(workspace, app) });
+        return json({
+          workspace: workspaceConfig(workspace, app, env.WORKSPACE_NAME),
+        });
       }
       if (url.pathname === "/api/github" && request.method === "POST") {
         const input = proxySchema.parse(await boundedJson(request, 131_072));
@@ -755,17 +883,21 @@ export default {
           );
       }
       const status =
-        error instanceof HttpError
-          ? error.status
-          : error instanceof z.ZodError
-            ? 400
-            : 502;
+        error instanceof WorkspaceMemberRequired
+          ? 403
+          : error instanceof HttpError
+            ? error.status
+            : error instanceof z.ZodError
+              ? 400
+              : 502;
       const message =
-        error instanceof HttpError
-          ? error.message
-          : error instanceof z.ZodError
-            ? "Invalid request."
-            : "Gitrew could not complete this operation. Retry, or ask your administrator to check the GitHub App and workspace permissions.";
+        error instanceof WorkspaceMemberRequired
+          ? "Private conversations need workspace membership. Ask an administrator to add you in Workspace members. Shared channels remain available."
+          : error instanceof HttpError
+            ? error.message
+            : error instanceof z.ZodError
+              ? "Invalid request."
+              : "Gitrew could not complete this operation. Retry, or ask your administrator to check the GitHub App and workspace permissions.";
       return json(
         { error: message },
         status,

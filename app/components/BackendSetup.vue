@@ -8,6 +8,7 @@ const auth = useGitHubAuth();
 const configSchema = z.object({
   configured: z.boolean(),
   setupAvailable: z.boolean(),
+  workspaceReady: z.boolean().default(false),
   app: z
     .object({ appSlug: z.string(), owner: z.string(), installUrl: z.url() })
     .nullable(),
@@ -30,6 +31,10 @@ const ready = shallowRef<z.infer<typeof backendWorkspaceSchema> | null>(null);
 onMounted(async () => {
   try {
     config.value = configSchema.parse(await backendJson("/api/config"));
+    if (config.value.workspaceReady) {
+      await navigateTo("/login", { replace: true });
+      return;
+    }
     organization.value = config.value.app?.owner || "";
   } catch (e) {
     error.value = e instanceof Error ? e.message : "Could not load setup.";

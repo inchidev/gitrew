@@ -8,6 +8,7 @@ const props = defineProps<{
   hideCreate?: boolean;
   backend?: boolean;
   compact?: boolean;
+  displayName?: string;
 }>();
 const mailbox = ref(props.mailboxRepository || "");
 const { copy, copied } = useClipboard();
@@ -20,8 +21,10 @@ const emit = defineEmits<{
 <template>
   <section class="auth-content" aria-label="Sign in">
     <template v-if="!compact">
-      <NuxtLink to="/" class="auth-brand" aria-label="Gitrew home"><BrandMark /><span>Gitrew</span></NuxtLink>
-      <h1>Sign in to Gitrew</h1>
+      <NuxtLink to="/" class="auth-brand" aria-label="Gitrew home"
+        ><BrandMark /><span>Gitrew</span></NuxtLink
+      >
+      <h1>Sign in to {{ displayName || "Gitrew" }}</h1>
       <p class="auth-intro">Your team’s conversations, in one place.</p>
     </template>
     <div class="auth-card">
@@ -87,7 +90,6 @@ const emit = defineEmits<{
         <p v-if="busy" class="auth-progress" role="status">
           Connecting to your workspace…
         </p>
-
       </template>
       <details v-if="!requestUrl && !backend" class="auth-team">
         <summary>Use your organization’s Gitrew</summary>
@@ -109,7 +111,7 @@ const emit = defineEmits<{
         </div>
       </details>
     </div>
-    <p v-if="!hideCreate" class="auth-create">
+    <p v-if="!hideCreate && !backend" class="auth-create">
       <NuxtLink to="/create/">Create your own workspace</NuxtLink>
     </p>
   </section>

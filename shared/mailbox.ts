@@ -6,6 +6,8 @@ export interface Envelope {
   data: string;
 }
 export interface MailboxConfig {
+  displayName?: string;
+  administrator?: boolean;
   /** Cookie-session transport; no issue mailbox or encryption key is used. */
   backend?: boolean;
   version: 1;

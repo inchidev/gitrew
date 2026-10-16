@@ -8,7 +8,7 @@ This is the recommended frontend/API deployment. See the provider guides for
 
 The public `gitrew.com` product site serves a landing page with installation
 links at `/#install`, without a workspace backend. Teams use independently
-deployed workspace domains. See [deployment boundaries](deployments.md).
+deployed workspace domains, whose root opens sign-in/chat rather than marketing. See [deployment boundaries](deployments.md).
 
 An organization is a workspace. An independent deployment includes its frontend,
 API, encrypted metadata storage and organization-owned GitHub App. Its operator
@@ -68,6 +68,29 @@ protected backup and retain it across deployments. Replacing it makes existing
 encrypted configuration unreadable. Choose the final production domain before
 registration; changing domains requires coordinated App and stored-origin changes.
 
+## Access diagnostics
+
+`GET /api/access` verifies only the current GitHub identity's organization, team
+and chat access, then its private-conversation registration if entry is available.
+It never grants repository access and never returns member lists, tokens, vault
+contents or CSRF credentials. Unavailable upstream checks remain unknown; later
+checks stay unchecked while a prerequisite is missing.
+
+Denied or unverified organization/team access after OAuth identity verification
+creates no ordinary application session and invalidates the previous browser session.
+Instead it saves
+an encrypted ten-minute access-result snapshot, addressed by a separate opaque,
+HttpOnly/Secure/SameSite cookie bound to the initiating OAuth browser. That cookie
+can read only its diagnostic snapshot and is not accepted by workspace APIs.
+Rechecking the snapshot restarts OAuth; successful login clears the diagnostic
+cookie and follows the validated original destination. Expired or guessed cookies
+fail closed. Normal session and data operations retain current membership checks.
+
+The workspace display name is optional D1 metadata with `WORKSPACE_NAME` as a
+fallback. Its write endpoint requires same-origin CSRF, current organization/team
+access and administrator membership verified by the existing vault operation.
+Members cannot rename workspaces or change storage identifiers through this API.
+
 ## Membership and private operations
 
 The vault directory records members and administrators by immutable GitHub ID.
@@ -120,15 +143,16 @@ have independent repository access; organization owners must manage those grants
 
 ## Client behavior and validation
 
-Nuxt runs with `ssr:false`; `/`, `/login` and `/create/` are static entry points.
-Workspace, channel and DM deep links use an SPA fallback and preserve their local
-destination through sign-in. There is no standalone demo page. The landing's
-illustrative preview makes no authenticated API requests.
+Nuxt runs with `ssr:false`. The portal registers only its marketing root.
+Workspace `/` and `/login` render the same dedicated entry flow; configured
+sessions go to their canonical chat repository and validated deep links survive
+sign-in. Fresh installations use owner `/create/`; ready installations return
+that route to the app. `/access/` is a separate own-identity diagnostic screen.
+There is no standalone demo route, workspace-creation rail or member hosting CTA.
+The public landing's optimized screenshots show the real workspace UI with sample
+responses; fixture data is never part of the deployed backend.
 
-Vue Query holds remote history in memory. LocalStorage contains account-scoped
-conversation/thread drafts and preferences; these remain after logout. Private
-history is not persisted. Connected clients receive WebSocket invalidations and recover with a five-minute refresh. Without realtime, private messages refresh every two minutes or manually; workspace messages refresh every20 seconds while visible. Search covers loaded history. Presence/typing are conversation scoped. Optional Web Push and RealtimeKit/LiveKit voice huddles need installation credentials and live verification.
-workspace messages refresh every 20 seconds while visible. Search covers loaded
-history. There is no presence, typing, push or WebSocket service.
-
-Unit tests use simulated GitHub APIs; runtime tests use workerd and local D1/DO. Browser tests mock API responses. These checks do not establish live GitHub approvals, media delivery, background push or fresh-team installation. Provider guides keep live verification records separate from automated checks.
+Browser drafts and appearance preferences stay on the device. LiveHub provides
+realtime updates, presence and typing; opt-in Web Push and voice providers are
+separate configured capabilities. These features retain their server-side access
+checks and do not replace GitHub as the conversation store.

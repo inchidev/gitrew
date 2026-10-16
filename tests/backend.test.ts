@@ -465,6 +465,270 @@ afterEach(async () => {
 });
 
 describe("Cloudflare backend", () => {
+  async function readyWorkspace() {
+    await register();
+    await store.saveWorkspace({
+      organization: "team",
+      repository: "team/gitrew-chat",
+      vault: "team/gitrew-vault",
+      installationId: 9,
+      nonce: "workspace-nonce",
+      ready: true,
+      openRegistration: false,
+      memberPrivateChannels: false,
+    });
+    await (
+      await mf.getD1Database("DB")
+    )
+      .prepare("UPDATE settings SET value=? WHERE key='app'")
+      .bind(await store.seal({ ...app, origin, allowedTeam: "crew" }, "app"))
+      .run();
+  }
+  it("reports only the current person's access, never grants it, and separates private membership from entry", async () => {
+    await readyWorkspace();
+    const bob = await login(2);
+    const access = async () => {
+      const response = await request("/api/access", {
+        headers: { Cookie: bob.cookie },
+      });
+      expect(response.status).toBe(200);
+      return (await response.json()) as {
+        canEnter: boolean;
+        checks: { id: string; status: string }[];
+      };
+    };
+    expect((await access()).checks.map((c) => c.status)).toEqual([
+      "passed",
+      "passed",
+      "passed",
+      "passed",
+    ]);
+    membership.members = membership.members.filter((m) => m.id !== 2);
+    const privateMissing = await access();
+    expect(privateMissing.canEnter).toBe(true);
+    expect(privateMissing.checks[3]?.status).toBe("missing");
+    expect(
+      (
+        await post(
+          "/api/vault",
+          { organization: "team", operation: { op: "list" } },
+          sessionHeaders(bob),
+        )
+      ).status,
+    ).toBe(403);
+    chatReaders.delete(2);
+    const before = githubCalls.length;
+    expect((await access()).checks[2]?.status).toBe("missing");
+    expect(githubCalls.slice(before).some((c) => c.method !== "GET")).toBe(
+      false,
+    );
+    chatReaders.add(2);
+    teamStatus = 502;
+    expect((await access()).checks.map((c) => c.status)).toEqual([
+      "passed",
+      "unknown",
+      "not_checked",
+      "not_checked",
+    ]);
+    teamStatus = 404;
+    const denied = await access();
+    expect(denied.canEnter).toBe(false);
+    expect(denied.checks[1]?.status).toBe("missing");
+    expect(JSON.stringify(denied)).not.toMatch(
+      /user3|accessToken|csrf|vault|client_secret/,
+    );
+    expect(
+      (await request("/api/session", { headers: { Cookie: bob.cookie } }))
+        .status,
+    ).toBe(403);
+    inviteeState = "outside";
+    expect((await access()).checks.map((c) => c.status)).toEqual([
+      "missing",
+      "not_checked",
+      "not_checked",
+      "not_checked",
+    ]);
+    expect((await request("/api/access")).status).toBe(401);
+  }, 20_000);
+  it("keeps denied OAuth diagnostics browser-bound and expiring without creating an application session", async () => {
+    await readyWorkspace();
+    const previous = await login(1);
+    currentUser = 2;
+    teamStatus = 404;
+    const start = await request(
+      "/api/auth/start?returnTo=" +
+        encodeURIComponent("/w/team/c/general?thread=m1"),
+    );
+    const state = new URL(start.headers.get("location")!).searchParams.get(
+      "state",
+    )!;
+    const callback = await request(
+      `/api/auth/callback?code=oauth-code&state=${state}`,
+      {
+        headers: {
+          Cookie:
+            previous.cookie +
+            "; " +
+            cookieValue(start.headers.get("set-cookie")),
+        },
+      },
+    );
+    expect(callback.headers.get("location")).toBe("/access/");
+    const cookies = callback.headers.get("set-cookie")!;
+    const diagnosticCookie = cookies.match(
+      /__Host-gitrew_access=[a-f0-9]{64}/,
+    )![0];
+    expect(cookies).toContain("HttpOnly");
+    expect(callback.headers.getSetCookie()).toContainEqual(
+      expect.stringMatching(/^__Host-gitrew_session=;.*Max-Age=0/),
+    );
+    expect(
+      (
+        await request("/api/access", {
+          headers: { Cookie: previous.cookie + "; " + diagnosticCookie },
+        })
+      ).status,
+    ).toBe(200);
+    expect(
+      (await request("/api/session", { headers: { Cookie: previous.cookie } }))
+        .status,
+    ).toBe(401);
+    const headers = { Cookie: diagnosticCookie };
+    const result = await request("/api/access", { headers });
+    const body = await result.json();
+    expect(body).toMatchObject({
+      snapshot: true,
+      canEnter: false,
+      viewer: { id: 2, login: "user2" },
+      returnTo: "/w/team/c/general?thread=m1",
+    });
+    expect(JSON.stringify(body)).not.toMatch(
+      /accessToken|refreshToken|csrf|client_secret|pem/,
+    );
+    expect((await request("/api/access", { headers })).status).toBe(200);
+    expect((await request("/api/session", { headers })).status).toBe(401);
+    expect((await post("/api/vault", {}, headers)).status).toBe(401);
+    expect(
+      (
+        await (
+          await mf.getD1Database("DB")
+        )
+          .prepare("SELECT count(*) AS total FROM sessions")
+          .first<{ total: number }>()
+      )?.total,
+    ).toBe(0);
+    expect(
+      (
+        await request("/api/access", {
+          headers: { Cookie: "__Host-gitrew_access=" + "a".repeat(64) },
+        })
+      ).status,
+    ).toBe(401);
+    await (
+      await mf.getD1Database("DB")
+    )
+      .prepare("UPDATE states SET expires=0 WHERE kind='access'")
+      .run();
+    expect((await request("/api/access", { headers })).status).toBe(401);
+  }, 20_000);
+  it("shows unknown access and preserves the destination when OAuth membership verification fails upstream", async () => {
+    await readyWorkspace();
+    currentUser = 2;
+    teamStatus = 502;
+    const start = await request(
+      "/api/auth/start?returnTo=" +
+        encodeURIComponent("/w/team/c/general?thread=m1"),
+    );
+    const state = new URL(start.headers.get("location")!).searchParams.get(
+      "state",
+    )!;
+    const callback = await request(
+      `/api/auth/callback?code=oauth-code&state=${state}`,
+      {
+        headers: { Cookie: cookieValue(start.headers.get("set-cookie")) },
+      },
+    );
+    expect(callback.status).toBe(303);
+    expect(callback.headers.get("location")).toBe("/access/");
+    const diagnostic = callback.headers
+      .get("set-cookie")!
+      .match(/__Host-gitrew_access=[a-f0-9]{64}/)![0];
+    const result = await request("/api/access", {
+      headers: { Cookie: diagnostic },
+    });
+    expect(await result.json()).toMatchObject({
+      snapshot: true,
+      canEnter: false,
+      viewer: { id: 2 },
+      returnTo: "/w/team/c/general?thread=m1",
+      checks: [
+        { id: "organization", status: "passed" },
+        { id: "team", status: "unknown" },
+        { id: "chat", status: "not_checked" },
+        { id: "membership", status: "not_checked" },
+      ],
+    });
+    expect(
+      (await request("/api/session", { headers: { Cookie: diagnostic } }))
+        .status,
+    ).toBe(401);
+  }, 20_000);
+  it("persists an administrator's display name without changing storage or permitting members to edit it", async () => {
+    await readyWorkspace();
+    const owner = await login(1),
+      bob = await login(2);
+    expect(
+      (
+        await post(
+          "/api/workspace/settings",
+          { displayName: "AfterPrompt" },
+          sessionHeaders(bob),
+        )
+      ).status,
+    ).toBe(403);
+    expect(
+      (
+        await post(
+          "/api/workspace/settings",
+          { displayName: "AfterPrompt" },
+          { Cookie: owner.cookie },
+        )
+      ).status,
+    ).toBe(403);
+    for (const value of [
+      { displayName: "" },
+      { displayName: "a".repeat(81) },
+      { displayName: "AfterPrompt", repository: "team/other" },
+    ])
+      expect(
+        (await post("/api/workspace/settings", value, sessionHeaders(owner)))
+          .status,
+      ).toBe(400);
+    expect(
+      (
+        await post(
+          "/api/workspace/settings",
+          { displayName: " AfterPrompt " },
+          sessionHeaders(owner),
+        )
+      ).status,
+    ).toBe(200);
+    expect(await store.workspace("team")).toMatchObject({
+      displayName: "AfterPrompt",
+      repository: "team/gitrew-chat",
+      vault: "team/gitrew-vault",
+    });
+    expect(await (await request("/api/config")).json()).toMatchObject({
+      displayName: "AfterPrompt",
+      workspaceReady: true,
+    });
+    const session = await request("/api/session", {
+      headers: { Cookie: owner.cookie },
+    });
+    expect(await session.json()).toMatchObject({
+      workspace: { displayName: "AfterPrompt", administrator: true },
+    });
+  }, 20_000);
   it("enforces team membership on session, proxy, vault, realtime, huddles and push, including removal", async () => {
     await register();
     await store.saveWorkspace({

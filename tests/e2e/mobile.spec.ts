@@ -140,7 +140,7 @@ for (const theme of ["dark", "light"] as const) {
         async () => (await page.locator(".channel-sidebar").boundingBox())?.x,
       )
       .toBe(0);
-    const menuTop = await page.locator(".workspace-switch").boundingBox();
+    const menuTop = await page.locator(".workspace-title").boundingBox();
     expect(menuTop?.y).toBeGreaterThanOrEqual(59);
     const account = await page.locator(".user-bar").boundingBox();
     expect(account!.y + account!.height).toBeLessThanOrEqual(844 - 34);
@@ -191,8 +191,8 @@ for (const theme of ["dark", "light"] as const) {
       content:
         ":root { --safe-top: 0px; --safe-left: 59px; --safe-right: 34px; --safe-bottom: 21px; }",
     });
-    const rail = await page.locator(".workspace-badge").boundingBox();
-    expect(rail?.x).toBeGreaterThanOrEqual(59);
+    const workspace = await page.locator(".workspace-title").boundingBox();
+    expect(workspace?.x).toBeGreaterThanOrEqual(59);
     const landscapeComposer = await page
       .locator(".conversation > .composer")
       .boundingBox();

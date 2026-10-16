@@ -238,8 +238,7 @@ onBeforeUnmount(() => {
 });
 const authOpen = ref(false);
 const signingOut = ref(false);
-const workspaceOpen = ref(false);
-const ownOpen = ref(false);
+const workspaceSettingsOpen = ref(false);
 const setupOpen = ref(false);
 const conversationOpen = ref(false);
 const membersOpen = ref(false);
@@ -296,8 +295,7 @@ useSidebarSwipe(
     !route.query.thread &&
     !threadPresent.value &&
     !authOpen.value &&
-    !workspaceOpen.value &&
-    !ownOpen.value &&
+    !workspaceSettingsOpen.value &&
     !setupOpen.value &&
     !conversationOpen.value &&
     !membersOpen.value &&
@@ -350,7 +348,7 @@ const workspaceName = computed(() =>
   sample.value
     ? "Gitrew demo"
     : isSignedIn.value
-      ? organization.value
+      ? auth.activeMailbox.value?.displayName || organization.value
       : "Your workspace",
 );
 const queryError = computed(
@@ -387,53 +385,73 @@ watch(
   },
   { flush: "sync" },
 );
-const conversationMenu = computed(() =>
-  sample.value
-    ? [
-        {
-          label: "Export preview channel",
-          icon: "i-octicon-download-16",
-          onSelect: exportPreview,
+const conversationMenu = computed(() => [
+  {
+    label: "Projects and issues",
+    icon: "i-octicon-project-16",
+    onSelect: () => {
+      projectsOpen.value = true;
+    },
+  },
+]);
+const accountItems = computed(() => [
+  [
+    {
+      label: "Appearance",
+      icon: "i-octicon-sun-16",
+      children: ["system", "light", "dark"].map((value) => ({
+        label:
+          value === "system"
+            ? "System appearance"
+            : value === "light"
+              ? "Light appearance"
+              : "Dark appearance",
+        icon: colorMode.preference === value ? "i-octicon-check-16" : undefined,
+        onSelect: () => {
+          colorMode.preference = value;
         },
-        {
-          label: "Host your own Gitrew",
-          icon: "i-octicon-repo-template-16",
-          onSelect: () => {
-            ownOpen.value = true;
+      })),
+    },
+    ...(auth.backend
+      ? [
+          {
+            label: "Check access",
+            icon: "i-octicon-shield-check-16",
+            to: "/access/",
           },
-        },
-      ]
-    : [
-        {
-          label: "Change workspace",
-          icon: "i-octicon-apps-16",
-          onSelect: openWorkspaces,
-        },
-        {
-          label: "Create workspace",
-          icon: "i-octicon-plus-16",
-          onSelect: () => navigateTo("/create/"),
-        },
-        {
-          label: "Projects and issues",
-          icon: "i-octicon-project-16",
-          onSelect: () => {
-            projectsOpen.value = true;
-          },
-        },
-        {
-          label: "Host your own Gitrew",
-          icon: "i-octicon-repo-template-16",
-          onSelect: () => {
-            ownOpen.value = true;
-          },
-        },
-      ],
-);
+        ]
+      : []),
+  ],
+  [{ label: "Sign out", icon: "i-octicon-sign-out-16", onSelect: signOut }],
+]);
+const workspaceItems = [
+  {
+    label: "Workspace settings",
+    icon: "i-octicon-gear-16",
+    onSelect: () => {
+      workspaceSettingsOpen.value = true;
+    },
+  },
+];
+async function workspaceSaved() {
+  await auth.selectMailbox(repository.value);
+}
 
 watch(
   [auth.busy, isSignedIn],
   ([busy, signedIn]) => {
+    if (
+      !busy &&
+      auth.backend &&
+      auth.accessRequired.value &&
+      !signingOut.value
+    ) {
+      void navigateTo(
+        { path: "/access/", query: { returnTo: route.fullPath } },
+        { replace: true },
+      );
+      return;
+    }
     if (!busy && !signedIn && !preview.value && !signingOut.value)
       void navigateTo(
         { path: "/login", query: { returnTo: route.fullPath } },
@@ -521,10 +539,6 @@ watch(selectedChannel, async () => {
 
 function openLogin() {
   void navigateTo("/login");
-}
-function openWorkspaces() {
-  if (isSignedIn.value) workspaceOpen.value = true;
-  else openLogin();
 }
 async function connect(value: string) {
   const owner = parseRepository(value)[0];
@@ -649,54 +663,7 @@ function dayLabel(index: number) {
           </template>
         </UInput>
       </div>
-      <span v-if="sample" class="demo-badge">Demo</span>
-      <span v-else class="toolbar-workspace">{{ workspaceName }}</span>
     </header>
-    <nav class="workspace-rail" aria-label="Workspaces">
-      <UTooltip
-        :text="workspaceName"
-        :delay-duration="300"
-        :content="{ side: 'right' }"
-      >
-        <button
-          class="workspace-badge"
-          :aria-label="`Open ${workspaceName} workspace`"
-          @click="openWorkspaces"
-        >
-          {{ sample ? "gh" : organization.slice(0, 2) }}
-        </button>
-      </UTooltip>
-      <UTooltip
-        text="Create a workspace"
-        :delay-duration="300"
-        :content="{ side: 'right' }"
-      >
-        <UButton
-          to="/create/"
-          icon="i-octicon-plus-16"
-          aria-label="Create a workspace"
-          color="neutral"
-          variant="ghost"
-        />
-      </UTooltip>
-      <div class="rail-bottom">
-        <UTooltip
-          text="About Gitrew"
-          :delay-duration="300"
-          :content="{ side: 'right' }"
-        >
-          <UButton
-            to="https://github.com/inchidev/gitrew"
-            target="_blank"
-            rel="noopener noreferrer"
-            icon="i-octicon-question-16"
-            aria-label="About Gitrew"
-            color="neutral"
-            variant="ghost"
-          />
-        </UTooltip>
-      </div>
-    </nav>
     <aside
       id="channel-navigation"
       class="channel-sidebar"
@@ -705,10 +672,20 @@ function dayLabel(index: number) {
       :inert="(isMobile && !channelsOpen) || (Boolean(parent) && isMobile)"
     >
       <div class="sidebar-top">
-        <button class="workspace-switch" @click="openWorkspaces">
-          <strong>{{ workspaceName }}</strong
-          ><UIcon name="i-octicon-chevron-down-16" />
-        </button>
+        <UDropdownMenu
+          v-if="auth.backend && auth.activeMailbox.value?.administrator"
+          :items="workspaceItems"
+        >
+          <UButton
+            class="workspace-title"
+            color="neutral"
+            variant="ghost"
+            :label="workspaceName"
+            trailing-icon="i-octicon-chevron-down-16"
+            aria-label="Workspace options"
+          />
+        </UDropdownMenu>
+        <strong v-else class="workspace-title">{{ workspaceName }}</strong>
         <UButton
           icon="i-octicon-x-16"
           aria-label="Close channels"
@@ -774,48 +751,23 @@ function dayLabel(index: number) {
           class="w-full justify-start"
           @click="membersOpen = true"
         />
-        <button class="own-client" @click="ownOpen = true">
-          <UIcon name="i-octicon-repo-template-16" /><span
-            ><strong>Host your own</strong></span
-          ><UIcon name="i-octicon-link-external-16" />
-        </button>
         <div class="user-bar">
-          <span
-            ><strong>{{ auth.viewer.value?.login || "Demo" }}</strong
-            ><small>{{
-              isSignedIn
-                ? "Your account"
-                : sample
-                  ? "Demo workspace"
-                  : "Sign in to open your workspace"
-            }}</small></span
-          >
-          <UButton
-            icon="i-octicon-sun-16"
-            aria-label="Toggle color theme"
-            color="neutral"
-            variant="ghost"
-            @click="
-              colorMode.preference =
-                colorMode.value === 'dark' ? 'light' : 'dark'
-            "
-          />
-          <UButton
-            v-if="isSignedIn"
-            icon="i-octicon-sign-out-16"
-            aria-label="Sign out"
-            color="neutral"
-            variant="ghost"
-            @click="signOut"
-          />
-          <UButton
-            v-else
-            icon="i-octicon-mark-github-16"
-            aria-label="Sign in with GitHub"
-            color="neutral"
-            variant="ghost"
-            @click="openLogin"
-          />
+          <UDropdownMenu :items="accountItems" :content="{ align: 'start' }">
+            <UButton
+              class="user-profile"
+              color="neutral"
+              variant="ghost"
+              aria-label="User settings"
+            >
+              <span
+                ><strong>{{
+                  auth.viewer.value?.login || "Your account"
+                }}</strong
+                ><small>Your account</small></span
+              >
+              <UIcon name="i-octicon-chevron-up-16" />
+            </UButton>
+          </UDropdownMenu>
         </div>
       </div>
     </aside>
@@ -981,8 +933,13 @@ function dayLabel(index: number) {
         class="notice error-notice"
         role="alert"
       >
-        <span>{{ queryErrorMessage }}</span
-        ><UButton
+        <span>{{ queryErrorMessage }}</span>
+        <NuxtLink
+          v-if="auth.backend"
+          :to="{ path: '/access/', query: { returnTo: route.fullPath } }"
+          >Check access</NuxtLink
+        >
+        <UButton
           label="Retry"
           size="xs"
           color="neutral"
@@ -1060,15 +1017,11 @@ function dayLabel(index: number) {
         </template>
       </div>
       <div
-        v-if="live.connected.value"
+        v-if="live.connected.value && otherTypers.length"
         class="px-4 py-1 text-xs text-muted"
         role="status"
       >
-        {{
-          otherTypers.length
-            ? `${otherTypers.join(", ")} typing…`
-            : `${live.members.value.length} online in this conversation`
-        }}
+        {{ otherTypers.join(", ") }} typing…
       </div>
       <ChatComposer
         v-model="roomDraft"
@@ -1160,17 +1113,13 @@ function dayLabel(index: number) {
       @mailbox="chooseMailbox"
       @cancel="auth.cancelMailbox"
     />
-    <WorkspaceModal
-      v-model:open="workspaceOpen"
+    <WorkspaceSettings
+      v-if="auth.backend && auth.activeMailbox.value?.administrator"
+      v-model:open="workspaceSettingsOpen"
+      :name="workspaceName"
       :token="auth.token.value"
-      :login="login"
-      :repository="repository"
-      :public-only="false"
-      @connect="connect"
-      @install="installApp"
-      @create="navigateTo('/create/')"
+      @saved="workspaceSaved"
     />
-    <OwnClientModal v-model:open="ownOpen" />
     <SetupModal
       v-model:open="setupOpen"
       :token="auth.token.value"

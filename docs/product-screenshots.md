@@ -2,13 +2,13 @@
 
 The landing shows the actual Gitrew client with sample API responses. Robin and
 Sam's messages are synthetic; no production session, private conversation or
-credentials are used. The workspace/repository label is our public source
-organization. Light/dark desktop and phone WebP assets live in `public/images/`.
+credentials are used. The workspace name is AfterPrompt; the organization label and repository references
+use our source organization. All responses are synthetic. Light/dark desktop and phone WebP assets live in `public/images/`.
 
 To refresh them after a UI change, use Node 24 and the repository's installed
 dependencies (including Nuxt's Sharp dependency):
 
-1. `npm run build` for the standard client build.
+1. `npm run build:worker` for the installed-workspace client.
 2. In another terminal, `node tests/serve-static.mjs`.
 3. `node scripts/capture-product.mjs` (optionally pass a local origin).
 4. Inspect the PNG captures under `output/product-screenshots/` and

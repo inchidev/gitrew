@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Open installed workspaces directly at sign-in/chat, preserve protected destinations, and explain organization/team/chat/private-membership access with browser-bound diagnostics that do not authorize denied users.
+- Remove the workspace-creation rail, member hosting prompts, duplicated toolbar name and idle presence counter; put appearance/sign-out in the account menu. Add administrator-editable workspace display names with Inchi/AfterPrompt defaults, without changing GitHub or storage identifiers.
+
 - Simplify the public landing, link directly to installation, remove its redundant `/create/` page, and replace the illustrative chat with real responsive product screenshots using sample content. Preserve setup on installed workspaces and document repository/App creation.
 
 - Resolve the UUID and nested esbuild dependency alerts with scoped, validated overrides; document the remaining unpatched braces/node-forge build dependencies and their assessed runtime boundary.

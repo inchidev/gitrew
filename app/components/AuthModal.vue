@@ -11,6 +11,7 @@ const props = defineProps<{
   sandbox?: boolean;
   backend?: boolean;
   standalone?: boolean;
+  displayName?: string;
 }>();
 const open = defineModel<boolean>("open", { required: true });
 const colorMode = useColorMode();

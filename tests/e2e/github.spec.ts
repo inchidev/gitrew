@@ -70,7 +70,10 @@ test("GitHub OAuth completes with PKCE, sends directly to Discussions, and clear
   expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain(
     "test-browser-session",
   );
-  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await page
+    .getByRole("button", { name: "User settings", exact: true })
+    .click();
+  await page.getByRole("menuitem", { name: "Sign out", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Sign in to Gitrew", exact: true }),
   ).toBeVisible();
@@ -123,10 +126,7 @@ test("switching repositories isolates messages and keeps drafts in their origina
   ).toBeVisible();
   const composer = page.getByRole("textbox", { name: "Message", exact: true });
   await composer.fill("Draft for the public workspace");
-  await page.locator(".workspace-switch").click();
-  await page
-    .getByRole("button", { name: "my-team/private-chat", exact: true })
-    .click();
+  await page.goto("/w/my-team?repo=private-chat");
   await expect(
     page.getByText("Only the private workspace", { exact: true }),
   ).toBeVisible();
@@ -135,10 +135,7 @@ test("switching repositories isolates messages and keeps drafts in their origina
   ).toHaveCount(0);
   await expect(composer).toHaveValue("");
   await composer.fill("Draft for the private workspace");
-  await page.locator(".workspace-switch").click();
-  await page
-    .getByRole("button", { name: "inchidev/gitrew", exact: true })
-    .click();
+  await page.goto("/w/inchidev?repo=gitrew");
   await expect(composer).toHaveValue("Draft for the public workspace");
 });
 
@@ -190,21 +187,10 @@ test("prefixed storage stays out of project repositories and vaults stay out of 
   await expect(
     page.getByText("A conversation from GitHub", { exact: true }),
   ).toBeVisible();
-  await page.locator(".workspace-switch").click();
-  const workspaces = page.getByRole("dialog", { name: "Your workspaces" });
   await expect(
-    workspaces.getByRole("button", {
-      name: "inchidev/gitrew-afterprompt-chat",
-      exact: true,
-    }),
-  ).toBeVisible();
-  for (const name of ["gitrew-afterprompt-vault", "gitrew-afterprompt-auth"])
-    await expect(
-      workspaces.getByRole("button", { name: `inchidev/${name}`, exact: true }),
-    ).toHaveCount(0);
-  await workspaces
-    .getByRole("button", { name: "Organization: inchidev", exact: true })
-    .click();
+    page.getByRole("navigation", { name: "Workspaces", exact: true }),
+  ).toHaveCount(0);
+  await page.goto("/w/inchidev?repo=gitrew-afterprompt-chat");
   await expect(page).toHaveURL(/repo=gitrew-afterprompt-chat/);
   await expect(
     page.getByText("Only the private workspace", { exact: true }),
