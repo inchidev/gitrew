@@ -25,10 +25,11 @@ this mode; teams that need them run their own workspace installation.
 ## Operator setup
 
 1. Create a token that can read public content and nothing else. A
-   fine-grained personal access token with **Discussions: read** and
-   **Metadata: read** (automatic) and no other permissions is enough. A
-   classic token with `public_repo` scope also works. Set an expiration and
-   rotate it like any credential.
+   fine-grained token with **Public repositories** access and **no
+   permissions at all** is enough: GitHub always includes read-only access
+   to all public repositories, and with public-only access GitHub does not
+   even offer other permissions. (A classic token with `public_repo` scope
+   also works.) Set an expiration and rotate it like any credential.
 2. Store it as a worker secret (never in a config file):
    `npx wrangler secret put PUBLIC_GITHUB_TOKEN --config wrangler.portal.jsonc`
 3. Deploy with `wrangler.portal.jsonc`, which binds the `gitrew-public` D1
