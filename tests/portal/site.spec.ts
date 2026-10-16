@@ -96,3 +96,11 @@ test("product site offers installation without workspace authentication", async 
     fullPage: true,
   });
 });
+
+test("landing showcases guest communities", async ({ page }) => {
+  await page.goto("/");
+  const card = page.getByRole("link", { name: /nuxt\/nuxt/ });
+  await expect(card).toBeVisible();
+  await card.click();
+  await expect(page).toHaveURL("/github/nuxt/nuxt");
+});

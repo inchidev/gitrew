@@ -76,6 +76,23 @@ const stages = [
     status: "Current focus",
   },
 ];
+const communities = [
+  {
+    owner: "nuxt",
+    repo: "nuxt",
+    blurb: "The framework this site runs on.",
+  },
+  {
+    owner: "vuejs",
+    repo: "core",
+    blurb: "The UI library under every channel.",
+  },
+  {
+    owner: "nuxt",
+    repo: "ui",
+    blurb: "The component library behind this interface.",
+  },
+];
 providers.push(
   {
     id: "cursor",
@@ -135,6 +152,7 @@ useHead({
         ><BrandMark /><span>Gitrew</span></NuxtLink
       >
       <nav aria-label="Main navigation">
+        <a href="#communities">Communities</a>
         <a href="#providers">Providers</a>
         <a href="#direction">The idea</a>
         <a href="#install" class="install-link">Install yours</a>
@@ -225,6 +243,35 @@ useHead({
             /></a>
           </figcaption>
         </figure>
+      </section>
+
+      <section
+        id="communities"
+        class="communities-section"
+        aria-labelledby="communities-title"
+      >
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">No sign-in</p>
+            <h2 id="communities-title">Read real communities as a guest.</h2>
+          </div>
+          <NuxtLink to="/github/" class="browse-all"
+            >Browse public
+            <UIcon name="i-octicon-arrow-right-16"
+          /></NuxtLink>
+        </div>
+        <ul class="communities">
+          <li v-for="community in communities" :key="`${community.owner}/${community.repo}`">
+            <NuxtLink :to="`/github/${community.owner}/${community.repo}`">
+              <strong>{{ community.owner }}/{{ community.repo }}</strong>
+              <span>{{ community.blurb }}</span>
+            </NuxtLink>
+          </li>
+        </ul>
+        <p class="direction-note">
+          Anonymous workspace preview with discussions included. Reply on
+          GitHub, or install Gitrew for your own crew below.
+        </p>
       </section>
 
       <section
@@ -476,9 +523,46 @@ section[id] {
 }
 .providers-section,
 .direction-section,
+.communities-section,
 .watch-section {
   padding: 52px 0 62px;
   border-top: 1px solid var(--ui-border);
+}
+.communities {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 30px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.communities a {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px;
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  color: inherit;
+  text-decoration: none;
+}
+.communities a:hover {
+  border-color: var(--ui-border-accented);
+}
+.communities strong {
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+.communities span {
+  font-size: 14px;
+  color: var(--ui-text-muted);
+}
+.browse-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  flex-shrink: 0;
 }
 .section-heading {
   display: flex;
@@ -794,6 +878,7 @@ h3 {
   }
   .providers-section,
   .direction-section,
+  .communities-section,
   .watch-section {
     padding: 38px 0;
   }
@@ -835,6 +920,9 @@ h3 {
   .workflow {
     grid-template-columns: 1fr 1fr;
     gap: 28px 20px;
+  }
+  .communities {
+    grid-template-columns: 1fr;
   }
   .workflow p {
     font-size: 14px;
