@@ -15,6 +15,10 @@ const meta = ref<PublicRepoMeta | null>(null);
 const pending = ref(true);
 const error = ref("");
 
+const searchOwner = ref("");
+const searchRepo = ref("");
+const searchError = ref("");
+
 async function load() {
   pending.value = true;
   error.value = "";
@@ -30,10 +34,27 @@ async function load() {
   }
 }
 
+function open() {
+  const cleanOwner = searchOwner.value.trim();
+  const cleanRepo = searchRepo.value.trim();
+  if (!/^[a-z\d](?:[a-z\d-]{0,38})$/i.test(cleanOwner)) {
+    searchError.value = "Enter a GitHub user or organization name.";
+    return;
+  }
+  if (cleanRepo && !/^[\w.-]{1,100}$/.test(cleanRepo)) {
+    searchError.value = "Enter a valid repository name.";
+    return;
+  }
+  searchError.value = "";
+  void navigateTo(
+    cleanRepo ? `/github/${cleanOwner}/${cleanRepo}` : `/github/${cleanOwner}`,
+  );
+}
+
 onMounted(() => void load());
 </script>
 <template>
-  <div class="public-page">
+  <div class="public-page public-workspace-page">
     <header class="public-header">
       <NuxtLink to="/" class="brand" aria-label="Gitrew home"
         ><BrandMark /><span>Gitrew</span></NuxtLink
@@ -45,10 +66,39 @@ onMounted(() => void load());
         <span aria-hidden="true"> / </span>
         <span>{{ repo }}</span>
       </nav>
+      <span v-if="meta" class="repo-stars" title="Stargazers"
+        >★ {{ meta.stargazerCount }}</span
+      >
+      <a
+        v-if="meta"
+        :href="meta.url"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="github-link"
+        >Open on GitHub</a
+      >
+      <form class="org-search" @submit.prevent="open">
+        <UInput
+          v-model="searchOwner"
+          placeholder="user or org"
+          aria-label="GitHub user or organization"
+          autocomplete="off"
+          spellcheck="false"
+          size="xs"
+        />
+        <UInput
+          v-model="searchRepo"
+          placeholder="repo"
+          aria-label="Repository"
+          autocomplete="off"
+          spellcheck="false"
+          size="xs"
+        />
+        <UButton type="submit" label="Open" size="xs" variant="outline" />
+      </form>
     </header>
+    <p v-if="searchError" class="search-error" role="alert">{{ searchError }}</p>
     <main>
-      <h1>{{ owner }}/{{ repo }}</h1>
-      <PublicBanner />
       <div v-if="pending" class="stack">
         <USkeleton v-for="index in [1, 2, 3]" :key="index" class="h-16" />
       </div>
@@ -58,14 +108,6 @@ onMounted(() => void load());
         </template>
       </UAlert>
       <template v-else-if="meta">
-        <p class="lede">
-          <span v-if="meta.description">{{ meta.description }} · </span>★
-          {{ meta.stargazerCount }}
-          ·
-          <a :href="meta.url" target="_blank" rel="noopener noreferrer"
-            >Open on GitHub</a
-          >
-        </p>
         <UAlert
           v-if="!meta.hasDiscussionsEnabled"
           color="warning"

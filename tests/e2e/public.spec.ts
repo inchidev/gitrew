@@ -175,6 +175,21 @@ test("disabled discussions banner offers a retry", async ({ page }) => {
   expect(metaHits).toBeGreaterThanOrEqual(2);
 });
 
+test("repository space searches other organizations", async ({ page }) => {
+  await publicRoutes(page);
+  await page.goto("/github/acme/widget");
+  await page.getByLabel("GitHub user or organization").fill("nope!");
+  await page.getByRole("button", { name: "Open", exact: true }).click();
+  await expect(
+    page.getByText("Enter a GitHub user or organization name."),
+  ).toBeVisible();
+  await page.getByLabel("GitHub user or organization").fill("ghost");
+  await page.getByLabel("Repository").fill("");
+  await page.getByRole("button", { name: "Open", exact: true }).click();
+  await expect(page).toHaveURL("/github/ghost");
+  await expect(page.getByText("does not exist")).toBeVisible();
+});
+
 test("unknown and private spaces look the same", async ({ page }) => {
   await publicRoutes(page);
   await page.goto("/github/ghost");

@@ -1303,10 +1303,58 @@ kbd {
   padding: 8px 0 8px 12px;
   border-left: 2px solid var(--ui-border);
 }
-.public-page .gitrew-shell {
-  height: 72dvh;
-  min-height: 480px;
-  border: 1px solid var(--ui-border);
-  border-radius: 12px;
-  overflow: hidden;
+.public-workspace-page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+.public-workspace-page .public-header {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+.public-workspace-page .repo-stars {
+  color: var(--ui-text-muted);
+  font-size: 14px;
+  white-space: nowrap;
+}
+.public-workspace-page .github-link {
+  font-size: 14px;
+  white-space: nowrap;
+}
+.public-workspace-page .org-search {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+.public-workspace-page .org-search input {
+  width: 130px;
+}
+.public-workspace-page .search-error {
+  color: var(--ui-error);
+  font-size: 13px;
+  padding: 4px 16px 0;
+}
+.public-workspace-page > main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  gap: 0;
+}
+.public-workspace-page > main > .stack {
+  padding: 16px;
+}
+.public-workspace-page .gitrew-shell {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+  border: none;
+  border-top: 1px solid var(--ui-border);
+  border-radius: 0;
 }
