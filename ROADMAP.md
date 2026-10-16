@@ -11,7 +11,7 @@ Status reconciled on 2026-10-16. The priority is reliable everyday GitHub team c
 
 All three Cloudflare deployments were verified after the prefix merge: successful builds of the same main commit, healthy workspace endpoints, anonymous sessions rejected, public-site API paths absent and the old inchi domain redirect intact. Feature configuration does not establish two-person audio, private delivery or background push. See the dated [installation record](docs/inchidev-install.md).
 
-The latest pinned source release is [v0.2.0](https://github.com/inchidev/gitrew/releases/tag/v0.2.0); the prefix change is newer on main and is listed in `CHANGELOG.md` under Unreleased.
+The latest pinned source release is [v0.2.0](https://github.com/inchidev/gitrew/releases/tag/v0.2.0); the prefix and dependency fixes are newer on main and are listed in `CHANGELOG.md` under Unreleased.
 
 ## Remaining work
 
@@ -20,7 +20,7 @@ The latest pinned source release is [v0.2.0](https://github.com/inchidev/gitrew/
 | Two-member team-chat acceptance on both maintained workspaces | Allowed/wrong-team access, private/DM isolation, live delivery and reconnect, membership revocation, two-person audio and provider cleanup | [#1](https://github.com/inchidev/gitrew/issues/1) |
 | Installed PWA and background notifications | Physical iOS/macOS/Android icons/layout/keyboard/gestures, standalone OAuth/session/deep links, opt-in/out and actual background push | [#2](https://github.com/inchidev/gitrew/issues/2) |
 | Encryption-key separation and rotation | Separate purpose keys, versioned migration, tested rotation and documented recovery | [#4](https://github.com/inchidev/gitrew/issues/4) |
-| Dependency alert remediation | Exposure assessed, compatible fixes/mitigations validated, unresolved upstream items explicit and GitHub alerts rechecked | [#26](https://github.com/inchidev/gitrew/issues/26) |
+| Remaining upstream dependency alerts | UUID/esbuild fixes and exposure assessment are documented; update braces/node-forge when patched upstream releases are available and recheck GitHub alerts | [#26](https://github.com/inchidev/gitrew/issues/26) · [Assessment](docs/dependency-security.md) |
 | Installation recovery and upgrades | Isolated backup/restore drill covering secrets, D1/DO and GitHub conversation state, with tested upgrade/rollback limits | [#27](https://github.com/inchidev/gitrew/issues/27) |
 | Public celld/Coolify installation | Supported production runtime/durability, final HTTPS OAuth, member/realtime checks, persistent restart and restore/upgrade proof | [#28](https://github.com/inchidev/gitrew/issues/28) |
 | Real landing screenshot | Representative shipped UI with consented/sample content, no private data, readable responsive asset | [#29](https://github.com/inchidev/gitrew/issues/29) |

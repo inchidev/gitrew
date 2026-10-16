@@ -16,6 +16,8 @@ updates are deferred because `vue-tsc` 3.3.13 fails to load its removed compiler
 entry point (`typescript/lib/tsc`). Revisit these rules when upgrading Node or the
 Vue typechecker; these compatibility exceptions do not disable dependency alerts.
 
+See [dependency security status](dependency-security.md) for the reviewed UUID/esbuild overrides and the remaining braces/node-forge upstream blockers. Keep unresolved alerts visible; dependency scope in GitHub's graph is not a substitute for checking the actual deployed module graph.
+
 ## Configure and verify
 
 In **Settings → Security → Advanced Security**, enable secret scanning and push

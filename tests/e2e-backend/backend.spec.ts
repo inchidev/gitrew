@@ -146,7 +146,12 @@ for (const repositoryName of ["gitrew-chat", "gitrew-test-chat"]) {
         `http://127.0.0.1:5182/w/team/${kind}/${id}${suffix}`,
       );
     let signedOut = false;
+    let huddleReleased = false;
     let vaultListAttempts = 0;
+    const sdkErrors: string[] = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") sdkErrors.push(message.text());
+    });
     const requests: { url: string; authorization: string | undefined }[] = [];
     page.on("request", (request) =>
       requests.push({
@@ -177,6 +182,20 @@ for (const repositoryName of ["gitrew-chat", "gitrew-test-chat"]) {
       if (path === "/api/logout") {
         signedOut = true;
         return route.fulfill({ json: { signedOut: true } });
+      }
+      if (path === "/api/huddle/join")
+        return route.fulfill({
+          json: {
+            provider: "realtimekit",
+            token: "invalid-participant-token",
+            url: "",
+            lease: "test-huddle-lease",
+          },
+        });
+      if (path === "/api/huddle/leave") {
+        expect(route.request().postDataJSON().lease).toBe("test-huddle-lease");
+        huddleReleased = true;
+        return route.fulfill({ json: { left: true } });
       }
       if (path === "/api/vault") {
         const body = route.request().postDataJSON();
@@ -344,6 +363,30 @@ for (const repositoryName of ["gitrew-chat", "gitrew-test-chat"]) {
     expect(
       await page.evaluate(() => JSON.stringify({ ...sessionStorage })),
     ).not.toContain("gitrew-backend:");
+    // Load the real browser SDK with the scoped UUID override. Its invalid-token
+    // error occurs after UUID generation, before provider or microphone access.
+    await page
+      .getByRole("button", { name: "Join huddle", exact: true })
+      .click();
+    const huddle = page.getByRole("dialog", { name: "Voice huddle" });
+    await expect(
+      huddle.getByText(/Could not initialize the huddle/),
+    ).toBeVisible();
+    expect(
+      sdkErrors.some((message) =>
+        message.includes("Invalid auth token provided"),
+      ),
+    ).toBe(true);
+    expect(
+      await page.evaluate(() =>
+        Boolean(customElements.get("rtk-participants-audio")),
+      ),
+    ).toBe(true);
+    await huddle
+      .getByRole("button", { name: "Disconnect", exact: true })
+      .click();
+    await expect(huddle).toHaveCount(0);
+    await expect.poll(() => huddleReleased).toBe(true);
     await page.getByRole("button", { name: "Sign out", exact: true }).click();
     await expect(
       page.getByRole("button", { name: "Continue with GitHub" }),

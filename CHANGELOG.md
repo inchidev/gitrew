@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Resolve the UUID and nested esbuild dependency alerts with scoped, validated overrides; document the remaining unpatched braces/node-forge build dependencies and their assessed runtime boundary.
+
 - Require the `gitrew-` prefix for chat/vault repository names during setup, and recognize named workspace storage when listing workspaces, conversation sources and project repositories.
 
 ## 0.2.0 — 2026-10-15
