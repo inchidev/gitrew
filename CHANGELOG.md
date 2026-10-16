@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-- Add anonymous read-only browsing of public GitHub owners and repositories at `/github/*`: one page per request with load-more, short-lived server cache, per-visitor budgets, and identical 404s for missing and private content. The public worker answers `/api/public/*` only. Requires a `PUBLIC_GITHUB_TOKEN` secret; see `docs/public-browsing.md`.
+## 0.4.0 — 2026-10-16
+
+- Add anonymous read-only browsing of public GitHub owners and repositories at `/github/*`: one page per request with load-more, short-lived server cache, per-visitor budgets, and identical 404s for missing and private content. The public worker answers `/api/public/*` only. Requires a `PUBLIC_GITHUB_TOKEN` secret with no permissions; see `docs/public-browsing.md`.
 
 ## 0.3.0 — 2026-10-16
 
