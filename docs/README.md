@@ -17,6 +17,7 @@ Gitrew is a GitHub organization workspace for channels, threads, private groups 
 - [Releases](releases.md): pinned source downloads, verification and maintainer procedure.
 - [Contributing](contributing.md): pull requests, required checks and branch policy.
 - [GitHub security settings](github-security.md): scanning, push protection and Dependabot.
+- [Dependency security status](dependency-security.md): scoped overrides, validation and remaining upstream blockers.
 - [Architecture and security](architecture.md).
 - [Realtime contract](realtime.md): event flow, authorization and fallback behavior.
 - [inchidev installation record](inchidev-install.md): dated live verification, distinct from local tests.
