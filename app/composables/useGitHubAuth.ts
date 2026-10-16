@@ -1,4 +1,4 @@
-import { appReturnTo } from "../../shared/routes";
+import { appReturnTo, legacyWorkspacePath } from "../../shared/routes";
 import { useQueryClient } from "@tanstack/vue-query";
 import { useNow, useIntervalFn } from "@vueuse/core";
 import {
@@ -257,7 +257,14 @@ export function useGitHubAuth() {
 
   async function signIn(isInstaller = false) {
     const url = new URL(window.location.href);
-    const returnTo = appReturnTo(url.searchParams.get("returnTo")) || appReturnTo(url.pathname + url.search);
+    const workspaceReturnTo = legacyWorkspacePath(
+      url.searchParams.get("workspace") || "",
+      url.searchParams.get("channel") || "",
+    );
+    const returnTo =
+      appReturnTo(url.searchParams.get("returnTo")) ||
+      workspaceReturnTo ||
+      appReturnTo(url.pathname + url.search);
     if (returnTo) sessionStorage.setItem("gitrew:return-to:v1", returnTo);
     error.value = "";
     busy.value = true;

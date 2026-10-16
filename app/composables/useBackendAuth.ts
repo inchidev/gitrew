@@ -1,4 +1,4 @@
-import { appReturnTo } from "../../shared/routes";
+import { appReturnTo, legacyWorkspacePath } from "../../shared/routes";
 import { useQueryClient } from "@tanstack/vue-query";
 import { z } from "zod";
 import { backendJson, backendResponse, backendToken } from "~/lib/backend";
@@ -118,8 +118,13 @@ export function useBackendAuth() {
     if (setup) query.set("setup", "1");
     else {
       const url = new URL(window.location.href);
+      const workspaceReturnTo = legacyWorkspacePath(
+        url.searchParams.get("workspace") || "",
+        url.searchParams.get("channel") || "",
+      );
       const returnTo =
         appReturnTo(url.searchParams.get("returnTo")) ||
+        workspaceReturnTo ||
         appReturnTo(url.pathname + url.search);
       if (returnTo) query.set("returnTo", returnTo);
     }
