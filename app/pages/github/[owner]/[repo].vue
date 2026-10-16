@@ -77,7 +77,11 @@ onMounted(() => void load());
             <UButton label="Retry" size="xs" variant="soft" @click="load()" />
           </template>
         </UAlert>
-        <PublicWorkspace v-else :owner="owner" :repo="repo" />
+        <Gitrew
+          v-else
+          :public-source="{ owner, repo }"
+          :key="`${owner}/${repo}`"
+        />
       </template>
     </main>
   </div>

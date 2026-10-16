@@ -12,6 +12,10 @@ import type { Channel } from "../../shared/chat";
 import type { MailboxConfig } from "../../shared/mailbox";
 
 import { legacyWorkspacePath, workspacePath } from "../../shared/routes";
+const props = defineProps<{
+  publicSource?: { owner: string; repo: string };
+}>();
+const publicMode = computed(() => Boolean(props.publicSource));
 const route = useRoute();
 const router = useRouter();
 const requestedChannel = computed(() => {
@@ -32,6 +36,8 @@ const savedRepositories = useLocalStorage<Record<string, string>>(
 );
 const repository = computed({
   get: () => {
+    if (publicMode.value && props.publicSource)
+      return `${props.publicSource.owner}/${props.publicSource.repo}`;
     // A server-selected workspace may have moved since this browser last visited.
     const selected =
       (auth.backend ? auth.activeMailbox.value?.repository : "") ||
@@ -125,6 +131,7 @@ const chat = useChat(
   sources,
   vaultMailbox,
   requestedChannel,
+  computed(() => props.publicSource || null),
 );
 const live = useLiveChat(auth.token, organization, chat.channel, () => {
   // Coalesce webhook delivery and the immediate send acknowledgement.
@@ -347,12 +354,16 @@ const sample = computed(() => preview.value);
 const workspaceName = computed(() =>
   sample.value
     ? "Gitrew demo"
-    : isSignedIn.value
-      ? auth.activeMailbox.value?.displayName || organization.value
-      : "Your workspace",
+    : publicMode.value
+      ? repository.value
+      : isSignedIn.value
+        ? auth.activeMailbox.value?.displayName || organization.value
+        : "Your workspace",
 );
 const queryError = computed(
   () =>
+    chat.publicChannelsQuery.error.value ||
+    chat.publicMessagesQuery.error.value ||
     chat.channelsQuery.error.value ||
     chat.messagesQuery.error.value ||
     chat.vaultChannelsQuery.error.value,
@@ -366,17 +377,22 @@ const sendError = computed(() => chat.sendMutation.error.value?.message || "");
 const isPending = chat.sendMutation.isPending;
 const loading = computed(
   () =>
-    isSignedIn.value &&
-    !sample.value &&
-    (chat.channelsQuery.isPending.value ||
-      (Boolean(channel.value) && chat.messagesQuery.isPending.value)),
+    (publicMode.value &&
+      (chat.publicChannelsQuery.isPending.value ||
+        (Boolean(channel.value) &&
+          chat.publicMessagesQuery.isPending.value))) ||
+    (isSignedIn.value &&
+      !sample.value &&
+      (chat.channelsQuery.isPending.value ||
+        (Boolean(channel.value) && chat.messagesQuery.isPending.value))),
 );
 const currentUrl = computed(() => safeUrl(channel.value?.url || ""));
-const updatedAt = computed(() =>
-  chat.messagesQuery.dataUpdatedAt.value
-    ? dayjs(chat.messagesQuery.dataUpdatedAt.value).format("HH:mm")
-    : "",
-);
+const updatedAt = computed(() => {
+  const stamp = publicMode.value
+    ? chat.publicMessagesQuery.dataUpdatedAt.value
+    : chat.messagesQuery.dataUpdatedAt.value;
+  return stamp ? dayjs(stamp).format("HH:mm") : "";
+});
 const threadPresent = ref(false);
 watch(
   parent,
@@ -440,12 +456,8 @@ async function workspaceSaved() {
 watch(
   [auth.busy, isSignedIn],
   ([busy, signedIn]) => {
-    if (
-      !busy &&
-      auth.backend &&
-      auth.accessRequired.value &&
-      !signingOut.value
-    ) {
+    if (publicMode.value || signingOut.value) return;
+    if (!busy && auth.backend && auth.accessRequired.value) {
       void navigateTo(
         { path: "/access/", query: { returnTo: route.fullPath } },
         { replace: true },
@@ -461,10 +473,19 @@ watch(
   { immediate: true },
 );
 function channelLocation(id: string) {
+  if (publicMode.value && props.publicSource)
+    return {
+      path: `/github/${props.publicSource.owner}/${props.publicSource.repo}`,
+      query: { channel: id },
+    };
   const item = chat.channels.value.find((value) => value.id === id);
   const path = workspacePath(organization.value, id, item?.kind);
   const query: Record<string, string> = {};
-  if (!preview.value && repository.value.split("/")[1] !== "gitrew-chat")
+  if (
+    !preview.value &&
+    !publicMode.value &&
+    repository.value.split("/")[1] !== "gitrew-chat"
+  )
     query.repo = repository.value.split("/")[1]!;
   if (typeof route.query.auth === "string" && !auth.backend)
     query.auth = route.query.auth;
@@ -476,7 +497,7 @@ function selectChannel(id: string) {
 watch(
   () => chat.channel.value,
   (value) => {
-    if (value && (preview.value || isSignedIn.value)) {
+    if (value && (preview.value || isSignedIn.value || publicMode.value)) {
       const location = channelLocation(value.id);
       if (route.path !== location.path)
         void router.replace({
@@ -626,7 +647,7 @@ function dayLabel(index: number) {
 </script>
 
 <template>
-  <main v-if="!sample && !isSignedIn" class="auth-page">
+  <main v-if="!sample && !isSignedIn && !publicMode" class="auth-page">
     <p role="status">Opening your workspace…</p>
   </main>
   <div
@@ -724,8 +745,10 @@ function dayLabel(index: number) {
           No channels yet.
         </p>
       </nav>
-      <div class="channel-heading dm-heading"><span>Direct messages</span></div>
-      <nav class="channels" aria-label="Direct messages">
+      <div class="channel-heading dm-heading" v-if="!publicMode">
+        <span>Direct messages</span>
+      </div>
+      <nav v-if="!publicMode" class="channels" aria-label="Direct messages">
         <UButton
           v-for="item in directChannels"
           :key="item.id"
@@ -751,7 +774,7 @@ function dayLabel(index: number) {
           class="w-full justify-start"
           @click="membersOpen = true"
         />
-        <div class="user-bar">
+        <div v-if="!publicMode" class="user-bar">
           <UDropdownMenu :items="accountItems" :content="{ align: 'start' }">
             <UButton
               class="user-profile"
@@ -769,6 +792,16 @@ function dayLabel(index: number) {
             </UButton>
           </UDropdownMenu>
         </div>
+        <UButton
+          v-else
+          label="Sign in"
+          icon="i-octicon-mark-github-16"
+          color="neutral"
+          variant="outline"
+          size="sm"
+          class="w-full justify-start"
+          @click="openLogin"
+        />
       </div>
     </aside>
     <button
@@ -816,7 +849,7 @@ function dayLabel(index: number) {
         </div>
         <div class="header-actions">
           <UButton
-            v-if="auth.backend && !sample"
+            v-if="auth.backend && !sample && !publicMode"
             :icon="push.enabled.value ? 'i-lucide-bell-ring' : 'i-lucide-bell'"
             :aria-label="
               push.enabled.value
@@ -829,7 +862,7 @@ function dayLabel(index: number) {
             @click="push.toggle"
           />
           <UButton
-            v-if="auth.backend && !sample"
+            v-if="auth.backend && !sample && !publicMode"
             icon="i-lucide-headphones"
             :aria-label="huddle ? 'Return to huddle' : 'Join huddle'"
             :label="
@@ -843,7 +876,7 @@ function dayLabel(index: number) {
             @click="joinHuddle"
           />
           <UButton
-            v-if="sample"
+            v-if="sample || publicMode"
             label="Sign in"
             aria-label="Sign in with GitHub"
             icon="i-octicon-mark-github-16"
@@ -873,17 +906,26 @@ function dayLabel(index: number) {
             variant="ghost"
           />
           <UButton
-            v-if="!sample"
+            v-if="!sample || publicMode"
             icon="i-octicon-sync-16"
             aria-label="Refresh messages"
             color="neutral"
             variant="ghost"
             size="sm"
-            :loading="chat.messagesQuery.isFetching.value"
-            :disabled="!online || chat.messagesQuery.isFetching.value"
+            :loading="
+              publicMode
+                ? chat.publicMessagesQuery.isFetching.value
+                : chat.messagesQuery.isFetching.value
+            "
+            :disabled="
+              !online ||
+              (publicMode
+                ? chat.publicMessagesQuery.isFetching.value
+                : chat.messagesQuery.isFetching.value)
+            "
             @click="chat.refresh"
           />
-          <UDropdownMenu :items="conversationMenu"
+          <UDropdownMenu v-if="!publicMode" :items="conversationMenu"
             ><UButton
               icon="i-octicon-kebab-horizontal-16"
               aria-label="Conversation options"
@@ -893,7 +935,9 @@ function dayLabel(index: number) {
         </div>
       </header>
       <div v-if="!online" class="notice offline-notice" role="status">
-        You’re offline. Your draft is saved on this device.<span v-if="!sample">
+        You’re offline. Your draft is saved on this device.<span
+          v-if="!sample && !publicMode"
+        >
           Send it when you reconnect.</span
         >
       </div>
@@ -929,13 +973,13 @@ function dayLabel(index: number) {
         {{ appError }}
       </div>
       <div
-        v-if="queryError && !sample"
+        v-if="queryError && (!sample || publicMode)"
         class="notice error-notice"
         role="alert"
       >
         <span>{{ queryErrorMessage }}</span>
         <NuxtLink
-          v-if="auth.backend"
+          v-if="auth.backend && !publicMode"
           :to="{ path: '/access/', query: { returnTo: route.fullPath } }"
           >Check access</NuxtLink
         >
@@ -965,12 +1009,14 @@ function dayLabel(index: number) {
           <BrandMark />
           <h3>
             {{
-              isSignedIn
-                ? "This workspace is ready for a conversation."
-                : "Your team’s conversations stay behind sign-in."
+              publicMode
+                ? "No discussions yet."
+                : isSignedIn
+                  ? "This workspace is ready for a conversation."
+                  : "Your team’s conversations stay behind sign-in."
             }}
           </h3>
-          <p>Create a channel to start talking with your team.</p>
+          <p v-if="!publicMode">Create a channel to start talking with your team.</p>
           <UButton
             label="Open Discussions"
             :to="`https://github.com/${repository}/discussions`"
@@ -993,7 +1039,9 @@ function dayLabel(index: number) {
             {{
               search
                 ? "Try another word, or return to the conversation."
-                : "Send the first message."
+                : publicMode
+                  ? "Follow along, or open the discussion on GitHub."
+                  : "Send the first message."
             }}
           </p>
           <UButton
@@ -1024,6 +1072,7 @@ function dayLabel(index: number) {
         {{ otherTypers.join(", ") }} typing…
       </div>
       <ChatComposer
+        v-if="!publicMode"
         v-model="roomDraft"
         label="Message"
         :disabled="!canWrite"
@@ -1032,6 +1081,18 @@ function dayLabel(index: number) {
         :error="sendError"
         @send="chat.send()"
       />
+      <div v-else class="notice guest-notice" role="note">
+        <span>You’re reading as a guest.</span>
+        <UButton label="Sign in" size="xs" variant="soft" @click="openLogin" />
+        <UButton
+          v-if="currentUrl"
+          label="Open in GitHub"
+          size="xs"
+          variant="soft"
+          :to="currentUrl"
+          target="_blank"
+        />
+      </div>
     </main>
 
     <Transition name="thread" @after-leave="threadPresent = false">
@@ -1068,6 +1129,7 @@ function dayLabel(index: number) {
           />
         </div>
         <ChatComposer
+          v-if="!publicMode"
           v-model="threadDraft"
           label="Reply"
           reply
@@ -1077,6 +1139,15 @@ function dayLabel(index: number) {
           :error="sendError"
           @send="chat.send(selectedThread)"
         />
+        <div v-else class="notice guest-notice" role="note">
+          <span>You’re reading as a guest.</span>
+          <UButton
+            label="Sign in"
+            size="xs"
+            variant="soft"
+            @click="openLogin"
+          />
+        </div>
       </aside>
     </Transition>
     <UModal

@@ -9,6 +9,8 @@ import type { Message, ChatTransport } from "../../shared/chat";
 import type { MailboxConfig } from "../../shared/mailbox";
 import { VaultTransport } from "~/lib/vault";
 import { GitHubError, GitHubTransport } from "~/lib/github";
+import { PublicError } from "~/lib/public";
+import { PublicTransport } from "~/lib/public-chat";
 import { previewChannels, previewMessages } from "~/lib/preview";
 
 export const messageBodySchema = z
@@ -25,6 +27,7 @@ export function useChat(
   sources?: Ref<string[]>,
   mailbox?: Ref<MailboxConfig | null>,
   requestedChannel?: Ref<string>,
+  publicSource?: Ref<{ owner: string; repo: string } | null>,
 ) {
   const queryClient = useQueryClient();
   const online = useOnline();
@@ -44,6 +47,12 @@ export function useChat(
   );
   const authenticated = computed(() =>
     Boolean(token.value && login.value && !preview.value),
+  );
+  const publicMode = computed(() => Boolean(publicSource?.value));
+  const publicTransport = computed(() =>
+    publicSource?.value
+      ? new PublicTransport(publicSource.value.owner, publicSource.value.repo)
+      : null,
   );
   const scope = computed(() =>
     preview.value ? "preview" : `${login.value}:${repository.value}`,
@@ -112,15 +121,56 @@ export function useChat(
           : 120_000
         : false,
   });
+  const publicChannelsQuery = useQuery({
+    queryKey: computed(() => [
+      "public-channels",
+      publicSource?.value?.owner || "",
+      publicSource?.value?.repo || "",
+    ]),
+    enabled: publicMode,
+    queryFn: () => publicTransport.value!.listChannels(),
+    retry: (attempt, error) =>
+      attempt < 2 &&
+      (!(error instanceof PublicError) || error.status !== 429),
+    refetchInterval: () =>
+      online.value && visibility.value === "visible" ? 120_000 : false,
+  });
+  const publicMessagesQuery = useQuery({
+    retry: (attempt, error) =>
+      attempt < 2 &&
+      (!(error instanceof PublicError) || error.status !== 429),
+    refetchOnWindowFocus: true,
+    queryKey: computed(() => [
+      "public-messages",
+      publicSource?.value?.owner || "",
+      publicSource?.value?.repo || "",
+      selectedChannel.value,
+    ]),
+    enabled: computed(
+      () =>
+        publicMode.value &&
+        Boolean(selectedChannel.value) &&
+        (publicChannelsQuery.isPending.value ||
+          channels.value.some(
+            (channel) => channel.id === selectedChannel.value,
+          )),
+    ),
+    queryFn: () =>
+      publicTransport.value!.listMessages(selectedChannel.value),
+    refetchInterval: () =>
+      online.value && visibility.value === "visible" ? 60_000 : false,
+  });
   const channels = computed(() =>
     preview.value
       ? previewChannels
-      : !authenticated.value
-        ? []
-        : [
-            ...(channelsQuery.data.value || []),
-            ...(vaultChannelsQuery.data.value || []),
-          ],
+      : publicMode.value
+        ? publicChannelsQuery.data.value || []
+        : !authenticated.value
+          ? []
+          : [
+              ...(channelsQuery.data.value || []),
+              ...(vaultChannelsQuery.data.value || []),
+            ],
   );
   const messagesQuery = useQuery({
     retry: (attempt, error) =>
@@ -178,9 +228,11 @@ export function useChat(
       ? localMessages.value.filter(
           (message) => message.channelId === selectedChannel.value,
         )
-      : authenticated.value
-        ? messagesQuery.data.value || []
-        : [];
+      : publicMode.value
+        ? publicMessagesQuery.data.value || []
+        : authenticated.value
+          ? messagesQuery.data.value || []
+          : [];
     return [...data].sort(
       (a, b) =>
         a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id),
@@ -237,8 +289,9 @@ export function useChat(
   });
   const canWrite = computed(
     () =>
-      preview.value ||
-      (authenticated.value && Boolean(channel.value) && online.value),
+      !publicMode.value &&
+      (preview.value ||
+        (authenticated.value && Boolean(channel.value) && online.value)),
   );
 
   if (requestedChannel)
@@ -377,7 +430,13 @@ export function useChat(
     }
   }
   function refresh() {
-    if (!authenticated.value || !online.value) return;
+    if (!online.value) return;
+    if (publicMode.value) {
+      void publicChannelsQuery.refetch();
+      if (channel.value) void publicMessagesQuery.refetch();
+      return;
+    }
+    if (!authenticated.value) return;
     void channelsQuery.refetch();
     if (mailbox?.value?.vault) void vaultChannelsQuery.refetch();
     if (channel.value) void messagesQuery.refetch();
@@ -403,6 +462,8 @@ export function useChat(
     channelsQuery,
     vaultChannelsQuery,
     messagesQuery,
+    publicChannelsQuery,
+    publicMessagesQuery,
     sendMutation,
   };
 }
