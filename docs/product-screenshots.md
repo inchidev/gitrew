@@ -1,9 +1,11 @@
 # Landing product screenshots
 
-The landing shows the actual Gitrew client with sample API responses. Robin and
+The landing hero links live public workspaces instead of sample screenshots,
+so no WebP assets ship in `public/images/` anymore. The capture pipeline below
+remains for ad-hoc docs or social preview assets. Robin and
 Sam's messages are synthetic; no production session, private conversation or
 credentials are used. The workspace name is AfterPrompt; the organization label and repository references
-use our source organization. All responses are synthetic. Light/dark desktop and phone WebP assets live in `public/images/`.
+use our source organization. All responses are synthetic.
 
 To refresh them after a UI change, use Node 24 and the repository's installed
 dependencies (including Nuxt's Sharp dependency):

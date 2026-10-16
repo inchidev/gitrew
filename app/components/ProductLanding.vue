@@ -199,8 +199,8 @@ useHead({
               trailing
               size="lg"
             /><UButton
-              to="/github/"
-              label="Browse public"
+              to="/github/nuxt/nuxt"
+              label="Open live workspace"
               icon="i-lucide-globe"
               color="neutral"
               variant="outline"
@@ -210,39 +210,29 @@ useHead({
             /></a>
           </div>
         </div>
-        <figure class="product-preview">
-          <a
-            :href="`/images/gitrew-chat-${colorMode.value === 'dark' ? 'dark' : 'light'}.webp`"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Open full Gitrew screenshot"
-          >
-            <picture>
-              <source
-                media="(max-width: 760px)"
-                :srcset="`/images/gitrew-chat-${colorMode.value === 'dark' ? 'dark' : 'light'}-mobile.webp`"
-                width="780"
-                height="1320"
-              />
-              <img
-                :src="`/images/gitrew-chat-${colorMode.value === 'dark' ? 'dark' : 'light'}.webp`"
-                alt="Gitrew channel with a sample team conversation, channels sidebar and message composer"
-                width="1800"
-                height="1360"
-                fetchpriority="high"
-              />
-            </picture>
-          </a>
-          <figcaption>
-            Gitrew with sample conversations.
-            <a
-              :href="`/images/gitrew-chat-${colorMode.value === 'dark' ? 'dark' : 'light'}.webp`"
-              target="_blank"
-              rel="noopener noreferrer"
-              >Open full screenshot <UIcon name="i-octicon-link-external-16"
-            /></a>
-          </figcaption>
-        </figure>
+        <div class="live-workspace" aria-label="Live public workspaces">
+          <p class="live-kicker">
+            <span class="live-dot" aria-hidden="true" />Live right now · no
+            sign-in
+          </p>
+          <ul>
+            <li
+              v-for="community in communities"
+              :key="`${community.owner}/${community.repo}`"
+            >
+              <NuxtLink :to="`/github/${community.owner}/${community.repo}`">
+                <strong
+                  >{{ community.owner }}/{{ community.repo }}</strong
+                >
+                <span>{{ community.blurb }}</span>
+                <UIcon name="i-octicon-arrow-right-16" />
+              </NuxtLink>
+            </li>
+          </ul>
+          <p class="live-note">
+            Real discussions, read-only. Reply on GitHub.
+          </p>
+        </div>
       </section>
 
       <section
@@ -486,37 +476,77 @@ h1 {
   align-items: center;
   font-size: 14px;
 }
-.product-preview {
+.live-workspace {
   min-width: 0;
-}
-.product-preview > a {
-  display: block;
-  overflow: hidden;
   border: 1px solid var(--ui-border);
   border-radius: 12px;
-  box-shadow: 8px 8px 0 var(--ui-bg-muted);
-  cursor: zoom-in;
-}
-.product-preview a:focus-visible {
-  outline: 2px solid var(--ui-primary);
-  outline-offset: 5px;
-}
-.product-preview img {
-  display: block;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--ui-bg-muted);
+  align-self: start;
   width: 100%;
-  height: auto;
 }
-.product-preview figcaption {
-  margin-top: 16px;
+.live-kicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ui-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ui-success, #3fb950);
+  flex: none;
+}
+.live-workspace ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.live-workspace a {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "name arrow" "blurb arrow";
+  column-gap: 10px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
+  color: inherit;
+  text-decoration: none;
+  background: var(--ui-bg);
+}
+.live-workspace a:hover {
+  border-color: var(--ui-border-accented);
+}
+.live-workspace strong {
+  grid-area: name;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+.live-workspace ul span {
+  grid-area: blurb;
+  font-size: 13px;
+  color: var(--ui-text-muted);
+}
+.live-workspace ul .iconify {
+  grid-area: arrow;
+  color: var(--ui-text-muted);
+}
+.live-note {
   color: var(--ui-text-muted);
   font-size: 14px;
   line-height: 1.6;
-}
-.product-preview figcaption a {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  width: fit-content;
 }
 section[id] {
   scroll-margin-top: 28px;
@@ -802,7 +832,7 @@ h3 {
   .hero-description {
     max-width: 560px;
   }
-  .product-preview {
+  .live-workspace {
     width: 100%;
     max-width: 820px;
     justify-self: center;
@@ -859,7 +889,7 @@ h3 {
   .site-header nav > a.install-link {
     display: inline-flex;
   }
-  .product-preview {
+  .live-workspace {
     max-width: 390px;
     justify-self: center;
     width: 100%;
