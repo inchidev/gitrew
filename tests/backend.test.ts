@@ -267,6 +267,32 @@ beforeEach(async () => {
             user: { id: id === 2 ? inviteeIdentity : id, login: `user${id}` },
           });
         }
+        if (url.pathname === "/user/memberships/orgs/club") {
+          const id = Number(
+            authorization.match(/private-user-token-(\d+)/)?.[1] ||
+              currentUser,
+          );
+          return id === 2
+            ? response({ role: "member", state: "active" })
+            : response({ message: "Not found" }, 404);
+        }
+        if (/^\/orgs\/club\/memberships\/user\d+$/.test(url.pathname))
+          return url.pathname.endsWith("user2")
+            ? response({
+                state: "active",
+                role: "member",
+                user: { id: 2, login: "user2" },
+              })
+            : response({ message: "Not found" }, 404);
+        if (/^\/orgs\/club\/teams\/band\/memberships\/user2$/.test(url.pathname))
+          return response({ state: "active" });
+        if (url.pathname === "/repos/club/gitrew-chat")
+          return response({
+            id: 20,
+            private: true,
+            description: "club chat",
+            has_discussions: true,
+          });
         if (url.pathname === "/user/installations")
           return response({
             total_count: 1,
@@ -368,7 +394,10 @@ beforeEach(async () => {
                       (body as { variables: { id: string } }).variables.id ===
                       "general"
                         ? "team/gitrew-chat"
-                        : "other/repository",
+                        : (body as { variables: { id: string } }).variables
+                              .id === "club-general"
+                          ? "club/gitrew-chat"
+                          : "other/repository",
                   },
                 },
               },
@@ -1087,6 +1116,145 @@ describe("Cloudflare backend", () => {
         .status,
     ).toBe(401);
   });
+  it("hosts two organizations with per-org access and webhook dispatch", async () => {
+    await register();
+    await store.saveWorkspace({
+      organization: "team",
+      repository: "team/gitrew-chat",
+      vault: "team/gitrew-vault",
+      installationId: 9,
+      nonce: "workspace-nonce",
+      ready: true,
+      openRegistration: false,
+      memberPrivateChannels: false,
+      allowedTeam: "crew",
+    });
+    // Logins happen while only one workspace exists, so the legacy
+    // organization-less session load keeps working.
+    const bob = await login(2);
+    const carol = await login(3);
+    await store.saveWorkspace({
+      organization: "club",
+      repository: "club/gitrew-chat",
+      vault: "club/gitrew-vault",
+      installationId: 10,
+      nonce: "club-nonce",
+      ready: true,
+      openRegistration: false,
+      memberPrivateChannels: false,
+      allowedTeam: "band",
+    });
+    const sessionOrg = async (
+      cookie: string,
+      organization?: string,
+    ): Promise<{ status: number; workspace?: string }> => {
+      const path =
+        "/api/session" + (organization ? `?organization=${organization}` : "");
+      const response = await request(path, { headers: { Cookie: cookie } });
+      const data = (await response.json()) as {
+        workspace?: { repository: string };
+      };
+      return {
+        status: response.status,
+        workspace: data.workspace?.repository.split("/")[0],
+      };
+    };
+    // Per-org sessions: bob belongs to both, carol only to team.
+    expect((await sessionOrg(bob.cookie, "club")).workspace).toBe("club");
+    expect((await sessionOrg(bob.cookie, "team")).workspace).toBe("team");
+    expect((await sessionOrg(carol.cookie, "team")).workspace).toBe("team");
+    expect((await sessionOrg(carol.cookie, "club")).status).toBe(403);
+    // No silent default once several workspaces exist.
+    expect((await sessionOrg(bob.cookie)).status).toBe(400);
+    // The club gate uses the club team, not the App default.
+    expect(
+      githubCalls.some((c) =>
+        c.url.endsWith("/orgs/club/teams/band/memberships/user2"),
+      ),
+    ).toBe(true);
+    // Live sockets attach per organization.
+    const ticketFor = async (
+      session: { cookie: string; csrf: string },
+      organization: string,
+      channel: string,
+    ) => {
+      const ticket = await post(
+        "/api/live/ticket",
+        { organization, channel, kind: "public" },
+        sessionHeaders(session),
+      );
+      expect(ticket.status).toBe(200);
+      const { ticket: id } = (await ticket.json()) as { ticket: string };
+      const connected = await request("/api/live/socket?ticket=" + id, {
+        headers: { Cookie: session.cookie, Origin: origin, Upgrade: "websocket" },
+      });
+      expect(connected.status).toBe(101);
+      connected.webSocket!.accept();
+      let closed = false;
+      const messages: unknown[] = [];
+      connected.webSocket!.addEventListener("message", (event) => {
+        messages.push(event.data);
+      });
+      const code = new Promise<number>((resolve) =>
+        connected.webSocket!.addEventListener("close", (event) => {
+          closed = true;
+          resolve(event.code);
+        }),
+      );
+      return { closed: () => closed, code, messages };
+    };
+    const teamSocket = await ticketFor(bob, "team", "general");
+    const clubSocket = await ticketFor(bob, "club", "club-general");
+    const webhook = (event: string, payload: unknown) => {
+      const body = JSON.stringify(payload);
+      return request("/api/webhooks", {
+        method: "POST",
+        headers: {
+          "X-GitHub-Event": event,
+          "X-Hub-Signature-256":
+            "sha256=" +
+            createHmac("sha256", app.webhook_secret).update(body).digest("hex"),
+        },
+        body,
+      });
+    };
+    // Discussion events dispatch by installation: each hub gets only
+    // its own refresh.
+    const discuss = (id: number, repo: string, node: string) =>
+      webhook("discussion", {
+        installation: { id },
+        repository: { full_name: repo },
+        discussion: { node_id: node },
+      });
+    expect((await discuss(10, "club/gitrew-chat", "club-general")).status).toBe(
+      200,
+    );
+    expect((await discuss(9, "team/gitrew-chat", "general")).status).toBe(200);
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    expect(
+      clubSocket.messages.filter((m) => m === '{"type":"refresh"}'),
+    ).toHaveLength(1);
+    expect(
+      teamSocket.messages.filter((m) => m === '{"type":"refresh"}'),
+    ).toHaveLength(1);
+    // A club membership event revokes only the club socket; the team
+    // socket stays live and keeps receiving its own refreshes.
+    expect(
+      (
+        await webhook("member", {
+          installation: { id: 10 },
+          member: { id: 2, login: "user2" },
+        })
+      ).status,
+    ).toBe(200);
+    expect(await clubSocket.code).toBe(4001);
+    expect((await discuss(9, "team/gitrew-chat", "general")).status).toBe(200);
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    expect(teamSocket.closed()).toBe(false);
+    expect(
+      teamSocket.messages.filter((m) => m === '{"type":"refresh"}'),
+    ).toHaveLength(2);
+  }, 20_000);
   it("enforces private-channel membership and never sends an installation token to the browser", async () => {
     await register();
     const workspace: Workspace = {
