@@ -279,7 +279,7 @@ beforeEach(async () => {
             description: string;
             has_discussions: boolean;
           };
-          if (!repo.name.startsWith("custom-test-"))
+          if (!repo.name.startsWith("gitrew-test-"))
             throw new Error("Unexpected repository creation");
           const saved = { ...repo, id: customRepos.size + 50 };
           customRepos.set(repo.name, saved);
@@ -287,7 +287,7 @@ beforeEach(async () => {
         }
         if (url.pathname === "/orgs/team/members")
           return response([{ id: 1, login: "user1" }]);
-        const customRepo = /^\/repos\/team\/(custom-test-[^/]+)(.*)$/.exec(
+        const customRepo = /^\/repos\/team\/(gitrew-test-[^/]+)(.*)$/.exec(
           url.pathname,
         );
         if (customRepo) {
@@ -380,7 +380,7 @@ beforeEach(async () => {
               });
             expect(
               (body as { variables: { name: string } }).variables.name,
-            ).toBe("custom-test-chat");
+            ).toBe("gitrew-test-chat");
             return response({
               data: {
                 repository: {
@@ -1076,8 +1076,8 @@ describe("Cloudflare backend", () => {
     const session = await login();
     const names = {
       organization: "team",
-      repositoryName: "custom-test-chat",
-      vaultName: "custom-test-vault",
+      repositoryName: "gitrew-test-chat",
+      vaultName: "gitrew-test-vault",
     };
     const create = (body: unknown) =>
       post("/api/workspaces", body, sessionHeaders(session));
@@ -1085,25 +1085,25 @@ describe("Cloudflare backend", () => {
     expect((await create(names)).ok).toBe(false);
     const checkpoint = await store.workspace("team");
     expect(checkpoint?.ready).toBe(false);
-    expect(checkpoint?.repository).toBe("team/custom-test-chat");
-    expect(checkpoint?.vault).toBe("team/custom-test-vault");
+    expect(checkpoint?.repository).toBe("team/gitrew-test-chat");
+    expect(checkpoint?.vault).toBe("team/gitrew-test-vault");
     expect(
-      (await create({ ...names, vaultName: "custom-test-another" })).status,
+      (await create({ ...names, vaultName: "gitrew-test-another" })).status,
     ).toBe(409);
     failCustomChannel = false;
     const resumed = await create(names);
     expect(resumed.status).toBe(200);
     expect(await resumed.json()).toMatchObject({
       workspace: {
-        repository: "team/custom-test-chat",
-        vault: "team/custom-test-vault",
+        repository: "team/gitrew-test-chat",
+        vault: "team/gitrew-test-vault",
       },
     });
     expect((await store.workspace("team"))?.nonce).toBe(checkpoint?.nonce);
     expect((await store.workspace("team"))?.ready).toBe(true);
-    expect(customRepos.get("custom-test-chat")?.private).toBe(true);
+    expect(customRepos.get("gitrew-test-chat")?.private).toBe(true);
     expect((await store.workspace("team"))?.openRegistration).toBe(false);
-    expect(customRepos.get("custom-test-vault")?.private).toBe(true);
+    expect(customRepos.get("gitrew-test-vault")?.private).toBe(true);
     const creates = githubCalls.filter(
       (c) =>
         c.method === "POST" && new URL(c.url).pathname === "/orgs/team/repos",
@@ -1114,14 +1114,14 @@ describe("Cloudflare backend", () => {
       githubCalls.some((c) => /\/repos\/team\/gitrew-(chat|vault)/.test(c.url)),
     ).toBe(false);
     const token = githubCalls.findLast((c) => c.url.endsWith("/access_tokens"));
-    expect(token?.body).toMatchObject({ repositories: ["custom-test-vault"] });
+    expect(token?.body).toMatchObject({ repositories: ["gitrew-test-vault"] });
     const loaded = await request("/api/session", {
       headers: { Cookie: session.cookie },
     });
     expect(await loaded.json()).toMatchObject({
       workspace: {
-        repository: "team/custom-test-chat",
-        vault: "team/custom-test-vault",
+        repository: "team/gitrew-test-chat",
+        vault: "team/gitrew-test-vault",
       },
     });
   });
@@ -1129,10 +1129,14 @@ describe("Cloudflare backend", () => {
     await register();
     const session = await login();
     for (const [repositoryName, vaultName] of [
-      ["../other", "safe"],
+      ["../other", "gitrew-safe"],
       ["same", "SAME"],
+      ["gitrew-same", "GITREW-SAME"],
       ["safe", "vault.git"],
-      [".", "safe"],
+      [".", "gitrew-safe"],
+      ["safe", "gitrew-safe"],
+      ["gitrew-safe", "safe"],
+      ["afterprompt-chat", "afterprompt-vault"],
     ]) {
       expect(
         (
@@ -1145,7 +1149,7 @@ describe("Cloudflare backend", () => {
       ).toBe(400);
     }
     expect(customRepos.size).toBe(0);
-    customRepos.set("custom-test-vault", {
+    customRepos.set("gitrew-test-vault", {
       id: 99,
       private: true,
       description: "unrelated",
@@ -1155,8 +1159,8 @@ describe("Cloudflare backend", () => {
       "/api/workspaces",
       {
         organization: "team",
-        repositoryName: "custom-test-chat",
-        vaultName: "custom-test-vault",
+        repositoryName: "gitrew-test-chat",
+        vaultName: "gitrew-test-vault",
       },
       sessionHeaders(session),
     );
@@ -1166,7 +1170,7 @@ describe("Cloudflare backend", () => {
         (c) => c.method === "POST" && c.url.endsWith("/orgs/team/repos"),
       ),
     ).toBe(false);
-    expect(customRepos.has("custom-test-chat")).toBe(false);
+    expect(customRepos.has("gitrew-test-chat")).toBe(false);
   });
   it("refuses unsafe organization base access and preserves unrelated repositories", async () => {
     await register();

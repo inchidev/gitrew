@@ -123,7 +123,7 @@ test("an owner installs the deployment's App and creates a verified workspace", 
   ]);
 });
 
-for (const repositoryName of ["gitrew-chat", "custom-test-chat"]) {
+for (const repositoryName of ["gitrew-chat", "gitrew-test-chat"]) {
   test(`cookie sessions use ${repositoryName} despite a stale preference, preserve private reads and clear on sign-out`, async ({
     page,
   }) => {
@@ -136,7 +136,7 @@ for (const repositoryName of ["gitrew-chat", "custom-test-chat"]) {
     const connectedWorkspace = {
       ...workspace,
       repository: `team/${repositoryName}`,
-      vault: "team/custom-test-vault",
+      vault: "team/gitrew-test-vault",
     };
     const channelRepositories: string[] = [];
     const suffix =
@@ -423,10 +423,14 @@ test("the landing is public, and protected links preserve their destination at l
     page.getByRole("heading", { name: "A place for your Git crew." }),
   ).toBeVisible();
   expect(apiRequests).toEqual([]);
-  for(const name of ["Cursor","Claude","Cloudflare"]) {
-    await page.getByRole("button",{name:`${name} Watching`,exact:false}).click();
+  for (const name of ["Cursor", "Claude", "Cloudflare"]) {
+    await page
+      .getByRole("button", { name: `${name} Watching`, exact: false })
+      .click();
     await expect(page.locator("#provider-detail")).toContainText("Watching");
-    await expect(page.locator("#provider-detail").getByRole("link",{name:/Read more/})).toHaveAttribute("target","_blank");
+    await expect(
+      page.locator("#provider-detail").getByRole("link", { name: /Read more/ }),
+    ).toHaveAttribute("target", "_blank");
   }
   await page.getByRole("button", { name: "Gitea Later", exact: false }).click();
   await expect(
@@ -611,8 +615,8 @@ test("setup preserves custom repository names across reloads and opens the selec
         json: {
           workspace: {
             ...workspace,
-            repository: "team/custom-test-chat",
-            vault: "team/custom-test-vault",
+            repository: "team/gitrew-test-chat",
+            vault: "team/gitrew-test-vault",
           },
         },
       });
@@ -620,19 +624,35 @@ test("setup preserves custom repository names across reloads and opens the selec
     throw new Error("Unexpected API request " + path);
   });
   await page.goto("/create/");
+  for (const [chat, vault] of [
+    ["afterprompt-chat", "gitrew-afterprompt-vault"],
+    ["gitrew-afterprompt-chat", "afterprompt-vault"],
+  ]) {
+    await page.getByLabel("Chat repository", { exact: true }).fill(chat);
+    await page
+      .getByLabel("Private vault repository", { exact: true })
+      .fill(vault);
+    await page
+      .getByRole("button", { name: "Create workspace", exact: true })
+      .click();
+    await expect(page.getByRole("alert")).toContainText(
+      "Start repository names with gitrew-",
+    );
+    expect(submitted).toBeUndefined();
+  }
   await page
     .getByLabel("Chat repository", { exact: true })
-    .fill("custom-test-chat");
+    .fill("gitrew-test-chat");
   await page
     .getByLabel("Private vault repository", { exact: true })
-    .fill("custom-test-vault");
+    .fill("gitrew-test-vault");
   await page.reload();
   await expect(page.getByLabel("Chat repository", { exact: true })).toHaveValue(
-    "custom-test-chat",
+    "gitrew-test-chat",
   );
   await expect(
     page.getByLabel("Private vault repository", { exact: true }),
-  ).toHaveValue("custom-test-vault");
+  ).toHaveValue("gitrew-test-vault");
   await page
     .getByRole("button", { name: "Create workspace", exact: true })
     .click();
@@ -641,10 +661,10 @@ test("setup preserves custom repository names across reloads and opens the selec
   ).toBeVisible();
   expect(submitted).toEqual({
     organization: "team",
-    repositoryName: "custom-test-chat",
-    vaultName: "custom-test-vault",
+    repositoryName: "gitrew-test-chat",
+    vaultName: "gitrew-test-vault",
   });
   await expect(
     page.getByRole("link", { name: "Open your workspace" }),
-  ).toHaveAttribute("href", "/w/team?repo=custom-test-chat");
+  ).toHaveAttribute("href", "/w/team?repo=gitrew-test-chat");
 });

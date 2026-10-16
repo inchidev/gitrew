@@ -69,20 +69,33 @@ const repositoriesQuery = useQuery({
 // Repository work is independent of the canonical conversation store.
 const projectRepositories = computed(() =>
   (repositoriesQuery.data.value || [])
-    .filter(
-      (repo) =>
+    .filter((repo) => {
+      const name = repo.full_name.split("/")[1]!.toLowerCase();
+      const isManagedStorage =
+        name === "gitrew-chat" ||
+        name === "gitrew-vault" ||
+        name === "gitrew-auth" ||
+        /^gitrew-(.*-)?(chat|vault|auth)$/.test(name);
+      return (
         repo.full_name
           .toLowerCase()
           .startsWith(organization.value.toLowerCase() + "/") &&
-        !["gitrew-chat", "gitrew-vault", "gitrew-auth"].includes(
-          repo.full_name.split("/")[1]!,
-        ),
-    )
+        !isManagedStorage
+      );
+    })
     .map((repo) => repo.full_name),
 );
 const sources = computed(() => {
   // Independent deployments own one configured chat/vault pair per organization.
   if (auth.backend) return [repository.value];
+  const isManagedVault = (fullName: string) => {
+    const name = fullName.split("/")[1]!.toLowerCase();
+    return (
+      name === "gitrew-vault" ||
+      name === "gitrew-auth" ||
+      /^gitrew-(.*-)?(vault|auth)$/.test(name)
+    );
+  };
   const all = (repositoriesQuery.data.value || [])
     .filter(
       (r) =>
@@ -90,12 +103,11 @@ const sources = computed(() => {
         r.full_name
           .toLowerCase()
           .startsWith(organization.value.toLowerCase() + "/") &&
-        !["gitrew-vault", "gitrew-auth"].includes(r.full_name.split("/")[1]!),
+        !isManagedVault(r.full_name),
     )
     .map((r) => r.full_name);
   return [...new Set([...all, repository.value])].filter(
-    (value) =>
-      !value.endsWith("/gitrew-vault") && !value.endsWith("/gitrew-auth"),
+    (value) => !isManagedVault(value),
   );
 });
 const vaultMailbox = computed(() =>

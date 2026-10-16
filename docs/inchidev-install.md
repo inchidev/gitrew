@@ -44,7 +44,7 @@ The public `gitrew.com` Worker serves only the landing and installation guide. E
 | Workspace | Worker/config | Required team | Working repositories | Private storage |
 | --- | --- | --- | --- | --- |
 | `inchi.gitrew.com` | `gitrew` / `wrangler.inchidev.jsonc` | `inchi` | `gitrew`, `anycord` | `gitrew-chat`, `gitrew-vault` |
-| `afterprompt.gitrew.com` | `gitrew-afterprompt` / `wrangler.afterprompt.jsonc` | `afterprompt` | `afterprompt`, `afterprompt-warlocks` | `afterprompt-chat`, `afterprompt-vault` |
+| `afterprompt.gitrew.com` | `gitrew-afterprompt` / `wrangler.afterprompt.jsonc` | `afterprompt` | `afterprompt`, `afterprompt-warlocks` | `gitrew-afterprompt-chat`, `gitrew-afterprompt-vault` |
 
 The original `gitrew-inchidev` App now uses `inchi.gitrew.com` for its homepage, OAuth callback, setup and webhook. The old `gitrew.inchi.dev` frontend redirects to it. The new `gitrew-inchidev-afterprompt` App is installed with selected repository access. GitHub automatically includes the chat/vault repositories that its installation creates. Both new repositories are private with Discussions enabled.
 
