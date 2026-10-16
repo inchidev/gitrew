@@ -167,8 +167,12 @@ onMounted(() => void load());
           color="warning"
           variant="subtle"
           title="Discussions are off in this repository"
-          description="Maintainers can enable them on GitHub. Other public content stays available there."
-        />
+          description="If this repository recently enabled Discussions, try again in a few minutes — repository details are cached briefly."
+        >
+          <template #actions>
+            <UButton label="Retry" size="xs" variant="soft" @click="load()" />
+          </template>
+        </UAlert>
         <template v-else>
           <ul v-if="discussions.length" class="discussion-list">
             <li v-for="discussion in discussions" :key="discussion.id">

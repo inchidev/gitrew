@@ -37,6 +37,12 @@ const repoMeta = {
   hasDiscussionsEnabled: true,
   url: "https://github.com/acme/widget",
 };
+const legacyMeta = {
+  description: null,
+  stargazerCount: 3,
+  hasDiscussionsEnabled: false,
+  url: "https://github.com/acme/legacy",
+};
 const discussionsPage = {
   discussions: [
     {
@@ -94,6 +100,7 @@ async function publicRoutes(page: Page) {
       );
     if (url.pathname === "/api/public/github/ghost") return json({}, 404);
     if (url.pathname === "/api/public/github/acme/widget") return json(repoMeta);
+    if (url.pathname === "/api/public/github/acme/legacy") return json(legacyMeta);
     if (url.pathname === "/api/public/github/acme/secret")
       return json({ error: "Unknown repository." }, 404);
     if (url.pathname === "/api/public/github/acme/widget/discussions")
@@ -147,6 +154,24 @@ test("repository space reads discussions and threads without signing in", async 
   expect(
     apiRequests.every((url) => url.includes("/api/public/github/")),
   ).toBe(true);
+});
+
+test("disabled discussions banner offers a retry", async ({ page }) => {
+  let metaHits = 0;
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname === "/api/public/github/acme/legacy")
+      metaHits += 1;
+  });
+  await publicRoutes(page);
+  await page.goto("/github/acme/legacy");
+  await expect(
+    page.getByText("Discussions are off in this repository"),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Retry", exact: true }).click();
+  await expect(
+    page.getByText("Discussions are off in this repository"),
+  ).toBeVisible();
+  expect(metaHits).toBeGreaterThanOrEqual(2);
 });
 
 test("unknown and private spaces look the same", async ({ page }) => {
