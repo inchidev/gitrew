@@ -3,6 +3,7 @@ import { z } from "zod";
 import { accessReportSchema, type AccessCheck } from "../../shared/access";
 import { appReturnTo, legacyWorkspacePath } from "../../shared/routes";
 import { backendResponse } from "~/lib/backend";
+import { GitHubTransport } from "~/lib/github";
 const route = useRoute();
 const auth = useGitHubAuth();
 const schema = accessReportSchema.extend({
@@ -76,7 +77,32 @@ async function enter() {
     const privateAccess =
       report.value.checks.find((c) => c.id === "membership")?.status ===
       "passed";
-    await navigateTo((privateAccess ? target.value : null) || shared);
+    let destination = target.value;
+    if (!privateAccess && destination) {
+      const url = new URL(destination, window.location.origin);
+      const parts = url.pathname.split("/");
+      const repository = auth.activeMailbox.value?.repository || "";
+      const [organization, repo] = repository.split("/");
+      const sameWorkspace =
+        parts[2] === organization &&
+        (!url.searchParams.has("repo") ||
+          url.searchParams.get("repo") === repo);
+      if (!sameWorkspace || parts[3] === "dm") destination = null;
+      else if (parts[4]) {
+        // Private channels share /c/ routes. Preserve a deep link only when
+        // its conversation is confirmed in the readable shared repository.
+        const channels = await new GitHubTransport(
+          repository,
+          auth.token.value,
+        ).listChannels();
+        if (!channels.some((channel) => channel.id === parts[4]))
+          destination = null;
+      }
+    }
+    await navigateTo(destination || shared);
+  } catch {
+    error.value =
+      "Could not open this conversation. Check again or open your workspace from its address.";
   } finally {
     busy.value = false;
   }

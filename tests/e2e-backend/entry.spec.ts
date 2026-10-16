@@ -129,6 +129,16 @@ test("missing private membership still lets a member open shared channels", asyn
   await page.getByRole("button", { name: "Open shared channels" }).click();
   await expect(page.getByRole("heading", { name: "# general" })).toBeVisible();
   await expect(page).not.toHaveURL(/private-id/);
+  const sharedLink =
+    "/w/inchidev/c/general?repo=gitrew-afterprompt-chat&thread=sample-0";
+  await page.goto("/access/?returnTo=" + encodeURIComponent(sharedLink));
+  await page.getByRole("button", { name: "Open shared channels" }).click();
+  await expect(page).toHaveURL(
+    new RegExp(
+      "/w/inchidev/c/general\\?repo=gitrew-afterprompt-chat&thread=sample-0$",
+    ),
+  );
+  await expect(page.getByRole("heading", { name: "# general" })).toBeVisible();
 });
 
 test("members enter the named chat from root without hosting, workspace switching or administrator settings", async ({

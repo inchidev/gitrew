@@ -76,7 +76,9 @@ It never grants repository access and never returns member lists, tokens, vault
 contents or CSRF credentials. Unavailable upstream checks remain unknown; later
 checks stay unchecked while a prerequisite is missing.
 
-Team-denied OAuth still creates no ordinary application session. Instead it saves
+Denied or unverified organization/team access after OAuth identity verification
+creates no ordinary application session and invalidates the previous browser session.
+Instead it saves
 an encrypted ten-minute access-result snapshot, addressed by a separate opaque,
 HttpOnly/Secure/SameSite cookie bound to the initiating OAuth browser. That cookie
 can read only its diagnostic snapshot and is not accepted by workspace APIs.

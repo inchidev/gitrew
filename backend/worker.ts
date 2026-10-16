@@ -392,26 +392,42 @@ export default {
             app,
             actor.login,
           );
-        } catch (error) {
-          if (error instanceof WorkspaceAccessError) {
-            // Keep denial intact: this is a browser-bound snapshot, not a session.
-            const report = await inspectAccess(
-              store,
-              new GitHub(credentials.accessToken),
-              app,
-              actor,
-              env.WORKSPACE_NAME,
-            );
-            const diagnostic = await store.state("access", {
-              report,
-              returnTo: appReturnTo(pending.returnTo),
-            });
-            return redirect("/access/", [
-              setCookie(request, FLOW, "", 0),
-              setCookie(request, ACCESS, diagnostic, 600),
-            ]);
+        } catch {
+          // Identity is known, but permission denial or verification failure
+          // must not create a session. Keep only browser-bound diagnostics.
+          const report = await inspectAccess(
+            store,
+            new GitHub(credentials.accessToken),
+            app,
+            actor,
+            env.WORKSPACE_NAME,
+          );
+          const diagnostic = await store.state("access", {
+            report,
+            returnTo: appReturnTo(pending.returnTo),
+          });
+          let previous: Session | null = null;
+          try {
+            previous = await store.session(cookie(request, SESSION));
+          } catch (error) {
+            if (!(error instanceof HttpError) || error.status !== 401)
+              throw error;
           }
-          throw error;
+          if (previous) {
+            await store.logout(previous.id);
+            if (pushEnabled(env)) await new PushStore(env).revoke(previous.id);
+            const workspace = await store.defaultWorkspace();
+            if (workspace)
+              await env.LIVE?.getByName(workspace.organization).revoke(
+                previous.userId,
+                previous.id,
+              );
+          }
+          return redirect("/access/", [
+            setCookie(request, FLOW, "", 0),
+            setCookie(request, SESSION, "", 0),
+            setCookie(request, ACCESS, diagnostic, 600),
+          ]);
         }
         const created = await store.createSession(actor.id, credentials);
         return redirect(pending.returnTo, [

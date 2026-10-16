@@ -11,11 +11,12 @@ Status reconciled on 2026-10-16. The priority is reliable everyday GitHub team c
 
 - A shorter landing with direct installation links and real light/dark desktop/mobile product screenshots using sample conversations ([#29](https://github.com/inchidev/gitrew/issues/29)). The public `/create/` guide is removed; installed workspace setup is preserved.
 
+- Direct workspace entry, own-identity access diagnostics and a member-focused chat UI: no marketing/workspace creation or hosting prompts on working domains; persistent administrator-editable names and account appearance controls. Inchi and AfterPrompt keep their existing organization, App, storage and access policy.
+
 All three Cloudflare deployments were verified after the prefix merge: successful builds of the same main commit, healthy workspace endpoints, anonymous sessions rejected, public-site API paths absent and the old inchi domain redirect intact. Feature configuration does not establish two-person audio, private delivery or background push. See the dated [installation record](docs/inchidev-install.md).
 
 The latest pinned source release is [v0.2.0](https://github.com/inchidev/gitrew/releases/tag/v0.2.0); the prefix, dependency, landing and workspace-entry changes are newer on main and are listed in `CHANGELOG.md` under Unreleased.
 
-- Direct workspace entry, own-identity access diagnostics and a member-focused chat UI: no marketing/workspace creation or hosting prompts on working domains; persistent administrator-editable names and account appearance controls. Inchi and AfterPrompt keep their existing organization, App, storage and access policy.
 
 ## Remaining work
 
