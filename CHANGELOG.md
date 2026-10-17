@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.6.2 — 2026-10-17
+
+- Guest browsing stops paginating forever: the read-only transport takes only the first server page of discussions and comments, so huge repositories like nuxt/nuxt open instantly instead of fetching every page in sequence; deeper history stays on GitHub.
+- Slim public header: repository and public pages drop the brand lockup in favor of breadcrumbs, and the GitHub link is an icon.
+
 ## 0.6.1 — 2026-10-16
 
 - Point the landing hero at a live workspace: the sample screenshots are gone, the hero panel and primary action open real public discussions (nuxt/nuxt, vuejs/core, nuxt/ui) with no sign-in.
