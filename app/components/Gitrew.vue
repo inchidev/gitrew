@@ -19,6 +19,8 @@ import type { MailboxConfig } from "../../shared/mailbox";
 import { legacyWorkspacePath, workspacePath } from "../../shared/routes";
 const props = defineProps<{
   publicSource?: { owner: string; repo: string };
+  /** Embedded on a foreign page (landing hero): route sync stays silent. */
+  embedded?: boolean;
 }>();
 const publicMode = computed(() => Boolean(props.publicSource));
 const route = useRoute();
@@ -297,6 +299,47 @@ const shell = useTemplateRef<HTMLElement>("shell");
 // property on the shell, so the toolbar search stays aligned with the
 // rail boundary as it moves.
 const SIDEBAR_WIDTH_KEY = "gitrew:sidebar-width:v1";
+const THREAD_WIDTH_KEY = "gitrew:thread-width:v1";
+function applyThreadWidth(width: number): number {
+  const safe = Math.round(Math.min(560, Math.max(260, width)));
+  shell.value?.style.setProperty("--thread-w", `${safe}px`);
+  return safe;
+}
+function startThreadResize(event: PointerEvent) {
+  const resizer = event.currentTarget as HTMLElement;
+  const rail = shell.value;
+  if (!rail) return;
+  event.preventDefault();
+  resizer.setPointerCapture(event.pointerId);
+  document.body.classList.add("sidebar-resizing");
+  const move = (step: PointerEvent) =>
+    applyThreadWidth(rail.getBoundingClientRect().right - step.clientX);
+  const finish = () => {
+    resizer.removeEventListener("pointermove", move);
+    document.body.classList.remove("sidebar-resizing");
+    const width = Number(
+      rail.style.getPropertyValue("--thread-w").replace("px", ""),
+    );
+    if (width >= 260) localStorage.setItem(THREAD_WIDTH_KEY, String(width));
+  };
+  resizer.addEventListener("pointermove", move);
+  resizer.addEventListener("pointerup", finish, { once: true });
+  resizer.addEventListener("pointercancel", finish, { once: true });
+}
+function threadWidthNow(): number {
+  const raw = Number(
+    shell.value?.style.getPropertyValue("--thread-w").replace("px", ""),
+  );
+  return Number.isFinite(raw) && raw >= 260 ? raw : 360;
+}
+function nudgeThreadWidth(event: KeyboardEvent) {
+  const drain =
+    event.key === "ArrowLeft" ? 24 : event.key === "ArrowRight" ? -24 : 0;
+  if (!drain) return;
+  const width = applyThreadWidth(threadWidthNow() + drain);
+  localStorage.setItem(THREAD_WIDTH_KEY, String(width));
+  event.preventDefault();
+}
 function applySidebarWidth(width: number): number {
   const safe = Math.round(Math.min(420, Math.max(180, width)));
   shell.value?.style.setProperty("--sidebar-w", `${safe}px`);
@@ -344,6 +387,8 @@ function nudgeSidebarWidth(event: KeyboardEvent) {
 onMounted(() => {
   const saved = Number(localStorage.getItem(SIDEBAR_WIDTH_KEY));
   if (saved >= 180 && saved <= 420) applySidebarWidth(saved);
+  const savedThread = Number(localStorage.getItem(THREAD_WIDTH_KEY));
+  if (savedThread >= 260 && savedThread <= 560) applyThreadWidth(savedThread);
 });
 const appError = ref("");
 const feed = useTemplateRef("feed");
@@ -665,7 +710,8 @@ watch(
   (value) => {
     if (value && (preview.value || isSignedIn.value || publicMode.value)) {
       const location = channelLocation(value.id);
-      if (route.path !== location.path)
+      // The landing embed never navigates away from its host page.
+      if (!props.embedded && route.path !== location.path)
         void router.replace({
           ...location,
           query: {
@@ -905,7 +951,18 @@ function dayLabel(index: number) {
         placeholder="Filter channels"
         aria-label="Filter channels"
         class="channel-filter"
-      />
+      >
+        <template v-if="channelFilter" #trailing>
+          <UButton
+            icon="i-octicon-x-16"
+            size="xs"
+            color="neutral"
+            variant="link"
+            aria-label="Clear channel filter"
+            @click="channelFilter = ''"
+          />
+        </template>
+      </UInput>
       <nav class="channels" aria-label="Channels">
         <template
           v-for="section in channelSectionsToRender"
@@ -1396,6 +1453,15 @@ function dayLabel(index: number) {
             />
           </div>
         </div>
+      <div
+        class="sidebar-resizer thread-resizer"
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Resize thread panel"
+        tabindex="0"
+        @pointerdown="startThreadResize"
+        @keydown="nudgeThreadWidth"
+      />
       </aside>
     </Transition>
     <div

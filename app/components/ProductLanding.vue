@@ -199,8 +199,8 @@ useHead({
               trailing
               size="lg"
             /><UButton
-              to="/github/nuxt/nuxt"
-              label="Open live workspace"
+              to="/github/"
+              label="Explore workspaces"
               icon="i-lucide-globe"
               color="neutral"
               variant="outline"
@@ -212,26 +212,14 @@ useHead({
         </div>
         <div class="live-workspace" aria-label="Live public workspaces">
           <p class="live-kicker">
-            <span class="live-dot" aria-hidden="true" />Live right now · no
-            sign-in
+            <span class="live-dot" aria-hidden="true" />Live right now · nuxt/nuxt
           </p>
-          <ul>
-            <li
-              v-for="community in communities"
-              :key="`${community.owner}/${community.repo}`"
-            >
-              <NuxtLink :to="`/github/${community.owner}/${community.repo}`">
-                <strong
-                  >{{ community.owner }}/{{ community.repo }}</strong
-                >
-                <span>{{ community.blurb }}</span>
-                <UIcon name="i-octicon-arrow-right-16" />
-              </NuxtLink>
-            </li>
-          </ul>
-          <p class="live-note">
-            Real discussions, read-only. Reply on GitHub.
-          </p>
+          <div class="live-embed">
+            <Gitrew
+              embedded
+              :public-source="{ owner: 'nuxt', repo: 'nuxt' }"
+            />
+          </div>
         </div>
       </section>
 
@@ -480,23 +468,38 @@ h1 {
   min-width: 0;
   border: 1px solid var(--ui-border);
   border-radius: 12px;
-  padding: 22px;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 0;
   background: var(--ui-bg-muted);
   align-self: start;
   width: 100%;
+  max-width: 820px;
+  height: 540px;
+  overflow: hidden;
 }
 .live-kicker {
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--ui-border);
   font-size: 13px;
   font-weight: 600;
   color: var(--ui-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  flex: none;
+}
+.live-embed {
+  flex: 1;
+  min-height: 0;
+}
+.live-embed .gitrew-shell {
+  height: 100%;
+  border: none;
+  border-radius: 0;
 }
 .live-dot {
   width: 8px;
@@ -505,49 +508,7 @@ h1 {
   background: var(--ui-success, #3fb950);
   flex: none;
 }
-.live-workspace ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.live-workspace a {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  grid-template-areas: "name arrow" "blurb arrow";
-  column-gap: 10px;
-  align-items: center;
-  padding: 12px 14px;
-  border: 1px solid var(--ui-border);
-  border-radius: 10px;
-  color: inherit;
-  text-decoration: none;
-  background: var(--ui-bg);
-}
-.live-workspace a:hover {
-  border-color: var(--ui-border-accented);
-}
-.live-workspace strong {
-  grid-area: name;
-  font-size: 16px;
-  overflow-wrap: anywhere;
-}
-.live-workspace ul span {
-  grid-area: blurb;
-  font-size: 13px;
-  color: var(--ui-text-muted);
-}
-.live-workspace ul .iconify {
-  grid-area: arrow;
-  color: var(--ui-text-muted);
-}
-.live-note {
-  color: var(--ui-text-muted);
-  font-size: 14px;
-  line-height: 1.6;
-}
+
 section[id] {
   scroll-margin-top: 28px;
 }
@@ -890,9 +851,10 @@ h3 {
     display: inline-flex;
   }
   .live-workspace {
-    max-width: 390px;
+    max-width: 460px;
     justify-self: center;
     width: 100%;
+    height: 420px;
   }
   .section-heading {
     align-items: flex-start;

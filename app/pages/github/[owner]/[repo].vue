@@ -23,6 +23,14 @@ const searchOpen = ref(false);
 const searchQuery = ref("");
 const searchError = ref("");
 const searchInput = useTemplateRef<HTMLElement>("searchInput");
+// Suggestions: Gitrew itself shows off its own workspace, then a few
+// public repositories known for lively discussions.
+const finderSuggestions = [
+  { owner: "inchidev", repo: "gitrew" },
+  { owner: "nuxt", repo: "nuxt" },
+  { owner: "vuejs", repo: "core" },
+  { owner: "nuxt", repo: "ui" },
+];
 
 async function load() {
   pending.value = true;
@@ -76,7 +84,7 @@ onMounted(() => void load());
   <div class="public-page public-workspace-page">
     <header class="public-header">
       <nav aria-label="Breadcrumb">
-        <NuxtLink to="/github/">GitHub</NuxtLink>
+        <NuxtLink to="/github/">github</NuxtLink>
         <span aria-hidden="true"> / </span>
         <NuxtLink :to="`/github/${owner}`">{{ owner }}</NuxtLink>
         <span aria-hidden="true"> / </span>
@@ -126,6 +134,15 @@ onMounted(() => void load());
         <p v-if="searchError" class="repo-finder-error" role="alert">
           {{ searchError }}
         </p>
+        <div class="repo-finder-suggestions">
+          <NuxtLink
+            v-for="suggestion in finderSuggestions"
+            :key="`${suggestion.owner}/${suggestion.repo}`"
+            :to="`/github/${suggestion.owner}/${suggestion.repo}`"
+            @click="searchOpen = false"
+            >{{ suggestion.owner }}/{{ suggestion.repo }}</NuxtLink
+          >
+        </div>
         <div class="composer-bottom">
           <span class="draft-status"
             >Any public repository that has Discussions on GitHub.</span

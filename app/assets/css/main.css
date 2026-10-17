@@ -112,7 +112,7 @@ textarea {
 .gitrew-shell.has-thread {
   grid-template-columns:
     calc(var(--sidebar-w, 232px) + var(--safe-left)) minmax(280px, 1fr)
-    360px;
+    var(--thread-w, 360px);
 }
 .app-toolbar {
   grid-column: 1/-1;
@@ -247,6 +247,15 @@ body.sidebar-resizing {
     display: none;
   }
 }
+.thread-resizer {
+  right: auto;
+  left: -5px;
+}
+@media (max-width: 1000px) {
+  .thread-resizer {
+    display: none;
+  }
+}
 .sidebar-top {
   display: flex;
   align-items: center;
@@ -285,7 +294,7 @@ body.sidebar-resizing {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 24px 8px 8px;
+  margin: 12px 8px 8px;
   font-size: 12px;
   font-weight: 600;
   color: var(--ui-text-muted);
@@ -405,6 +414,12 @@ body.sidebar-resizing {
   color: var(--ui-text-muted);
   width: 16px;
   height: 16px;
+}
+.channel-sidebar .channels > button:hover:not(.active) {
+  background: var(
+    --control-transparent-bgColor-hover,
+    var(--ui-bg-accented)
+  );
 }
 .channels .active {
   background: var(
@@ -709,10 +724,24 @@ body.sidebar-resizing {
 }
 .message-actions {
   display: flex;
-  gap: 4px;
+  gap: 2px;
   align-items: center;
   flex-wrap: wrap;
-  margin: 3px 0 0 -6px;
+  margin: 6px 0 0 -3px;
+  padding: 3px;
+  background: var(--ui-bg);
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
+  box-shadow: 0 10px 24px rgb(0 0 0 / 0.28);
+}
+.message-actions button {
+  min-width: 30px;
+  height: 30px;
+  border-radius: 7px;
+}
+.message-actions button .iconify {
+  width: 18px;
+  height: 18px;
 }
 .message-reactions {
   display: flex;
@@ -1221,7 +1250,7 @@ button.message-reaction:hover {
   .gitrew-shell.has-thread {
     grid-template-columns:
       calc(var(--sidebar-w, 204px) + var(--safe-left)) minmax(240px, 1fr)
-      320px;
+      var(--thread-w, 320px);
   }
   .gitrew-shell {
     grid-template-columns: calc(var(--sidebar-w, 204px) + var(--safe-left)) minmax(0, 1fr);
@@ -1623,6 +1652,24 @@ button.message-reaction:hover {
 }
 .public-workspace-page .github-link:hover {
   color: var(--ui-text-highlighted);
+}
+.repo-finder-suggestions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+.repo-finder-suggestions > a {
+  padding: 3px 9px;
+  border: 1px solid var(--ui-border);
+  border-radius: 999px;
+  color: var(--ui-text-default);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.repo-finder-suggestions > a:hover {
+  border-color: var(--ui-border-accented);
+  background: var(--control-transparent-bgColor-hover, var(--ui-bg-accented));
 }
 .repo-finder-error {
   color: var(--ui-error);
