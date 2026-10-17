@@ -1653,6 +1653,23 @@ button.message-reaction:hover {
 .public-workspace-page .github-link:hover {
   color: var(--ui-text-highlighted);
 }
+.toolbar-crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--ui-text-muted);
+  font-size: 14px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.toolbar-crumb > a {
+  color: var(--ui-text-muted);
+  text-decoration: none;
+}
+.toolbar-crumb > a:hover {
+  color: var(--ui-text-highlighted);
+}
 .repo-finder-suggestions {
   display: flex;
   gap: 6px;
