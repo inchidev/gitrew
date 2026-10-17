@@ -408,6 +408,29 @@ test("disabled discussions banner offers a retry", async ({ page }) => {
   expect(metaHits).toBeGreaterThanOrEqual(2);
 });
 
+test("the channels rail edge is resizable and remembers the width", async ({
+  page,
+}) => {
+  await publicRoutes(page);
+  await page.goto("/github/acme/widget");
+  await expect(page.getByText("First message", { exact: true })).toBeVisible();
+  const resizer = page.getByLabel("Resize channels sidebar");
+  await resizer.focus();
+  await page.keyboard.press("ArrowRight");
+  expect(
+    await page.evaluate(() =>
+      document.querySelector(".gitrew-shell")?.style.getPropertyValue("--sidebar-w"),
+    ),
+  ).toBe("256px");
+  await page.reload();
+  await expect(page.getByText("First message", { exact: true })).toBeVisible();
+  expect(
+    await page.evaluate(() =>
+      document.querySelector(".gitrew-shell")?.style.getPropertyValue("--sidebar-w"),
+    ),
+  ).toBe("256px");
+});
+
 test("repository space searches other organizations", async ({ page }) => {
   await publicRoutes(page);
   await page.goto("/github/acme/widget");

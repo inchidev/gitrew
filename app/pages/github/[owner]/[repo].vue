@@ -75,9 +75,6 @@ onMounted(() => void load());
 <template>
   <div class="public-page public-workspace-page">
     <header class="public-header">
-      <NuxtLink to="/" class="brand public-brand" aria-label="Gitrew home">
-        <BrandMark /><span>Gitrew</span>
-      </NuxtLink>
       <nav aria-label="Breadcrumb">
         <NuxtLink to="/github/">GitHub</NuxtLink>
         <span aria-hidden="true"> / </span>

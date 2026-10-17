@@ -292,6 +292,59 @@ watch(auth.installer, (value) => {
 });
 const channelsOpen = ref(false);
 const shell = useTemplateRef<HTMLElement>("shell");
+// Slack-style resizable rail: drag the edge or use arrow keys; the width
+// is remembered per browser. The width lives as a `--sidebar-w` custom
+// property on the shell, so the toolbar search stays aligned with the
+// rail boundary as it moves.
+const SIDEBAR_WIDTH_KEY = "gitrew:sidebar-width:v1";
+function applySidebarWidth(width: number): number {
+  const safe = Math.round(Math.min(420, Math.max(180, width)));
+  shell.value?.style.setProperty("--sidebar-w", `${safe}px`);
+  return safe;
+}
+function startSidebarResize(event: PointerEvent) {
+  const resizer = event.currentTarget as HTMLElement;
+  const rail = shell.value;
+  if (!rail) return;
+  event.preventDefault();
+  resizer.setPointerCapture(event.pointerId);
+  document.body.classList.add("sidebar-resizing");
+  const move = (step: PointerEvent) =>
+    applySidebarWidth(step.clientX - rail.getBoundingClientRect().left);
+  const finish = () => {
+    resizer.removeEventListener("pointermove", move);
+    document.body.classList.remove("sidebar-resizing");
+    const width = Number(
+      rail.style.getPropertyValue("--sidebar-w").replace("px", ""),
+    );
+    if (width >= 180) localStorage.setItem(SIDEBAR_WIDTH_KEY, String(width));
+  };
+  resizer.addEventListener("pointermove", move);
+  resizer.addEventListener("pointerup", finish, { once: true });
+  resizer.addEventListener("pointercancel", finish, { once: true });
+}
+function currentSidebarWidth(): number {
+  const raw = Number(
+    shell.value?.style.getPropertyValue("--sidebar-w").replace("px", ""),
+  );
+  return Number.isFinite(raw) && raw >= 180 ? raw : 232;
+}
+function nudgeSidebarWidth(event: KeyboardEvent) {
+  const step =
+    event.key === "ArrowLeft"
+      ? -24
+      : event.key === "ArrowRight"
+        ? 24
+        : 0;
+  if (!step) return;
+  const width = applySidebarWidth(currentSidebarWidth() + step);
+  localStorage.setItem(SIDEBAR_WIDTH_KEY, String(width));
+  event.preventDefault();
+}
+onMounted(() => {
+  const saved = Number(localStorage.getItem(SIDEBAR_WIDTH_KEY));
+  if (saved >= 180 && saved <= 420) applySidebarWidth(saved);
+});
 const appError = ref("");
 const feed = useTemplateRef("feed");
 const { copy, copied } = useClipboard();
@@ -822,14 +875,6 @@ function dayLabel(index: number) {
           </UDropdownMenu>
           <strong v-else class="workspace-title">{{ workspaceName }}</strong>
         </template>
-        <NuxtLink
-          v-else
-          to="/"
-          class="brand brand-rail"
-          aria-label="Gitrew home"
-        >
-          <BrandMark />
-        </NuxtLink>
         <UButton
           icon="i-octicon-x-16"
           aria-label="Close channels"
@@ -919,7 +964,7 @@ function dayLabel(index: number) {
           No direct messages yet
         </p>
       </nav>
-      <div class="sidebar-bottom">
+      <div v-if="!publicMode" class="sidebar-bottom">
         <UButton
           v-if="isSignedIn && vaultMailbox?.vault"
           label="Workspace members"
@@ -958,6 +1003,15 @@ function dayLabel(index: number) {
           @click="openLogin"
         />
       </div>
+      <div
+        class="sidebar-resizer"
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Resize channels sidebar"
+        tabindex="0"
+        @pointerdown="startSidebarResize"
+        @keydown="nudgeSidebarWidth"
+      />
     </aside>
     <button
       v-if="channelsOpen"
