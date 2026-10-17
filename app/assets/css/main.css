@@ -100,7 +100,7 @@ textarea {
 }
 .gitrew-shell {
   display: grid;
-  grid-template-columns: calc(232px + var(--safe-left)) minmax(0, 1fr);
+  grid-template-columns: calc(var(--sidebar-w, 232px) + var(--safe-left)) minmax(0, 1fr);
   grid-template-rows: calc(56px + var(--safe-top)) minmax(0, 1fr);
   height: 100dvh;
   min-height: 0;
@@ -111,13 +111,14 @@ textarea {
 }
 .gitrew-shell.has-thread {
   grid-template-columns:
-    calc(232px + var(--safe-left)) minmax(280px, 1fr)
+    calc(var(--sidebar-w, 232px) + var(--safe-left)) minmax(280px, 1fr)
     360px;
 }
 .app-toolbar {
   grid-column: 1/-1;
   grid-row: 1;
-  display: flex;
+  display: grid;
+  grid-template-columns: calc(var(--sidebar-w, 232px) - 12px) minmax(0, 1fr);
   align-items: center;
   gap: 24px;
   padding: var(--safe-top) calc(20px + var(--safe-right)) 0
@@ -126,11 +127,10 @@ textarea {
   background: var(--rail);
 }
 .app-toolbar > .brand {
-  flex: 0 0 196px;
+  justify-self: start;
 }
 .global-search {
   width: min(640px, 100%);
-  margin-inline: auto;
   min-width: 0;
 }
 .global-search input::-webkit-search-cancel-button {
@@ -209,6 +209,43 @@ kbd {
   border-right: 1px solid var(--ui-border);
   padding: 0 8px 8px;
   padding-left: calc(8px + var(--safe-left));
+}
+.channel-sidebar {
+  position: relative;
+}
+.sidebar-resizer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: -5px;
+  width: 10px;
+  cursor: col-resize;
+  touch-action: none;
+  z-index: 30;
+}
+.sidebar-resizer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(50% - 1.5px);
+  width: 3px;
+  border-radius: 3px;
+  background: transparent;
+}
+.sidebar-resizer:hover::after,
+.sidebar-resizer:focus-visible::after,
+body.sidebar-resizing .sidebar-resizer::after {
+  background: var(--fgColor-accent);
+}
+body.sidebar-resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+@media (max-width: 760px) {
+  .sidebar-resizer {
+    display: none;
+  }
 }
 .sidebar-top {
   display: flex;
@@ -1183,14 +1220,11 @@ button.message-reaction:hover {
 @media (max-width: 1150px) {
   .gitrew-shell.has-thread {
     grid-template-columns:
-      calc(204px + var(--safe-left)) minmax(240px, 1fr)
+      calc(var(--sidebar-w, 204px) + var(--safe-left)) minmax(240px, 1fr)
       320px;
   }
   .gitrew-shell {
-    grid-template-columns: calc(204px + var(--safe-left)) minmax(0, 1fr);
-  }
-  .app-toolbar > .brand {
-    flex-basis: 176px;
+    grid-template-columns: calc(var(--sidebar-w, 204px) + var(--safe-left)) minmax(0, 1fr);
   }
   .app-toolbar {
     gap: 16px;
@@ -1202,7 +1236,7 @@ button.message-reaction:hover {
   }
   .thread-panel {
     position: fixed;
-    inset: calc(56px + var(--safe-top)) 0 0 calc(204px + var(--safe-left));
+    inset: calc(56px + var(--safe-top)) 0 0 calc(var(--sidebar-w, 204px) + var(--safe-left));
     z-index: 25;
     box-shadow: -8px 0 24px #0002;
     padding-bottom: var(--safe-bottom);
@@ -1219,12 +1253,10 @@ button.message-reaction:hover {
     display: none;
   }
   .app-toolbar {
+    display: flex;
     padding: var(--safe-top) calc(12px + var(--safe-right)) 0
       calc(12px + var(--safe-left));
     gap: 12px;
-  }
-  .app-toolbar > .brand {
-    flex-basis: auto;
   }
   .app-toolbar .brand > span:last-child {
     display: none;
@@ -1575,17 +1607,6 @@ button.message-reaction:hover {
   flex-wrap: wrap;
   row-gap: 8px;
 }
-.public-workspace-page .public-brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 650;
-  color: var(--ui-text-default);
-  margin-right: 4px;
-}
-.public-workspace-page .public-brand > span {
-  line-height: 1;
-}
 .public-workspace-page .workspace-finder-open {
   margin-left: auto;
 }
@@ -1610,11 +1631,10 @@ button.message-reaction:hover {
 .sidebar-top-plain {
   min-height: 44px;
 }
-.brand-rail {
-  color: var(--ui-text-default);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+@media (min-width: 761px) {
+  .sidebar-top-plain {
+    display: none;
+  }
 }
 .sidebar-bottom {
   display: flex;
