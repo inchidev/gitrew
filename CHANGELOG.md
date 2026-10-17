@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.6.4 — 2026-10-17
+
+- Signed-in workspace gets the rest of the Slack feel: clickable GitHub reactions (optimistic with rollback), an online presence chip on the conversation header, and local unread dots in the sidebar; the Cmd/Ctrl-K quick switcher now works in every mode and "/" jumps to search.
+
 ## 0.6.3 — 2026-10-17
 
 - Guest workspace behaves like Slack: Discussions categories become sidebar sections with a filter, load-more channels and a Cmd/Ctrl-K quick switcher; conversations open at the latest comments and an in-feed button walks back through history (deep history is pulled by explicit pages only). Guests reopen on their last channel; no auto-refetch, history stays put.

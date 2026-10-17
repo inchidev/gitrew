@@ -15,7 +15,7 @@ Status reconciled on 2026-10-16. The priority is reliable everyday GitHub team c
 
 The public deployment was verified after the prefix merge: successful build of the same main commit, healthy endpoints, anonymous sessions rejected and public-site API paths absent. Feature configuration does not establish two-person audio, private delivery or background push. The former inchidev workspace deployments (`inchi.gitrew.com`, `afterprompt.gitrew.com`) were retired on 2026-10-16: their Workers, D1 databases, storage repositories and installation record were removed.
 
-The latest pinned source release is [v0.6.3](https://github.com/inchidev/gitrew/releases/tag/v0.6.3).
+The latest pinned source release is [v0.6.4](https://github.com/inchidev/gitrew/releases/tag/v0.6.4).
 
 
 ## Remaining work
