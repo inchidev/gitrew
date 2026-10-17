@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.6.5 — 2026-10-17
+
+- Guest workspace chrome polish from review marks: the discussion body opens the feed as its first message (with the author) instead of a truncated header line, GitHub category emoji shortcodes render as real glyphs, the brand and the current repository moved up into the public header, the landing breadcrumb reads GitHub, and a Find-a-workspace modal accepts owner/repo or a full GitHub URL.
+- The sidebar bottom is pinned while the channels list scrolls internally, the duplicated header sign-in button is gone, and guests see an auth-like disabled composer inviting them to sign in.
+
 ## 0.6.4 — 2026-10-17
 
 - Signed-in workspace gets the rest of the Slack feel: clickable GitHub reactions (optimistic with rollback), an online presence chip on the conversation header, and local unread dots in the sidebar; the Cmd/Ctrl-K quick switcher now works in every mode and "/" jumps to search.
