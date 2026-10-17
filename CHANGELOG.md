@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.6.8 — 2026-10-17
+
+- Brand and repository identity swap places: the public workspace page header carries the Gitrew brand, while the toolbar hosts github / owner / repo with stars and the Open-on-GitHub icon through a new workspace-brand slot (other pages keep the toolbar brand).
+
 ## 0.6.7 — 2026-10-17
 
 - The landing hero embeds the real read-only nuxt/nuxt workspace instead of a link list; the panel keeps a live kicker and the embedded instance never rewrites the host route.
