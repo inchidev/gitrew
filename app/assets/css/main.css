@@ -1304,7 +1304,7 @@ kbd {
   border-left: 2px solid var(--ui-border);
 }
 .public-workspace-page {
-  min-height: 100dvh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
 }
@@ -1358,7 +1358,6 @@ kbd {
 .public-workspace-page .gitrew-shell {
   flex: 1;
   min-height: 0;
-  height: auto;
   border: none;
   border-top: 1px solid var(--ui-border);
   border-radius: 0;

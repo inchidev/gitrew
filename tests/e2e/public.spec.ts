@@ -177,6 +177,39 @@ test("guest history stays on the first server page", async ({ page }) => {
   expect(apiRequests.every((url) => !url.includes("after="))).toBe(true);
 });
 
+test("workspace layout is pinned to the viewport", async ({ page }) => {
+  await publicRoutes(page);
+  await page.goto("/github/acme/widget");
+  await expect(page.getByText("First message", { exact: true })).toBeVisible();
+  const layout = await page.evaluate(() => {
+    const shell = document.querySelector(".gitrew-shell");
+    const pageHeader = document.querySelector(".public-header");
+    const sidebar = document.getElementById("channel-navigation");
+    const feed = document.querySelector<HTMLElement>(".message-feed");
+    return {
+      pageOverflow:
+        document.documentElement.scrollHeight - window.innerHeight,
+      shellHeight: shell?.getBoundingClientRect().height ?? 0,
+      headerHeight: pageHeader?.getBoundingClientRect().height ?? 0,
+      sidebarHeight: sidebar?.getBoundingClientRect().height ?? 0,
+      feedHeight: feed?.getBoundingClientRect().height ?? 0,
+      viewport: window.innerHeight,
+      feedFitsWithoutScrolling: feed
+        ? feed.scrollHeight <= feed.clientHeight
+        : false,
+      sidebarFitsWithoutScrolling: sidebar
+        ? sidebar.scrollHeight <= sidebar.clientHeight
+        : false,
+    };
+  });
+  expect(layout.pageOverflow).toBe(0);
+  expect(layout.shellHeight + layout.headerHeight).toBe(layout.viewport);
+  expect(layout.sidebarHeight).toBeLessThanOrEqual(layout.shellHeight);
+  expect(layout.feedHeight).toBeLessThanOrEqual(layout.shellHeight);
+  expect(layout.feedFitsWithoutScrolling).toBe(true);
+  expect(layout.sidebarFitsWithoutScrolling).toBe(true);
+});
+
 test("disabled discussions banner offers a retry", async ({ page }) => {
   let metaHits = 0;
   page.on("request", (request) => {
