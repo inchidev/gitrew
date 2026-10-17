@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.6.3 — 2026-10-17
+
+- Guest workspace behaves like Slack: Discussions categories become sidebar sections with a filter, load-more channels and a Cmd/Ctrl-K quick switcher; conversations open at the latest comments and an in-feed button walks back through history (deep history is pulled by explicit pages only). Guests reopen on their last channel; no auto-refetch, history stays put.
+
 ## 0.6.2 — 2026-10-17
 
 - Guest browsing stops paginating forever: the read-only transport takes only the first server page of discussions and comments, so huge repositories like nuxt/nuxt open instantly instead of fetching every page in sequence; deeper history stays on GitHub.
