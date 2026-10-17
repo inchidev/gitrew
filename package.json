@@ -1,7 +1,7 @@
 {
   "name": "gitrew",
   "private": true,
-  "version": "0.6.5",
+  "version": "0.6.6",
   "type": "module",
   "description": "A team chat client for GitHub Discussions.",
   "license": "MIT",

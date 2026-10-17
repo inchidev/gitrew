@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.6.6 — 2026-10-17
+
+- Workspace chrome cleanup from review marks: one Gitrew logo (the toolbar one) — the rail-top mark, the duplicate sidebar sign-in and the page-header brand are gone; guests sign in from the composer only.
+- The channels rail is resizable: drag its edge or use arrow keys on the separator, the width is remembered per browser.
+- The toolbar search starts exactly at the sidebar boundary and follows it while resizing.
+
 ## 0.6.5 — 2026-10-17
 
 - Guest workspace chrome polish from review marks: the discussion body opens the feed as its first message (with the author) instead of a truncated header line, GitHub category emoji shortcodes render as real glyphs, the brand and the current repository moved up into the public header, the landing breadcrumb reads GitHub, and a Find-a-workspace modal accepts owner/repo or a full GitHub URL.
