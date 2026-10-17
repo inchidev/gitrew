@@ -7,6 +7,9 @@ export interface Channel {
   category?: { name: string; emoji: string } | null;
   /** ISO time of the latest conversation activity, for local unread markers. */
   activityAt?: string;
+  /** Who started the conversation and when — feeds the intro message. */
+  startedBy?: string;
+  startedAt?: string;
   kind?: "public" | "private" | "dm";
 }
 

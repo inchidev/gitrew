@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { channelSections } from "../app/lib/channel-groups";
+import { channelSections, emojiGlyph } from "../app/lib/channel-groups";
 import type { Channel } from "../shared/chat";
 
 function channel(id: string, name: string, category?: string): Channel {
@@ -11,6 +11,19 @@ function channel(id: string, name: string, category?: string): Channel {
     ...(category ? { category: { name: category, emoji: `:${category}:` } } : {}),
   };
 }
+
+describe("emojiGlyph", () => {
+  it("maps GitHub category emoji shortcodes to glyphs", () => {
+    expect(emojiGlyph(":grey_question:")).toBe("❓");
+    expect(emojiGlyph(":sparkles:")).toBe("✨");
+  });
+
+  it("keeps unicode emoji and degrades unknown codes", () => {
+    expect(emojiGlyph("📣")).toBe("📣");
+    expect(emojiGlyph(":obscure_code:")).toBe("");
+    expect(emojiGlyph(undefined)).toBe("");
+  });
+});
 
 describe("channelSections", () => {
   it("keeps server order and normalizes a single section", () => {

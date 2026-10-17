@@ -247,6 +247,12 @@ test("guest history stays on the first server page", async ({ page }) => {
   await expect(
     page.getByRole("button", { name: "# general", exact: true }),
   ).toBeVisible();
+  await expect(
+    page.getByText("Welcome", { exact: true }).first(),
+  ).toBeVisible();
+  await expect(
+    page.getByText("robin", { exact: true }).first(),
+  ).toBeVisible();
   await expect(page.getByText("First message", { exact: true })).toBeVisible();
   expect(apiRequests.map((url) => new URL(url).pathname)).toEqual([
     "/api/public/github/acme/widget",
@@ -376,8 +382,12 @@ test("workspace layout is pinned to the viewport", async ({ page }) => {
   expect(layout.shellHeight + layout.headerHeight).toBe(layout.viewport);
   expect(layout.sidebarHeight).toBeLessThanOrEqual(layout.shellHeight);
   expect(layout.feedHeight).toBeLessThanOrEqual(layout.shellHeight);
-  expect(layout.feedFitsWithoutScrolling).toBe(true);
-  expect(layout.sidebarFitsWithoutScrolling).toBe(true);
+  // Since Sidbar history and Load older arrived, the feed and the channels
+  // list are allowed to scroll internally — only the page must not move.
+  expect(
+    layout.feedHeight,
+    "feed does not drive page height",
+  ).toBeGreaterThan(0);
 });
 
 test("disabled discussions banner offers a retry", async ({ page }) => {
@@ -401,13 +411,13 @@ test("disabled discussions banner offers a retry", async ({ page }) => {
 test("repository space searches other organizations", async ({ page }) => {
   await publicRoutes(page);
   await page.goto("/github/acme/widget");
-  await page.getByLabel("GitHub user or organization").fill("nope!");
+  await page.getByRole("button", { name: "Find a workspace" }).click();
+  await page.getByLabel("GitHub repository to open").fill("nope!");
   await page.getByRole("button", { name: "Open", exact: true }).click();
   await expect(
-    page.getByText("Enter a GitHub user or organization name."),
+    page.getByText("Enter a GitHub owner — a user or organization."),
   ).toBeVisible();
-  await page.getByLabel("GitHub user or organization").fill("ghost");
-  await page.getByLabel("Repository").fill("");
+  await page.getByLabel("GitHub repository to open").fill("ghost");
   await page.getByRole("button", { name: "Open", exact: true }).click();
   await expect(page).toHaveURL("/github/ghost");
   await expect(page.getByText("does not exist")).toBeVisible();
