@@ -194,6 +194,7 @@ const discussionsSchema = z.object({
               .object({ name: z.string(), emoji: z.string() })
               .nullable()
               .optional(),
+            author: z.object({ login: z.string() }).nullable().optional(),
             comments: z.object({ totalCount: z.number() }),
           }),
         ),
@@ -335,7 +336,7 @@ async function publicDiscussions(
       repository(owner: $owner, name: $name) { isPrivate
         discussions(first: ${PAGE.discussions}, after: $after) {
           nodes { id title body url createdAt updatedAt comments { totalCount }
-            category { name emoji } }
+            category { name emoji } author { login } }
           pageInfo { hasNextPage endCursor }
         } }
     }`,

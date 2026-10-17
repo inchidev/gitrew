@@ -805,21 +805,31 @@ function dayLabel(index: number) {
       aria-label="Workspace navigation"
       :inert="(isMobile && !channelsOpen) || (Boolean(parent) && isMobile)"
     >
-      <div class="sidebar-top">
-        <UDropdownMenu
-          v-if="auth.backend && auth.activeMailbox.value?.administrator"
-          :items="workspaceItems"
+      <div class="sidebar-top" :class="{ 'sidebar-top-plain': publicMode }">
+        <template v-if="!publicMode">
+          <UDropdownMenu
+            v-if="auth.backend && auth.activeMailbox.value?.administrator"
+            :items="workspaceItems"
+          >
+            <UButton
+              class="workspace-title"
+              color="neutral"
+              variant="ghost"
+              :label="workspaceName"
+              trailing-icon="i-octicon-chevron-down-16"
+              aria-label="Workspace options"
+            />
+          </UDropdownMenu>
+          <strong v-else class="workspace-title">{{ workspaceName }}</strong>
+        </template>
+        <NuxtLink
+          v-else
+          to="/"
+          class="brand brand-rail"
+          aria-label="Gitrew home"
         >
-          <UButton
-            class="workspace-title"
-            color="neutral"
-            variant="ghost"
-            :label="workspaceName"
-            trailing-icon="i-octicon-chevron-down-16"
-            aria-label="Workspace options"
-          />
-        </UDropdownMenu>
-        <strong v-else class="workspace-title">{{ workspaceName }}</strong>
+          <BrandMark />
+        </NuxtLink>
         <UButton
           icon="i-octicon-x-16"
           aria-label="Close channels"
@@ -982,7 +992,7 @@ function dayLabel(index: number) {
             />
             <span v-else>#</span> {{ channel?.name || "Your workspace" }}
           </h2>
-          <p>
+          <p v-if="!publicMode">
             {{
               channel?.kind === "private"
                 ? "Private channel"
@@ -1029,7 +1039,7 @@ function dayLabel(index: number) {
             @click="joinHuddle"
           />
           <UButton
-            v-if="sample || publicMode"
+            v-if="sample"
             label="Sign in"
             aria-label="Sign in with GitHub"
             icon="i-octicon-mark-github-16"
@@ -1248,17 +1258,19 @@ function dayLabel(index: number) {
         :error="sendError"
         @send="chat.send()"
       />
-      <div v-else class="notice guest-notice" role="note">
-        <span>You’re reading as a guest.</span>
-        <UButton label="Sign in" size="xs" variant="soft" @click="openLogin" />
-        <UButton
-          v-if="currentUrl"
-          label="Open in GitHub"
-          size="xs"
-          variant="soft"
-          :to="currentUrl"
-          target="_blank"
-        />
+      <div v-else class="composer composer-guest">
+        <div class="guest-composer-input" aria-disabled="true">
+          You’re browsing as a guest. Sign in with GitHub to write messages.
+        </div>
+        <div class="composer-bottom">
+          <span class="draft-status">Read-only view</span>
+          <UButton
+            label="Sign in"
+            icon="i-octicon-mark-github-16"
+            size="sm"
+            @click="openLogin"
+          />
+        </div>
       </div>
     </main>
 
@@ -1316,14 +1328,19 @@ function dayLabel(index: number) {
           :error="sendError"
           @send="chat.send(selectedThread)"
         />
-        <div v-else class="notice guest-notice" role="note">
-          <span>You’re reading as a guest.</span>
-          <UButton
-            label="Sign in"
-            size="xs"
-            variant="soft"
-            @click="openLogin"
-          />
+        <div v-else class="composer composer-guest composer-guest-thread">
+          <div class="guest-composer-input" aria-disabled="true">
+            You’re browsing as a guest. Sign in with GitHub to reply.
+          </div>
+          <div class="composer-bottom">
+            <span class="draft-status">Read-only view</span>
+            <UButton
+              label="Sign in"
+              icon="i-octicon-mark-github-16"
+              size="sm"
+              @click="openLogin"
+            />
+          </div>
         </div>
       </aside>
     </Transition>

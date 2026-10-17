@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { safeUrl } from "~/lib/links";
 import { publicRepoMeta, PublicError, type PublicRepoMeta } from "~/lib/public";
 
 const route = useRoute();
@@ -15,9 +16,13 @@ const meta = ref<PublicRepoMeta | null>(null);
 const pending = ref(true);
 const error = ref("");
 
-const searchOwner = ref("");
-const searchRepo = ref("");
+// The header keeps the workspace chrome: find any public GitHub repo from
+// here. Accepts "owner/repo" or a full GitHub URL; a bare owner browses
+// that account's public discussions.
+const searchOpen = ref(false);
+const searchQuery = ref("");
 const searchError = ref("");
+const searchInput = useTemplateRef<HTMLElement>("searchInput");
 
 async function load() {
   pending.value = true;
@@ -34,30 +39,47 @@ async function load() {
   }
 }
 
-function open() {
-  const cleanOwner = searchOwner.value.trim();
-  const cleanRepo = searchRepo.value.trim();
-  if (!/^[a-z\d](?:[a-z\d-]{0,38})$/i.test(cleanOwner)) {
-    searchError.value = "Enter a GitHub user or organization name.";
-    return;
+function parseTarget(raw: string): string {
+  const path = raw
+    .trim()
+    .replace(/^https?:\/\/(?:www\.)?github\.com\//i, "")
+    .replace(/^\/+|\/+$/g, "");
+  const parts = path.split(/[/?#\s]/).filter(Boolean);
+  const [head, tail] = parts;
+  if (!head || !/^[a-z\d](?:[a-z\d-]{0,38})$/i.test(head)) {
+    searchError.value = "Enter a GitHub owner — a user or organization.";
+    return "";
   }
-  if (cleanRepo && !/^[\w.-]{1,100}$/.test(cleanRepo)) {
+  if (tail && !/^[\w.-]{1,100}$/.test(tail)) {
     searchError.value = "Enter a valid repository name.";
-    return;
+    return "";
   }
   searchError.value = "";
-  void navigateTo(
-    cleanRepo ? `/github/${cleanOwner}/${cleanRepo}` : `/github/${cleanOwner}`,
-  );
+  return tail ? `/github/${head}/${tail}` : `/github/${head}`;
 }
 
+function switchWorkspace() {
+  const target = parseTarget(searchQuery.value);
+  if (!target || searchError.value) return;
+  searchOpen.value = false;
+  void navigateTo(target);
+}
+function openSearch() {
+  searchQuery.value = "";
+  searchError.value = "";
+  searchOpen.value = true;
+  void nextTick(() => searchInput.value?.querySelector("input")?.focus());
+}
 onMounted(() => void load());
 </script>
 <template>
   <div class="public-page public-workspace-page">
     <header class="public-header">
+      <NuxtLink to="/" class="brand public-brand" aria-label="Gitrew home">
+        <BrandMark /><span>Gitrew</span>
+      </NuxtLink>
       <nav aria-label="Breadcrumb">
-        <NuxtLink to="/github/">Public</NuxtLink>
+        <NuxtLink to="/github/">GitHub</NuxtLink>
         <span aria-hidden="true"> / </span>
         <NuxtLink :to="`/github/${owner}`">{{ owner }}</NuxtLink>
         <span aria-hidden="true"> / </span>
@@ -68,7 +90,7 @@ onMounted(() => void load());
       >
       <a
         v-if="meta"
-        :href="meta.url"
+        :href="safeUrl(meta.url)"
         target="_blank"
         rel="noopener noreferrer"
         class="github-link"
@@ -76,27 +98,45 @@ onMounted(() => void load());
       >
         <UIcon name="i-octicon-mark-github-16" />
       </a>
-      <form class="org-search" @submit.prevent="open">
-        <UInput
-          v-model="searchOwner"
-          placeholder="user or org"
-          aria-label="GitHub user or organization"
-          autocomplete="off"
-          spellcheck="false"
-          size="xs"
-        />
-        <UInput
-          v-model="searchRepo"
-          placeholder="repo"
-          aria-label="Repository"
-          autocomplete="off"
-          spellcheck="false"
-          size="xs"
-        />
-        <UButton type="submit" label="Open" size="xs" variant="outline" />
-      </form>
+      <UButton
+        class="workspace-finder-open"
+        label="Find a workspace"
+        icon="i-octicon-search-16"
+        size="xs"
+        color="neutral"
+        variant="outline"
+        @click="openSearch"
+      />
     </header>
-    <p v-if="searchError" class="search-error" role="alert">{{ searchError }}</p>
+    <div
+      v-if="searchOpen"
+      class="switcher-overlay"
+      @click.self="searchOpen = false"
+      @keydown.esc="searchOpen = false"
+    >
+      <form
+        ref="searchInput"
+        class="switcher repo-finder"
+        @submit.prevent="switchWorkspace"
+      >
+        <UInput
+          v-model="searchQuery"
+          size="lg"
+          icon="i-octicon-search-16"
+          placeholder="nuxt/nuxt or https://github.com/nuxt/nuxt"
+          aria-label="GitHub repository to open"
+        />
+        <p v-if="searchError" class="repo-finder-error" role="alert">
+          {{ searchError }}
+        </p>
+        <div class="composer-bottom">
+          <span class="draft-status"
+            >Any public repository that has Discussions on GitHub.</span
+          >
+          <UButton type="submit" label="Open" size="sm" />
+        </div>
+      </form>
+    </div>
     <main>
       <div v-if="pending" class="stack">
         <USkeleton v-for="index in [1, 2, 3]" :key="index" class="h-16" />

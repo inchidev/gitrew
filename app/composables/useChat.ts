@@ -286,6 +286,28 @@ export function useChat(
       );
     },
   });
+  // The discussion body opens the conversation as the first message — the
+  // same text a reader would see on GitHub — instead of a truncated header line.
+  const discussionIntro = computed((): Message | null => {
+    if (!publicMode.value || preview.value) return null;
+    // Resolved inline: this evaluates while messages are still unwrapping,
+    // before the shared `channel` computed is declared.
+    const target = channels.value.find(
+      (item) => item.id === selectedChannel.value,
+    );
+    if (!target?.description) return null;
+    return {
+      id: `discussion:${target.id}`,
+      channelId: target.id,
+      parentId: "",
+      author: target.startedBy || "Discussion",
+      body: target.description,
+      createdAt: target.startedAt || "",
+      updatedAt: target.startedAt || "",
+      status: "saved",
+      url: target.url || "",
+    };
+  });
   const messages = computed(() => {
     const data = preview.value
       ? localMessages.value.filter(
@@ -296,7 +318,10 @@ export function useChat(
         : authenticated.value
           ? messagesQuery.data.value || []
           : [];
-    return [...data].sort(
+    const list = [...data];
+    if (publicMode.value && discussionIntro.value)
+      list.push(discussionIntro.value);
+    return list.sort(
       (a, b) =>
         a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id),
     );

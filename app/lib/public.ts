@@ -29,6 +29,7 @@ export interface PublicDiscussion {
   url: string;
   createdAt: string;
   activityAt?: string;
+  author?: { login: string } | null;
   category?: { name: string; emoji: string } | null;
   comments: { totalCount: number };
 }

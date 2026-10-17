@@ -398,6 +398,23 @@ kbd {
   margin-top: auto;
   padding-top: 24px;
 }
+@media (min-width: 761px) {
+  .channel-sidebar {
+    overflow: hidden;
+  }
+  .channel-sidebar nav.channels {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+}
+@media (max-width: 760px) {
+  .channel-sidebar nav.channels {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+}
 .own-client {
   display: flex;
   align-items: center;
@@ -521,10 +538,23 @@ kbd {
 .preview-notice {
   background: var(--ui-bg-muted);
 }
-.guest-notice {
-  justify-content: flex-start;
-  border-bottom: none;
-  border-top: 1px solid var(--ui-border);
+.composer-guest .guest-composer-input {
+  border: 1px dashed var(--ui-border-accented);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: var(--ui-text-muted);
+  font-size: 14px;
+  background: var(--ui-bg-muted);
+  user-select: none;
+  cursor: not-allowed;
+}
+.composer-guest {
+  padding: 0 16px;
+  margin: 0 0 12px;
+}
+.composer-guest-thread {
+  margin: 0 16px 16px;
+  padding: 0;
 }
 .offline-notice {
   justify-content: flex-start;
@@ -1545,6 +1575,20 @@ button.message-reaction:hover {
   flex-wrap: wrap;
   row-gap: 8px;
 }
+.public-workspace-page .public-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 650;
+  color: var(--ui-text-default);
+  margin-right: 4px;
+}
+.public-workspace-page .public-brand > span {
+  line-height: 1;
+}
+.public-workspace-page .workspace-finder-open {
+  margin-left: auto;
+}
 .public-workspace-page .repo-stars {
   color: var(--ui-text-muted);
   font-size: 14px;
@@ -1559,7 +1603,20 @@ button.message-reaction:hover {
 .public-workspace-page .github-link:hover {
   color: var(--ui-text-highlighted);
 }
-.public-workspace-page .org-search {
+.repo-finder-error {
+  color: var(--ui-error);
+  font-size: 13px;
+}
+.sidebar-top-plain {
+  min-height: 44px;
+}
+.brand-rail {
+  color: var(--ui-text-default);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.sidebar-bottom {
   display: flex;
   gap: 6px;
   align-items: center;
@@ -1592,6 +1649,5 @@ button.message-reaction:hover {
   flex: 1;
   min-height: 0;
   border: none;
-  border-top: 1px solid var(--ui-border);
   border-radius: 0;
 }
