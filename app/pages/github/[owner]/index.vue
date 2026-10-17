@@ -47,10 +47,9 @@ onMounted(() => void load(null));
 <template>
   <div class="public-page">
     <header class="public-header">
-      <NuxtLink to="/" class="brand" aria-label="Gitrew home"
-        ><BrandMark /><span>Gitrew</span></NuxtLink
-      >
       <nav aria-label="Breadcrumb">
+        <NuxtLink to="/">Gitrew</NuxtLink>
+        <span aria-hidden="true"> / </span>
         <NuxtLink to="/github/">Public</NuxtLink>
         <span aria-hidden="true"> / </span>
         <span>{{ owner }}</span>
