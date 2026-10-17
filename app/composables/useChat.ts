@@ -5,7 +5,7 @@ import {
   useDocumentVisibility,
 } from "@vueuse/core";
 import { z } from "zod";
-import type { Message, ChatTransport } from "../../shared/chat";
+import type { Channel, Message, ChatTransport } from "../../shared/chat";
 import type { MailboxConfig } from "../../shared/mailbox";
 import { VaultTransport } from "~/lib/vault";
 import { GitHubError, GitHubTransport } from "~/lib/github";
@@ -128,18 +128,32 @@ export function useChat(
       publicSource?.value?.repo || "",
     ]),
     enabled: publicMode,
-    queryFn: () => publicTransport.value!.listChannels(),
+    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      const channels = await publicTransport.value!.listChannels();
+      publicHasMoreChannels.value = publicTransport.value!.hasMoreChannels();
+      return channels;
+    },
     retry: (attempt, error) =>
       attempt < 2 &&
       (!(error instanceof PublicError) || error.status !== 429),
-    refetchInterval: () =>
-      online.value && visibility.value === "visible" ? 120_000 : false,
   });
+  // Guest pages are read-only snapshots: auto refetch would evaporate any
+  // history the visitor already pulled, so refresh stays an explicit action.
+  const publicHasMoreChannels = ref(false);
+  const olderMessageHistory = ref<Record<string, boolean>>({});
+  const hasOlderMessages = computed(
+    () =>
+      Boolean(selectedChannel.value) &&
+      (olderMessageHistory.value[selectedChannel.value] ??
+        publicTransport.value?.hasOlderMessages(selectedChannel.value) ??
+        false),
+  );
   const publicMessagesQuery = useQuery({
     retry: (attempt, error) =>
       attempt < 2 &&
       (!(error instanceof PublicError) || error.status !== 429),
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
     queryKey: computed(() => [
       "public-messages",
       publicSource?.value?.owner || "",
@@ -155,10 +169,52 @@ export function useChat(
             (channel) => channel.id === selectedChannel.value,
           )),
     ),
-    queryFn: () =>
-      publicTransport.value!.listMessages(selectedChannel.value),
-    refetchInterval: () =>
-      online.value && visibility.value === "visible" ? 60_000 : false,
+    queryFn: async ({ signal }) => {
+      const messages = await publicTransport.value!.listMessages(
+        selectedChannel.value,
+      );
+      olderMessageHistory.value = {
+        ...olderMessageHistory.value,
+        [selectedChannel.value]: publicTransport.value!.hasOlderMessages(
+          selectedChannel.value,
+        ),
+      };
+      return messages;
+    },
+  });
+  const publicLoadMoreChannels = useMutation({
+    mutationFn: () => publicTransport.value!.listMoreChannels(),
+    onSuccess: (page) => {
+      publicHasMoreChannels.value = page.hasMore;
+      queryClient.setQueryData<Channel[]>(
+        [
+          "public-channels",
+          publicSource?.value?.owner || "",
+          publicSource?.value?.repo || "",
+        ],
+        (previous) => [...(previous || []), ...page.channels],
+      );
+    },
+  });
+  const publicLoadOlderMessages = useMutation({
+    mutationFn: (channelId: string) =>
+      publicTransport.value!.listOlderMessages(channelId),
+    onSuccess: (page, channelId) => {
+      olderMessageHistory.value = {
+        ...olderMessageHistory.value,
+        [channelId]: page.hasMore,
+      };
+      if (channelId !== selectedChannel.value) return;
+      queryClient.setQueryData<Message[]>(
+        [
+          "public-messages",
+          publicSource?.value?.owner || "",
+          publicSource?.value?.repo || "",
+          channelId,
+        ],
+        (previous) => [...page.messages, ...(previous || [])],
+      );
+    },
   });
   const channels = computed(() =>
     preview.value
@@ -463,6 +519,10 @@ export function useChat(
     vaultChannelsQuery,
     messagesQuery,
     publicChannelsQuery,
+    publicHasMoreChannels,
+    publicLoadMoreChannels,
+    hasOlderMessages,
+    publicLoadOlderMessages,
     publicMessagesQuery,
     sendMutation,
   };

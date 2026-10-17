@@ -28,6 +28,7 @@ export interface PublicDiscussion {
   body: string;
   url: string;
   createdAt: string;
+  category?: { name: string; emoji: string } | null;
   comments: { totalCount: number };
 }
 export interface PublicComment {
@@ -40,7 +41,7 @@ export interface PublicComment {
   reactions?: Array<{ emoji: string; count: number }>;
 }
 export interface PublicThreadComment extends PublicComment {
-  replies: { nodes: PublicComment[]; pageInfo: PublicPageInfo };
+  replies: { nodes: PublicComment[]; pageInfo?: PublicPageInfo };
 }
 
 export class PublicError extends Error {
@@ -103,9 +104,13 @@ export function publicDiscussions(
     `/api/public/github/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/discussions${query(after)}`,
   );
 }
-export function publicComments(id: string, after: string | null = null) {
+export function publicComments(id: string, before: string | null = null) {
   return publicGet<{
     comments: PublicThreadComment[];
-    pageInfo: PublicPageInfo;
-  }>(`/api/public/github/discussions/${encodeURIComponent(id)}/comments${query(after)}`);
+    pageInfo: { hasPreviousPage: boolean; startCursor: string | null };
+  }>(
+    `/api/public/github/discussions/${encodeURIComponent(id)}/comments${
+      before ? `?before=${encodeURIComponent(before)}` : ""
+    }`,
+  );
 }

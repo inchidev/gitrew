@@ -25,6 +25,10 @@ const pageInfoSchema = z.object({
   hasNextPage: z.boolean(),
   endCursor: z.string().nullable(),
 });
+const historyPageSchema = z.object({
+  hasPreviousPage: z.boolean(),
+  startCursor: z.string().nullable(),
+});
 type PageInfo = z.infer<typeof pageInfoSchema>;
 
 const graphqlEnvelope = z.object({
@@ -185,6 +189,10 @@ const discussionsSchema = z.object({
             body: z.string(),
             url: z.string(),
             createdAt: z.string(),
+            category: z
+              .object({ name: z.string(), emoji: z.string() })
+              .nullable()
+              .optional(),
             comments: z.object({ totalCount: z.number() }),
           }),
         ),
@@ -228,11 +236,10 @@ const commentsSchema = z.object({
           commentSchema.extend({
             replies: z.object({
               nodes: z.array(commentSchema),
-              pageInfo: pageInfoSchema,
             }),
           }),
         ),
-        pageInfo: pageInfoSchema,
+        pageInfo: historyPageSchema,
       }),
     })
     .nullable(),
@@ -326,7 +333,8 @@ async function publicDiscussions(
     `query PublicDiscussions($owner: String!, $name: String!, $after: String) {
       repository(owner: $owner, name: $name) { isPrivate
         discussions(first: ${PAGE.discussions}, after: $after) {
-          nodes { id title body url createdAt comments { totalCount } }
+          nodes { id title body url createdAt comments { totalCount }
+            category { name emoji } }
           pageInfo { hasNextPage endCursor }
         } }
     }`,
@@ -344,26 +352,51 @@ async function publicDiscussions(
   };
 }
 
-async function publicComments(token: string, id: string, after: string | null) {
+async function publicComments(
+  token: string,
+  id: string,
+  after: string | null,
+  before: string | null,
+) {
   if (!z.string().min(1).max(256).safeParse(id).success)
     throw new HttpError(404, "Unknown conversation.");
   if (after !== null && !cursorPattern.test(after))
     throw new HttpError(400, "Invalid page cursor.");
-  const { data } = await upstreamGraphQL(
-    token,
-    `query PublicComments($id: ID!, $after: String) {
-      node(id: $id) { ... on Discussion { repository { isPrivate }
-        comments(first: ${PAGE.comments}, after: $after) {
-          nodes { id body createdAt updatedAt url author { login }
-            reactionGroups { content users { totalCount } }
-            replies(first: ${PAGE.replies}) {
-              nodes { id body createdAt updatedAt url author { login }
-                reactionGroups { content users { totalCount } } }
-              pageInfo { hasNextPage endCursor } } }
-          pageInfo { hasNextPage endCursor } } } }
-    }`,
-    { id, after },
-  );
+  if (before !== null && !cursorPattern.test(before))
+    throw new HttpError(400, "Invalid page cursor.");
+  if (after !== null && before !== null)
+    throw new HttpError(400, "Invalid page cursor.");
+  // Guests open a conversation at its latest page and walk backwards, so
+  // the first call reads last: N and later ones step through older pages.
+  const [query, variables] =
+    before !== null
+      ? [
+          `query PublicComments($id: ID!, $before: String) {
+            node(id: $id) { ... on Discussion { repository { isPrivate }
+              comments(last: ${PAGE.comments}, before: $before) {
+                nodes { id body createdAt updatedAt url author { login }
+                  reactionGroups { content users { totalCount } }
+                  replies(first: ${PAGE.replies}) {
+                    nodes { id body createdAt updatedAt url author { login }
+                      reactionGroups { content users { totalCount } } } } }
+                pageInfo { hasPreviousPage startCursor } } } }
+          }`,
+          { id, before },
+        ]
+      : [
+          `query PublicComments($id: ID!) {
+            node(id: $id) { ... on Discussion { repository { isPrivate }
+              comments(last: ${PAGE.comments}) {
+                nodes { id body createdAt updatedAt url author { login }
+                  reactionGroups { content users { totalCount } }
+                  replies(first: ${PAGE.replies}) {
+                    nodes { id body createdAt updatedAt url author { login }
+                      reactionGroups { content users { totalCount } } } } }
+                pageInfo { hasPreviousPage startCursor } } } }
+          }`,
+          { id },
+        ];
+  const { data } = await upstreamGraphQL(token, query, variables);
   const parsed = commentsSchema.parse(data);
   if (!parsed.node || parsed.node.repository.isPrivate)
     throw new HttpError(404, "Unknown conversation.");
@@ -406,13 +439,18 @@ export async function handlePublic(
   await ensurePublicTables(db);
   await checkBudget(db, clientIp(request));
   const after = url.searchParams.get("after");
-  const key = `GET ${url.pathname}${after ? `?after=${after}` : ""}`;
+  const before = url.searchParams.get("before");
+  const key = `GET ${url.pathname}${[
+    after ? `?after=${after}` : "",
+    before ? `?before=${before}` : "",
+  ].join("")}`;
   const load = async () => {
     if (thread) {
       return publicComments(
         token,
         decodeURIComponent(thread[1]!),
         after,
+        before,
       );
     }
     const [, owner, name, section] = space!;
