@@ -51,7 +51,31 @@ const discussionsPage = {
       body: "Welcome",
       url: "https://github.com/acme/widget/discussions/1",
       createdAt: "2026-10-01T00:00:00Z",
+      category: { name: "Announcements", emoji: "📣" },
       comments: { totalCount: 2 },
+    },
+    {
+      id: "D_2",
+      title: "#ideas",
+      body: "Ideas talk",
+      url: "https://github.com/acme/widget/discussions/2",
+      createdAt: "2026-10-02T00:00:00Z",
+      category: { name: "Ideas", emoji: "💡" },
+      comments: { totalCount: 1 },
+    },
+  ],
+  pageInfo: { hasNextPage: true, endCursor: "disc-cursor-1" },
+};
+const discussionsPage2 = {
+  discussions: [
+    {
+      id: "D_3",
+      title: "#third",
+      body: "Third channel",
+      url: "https://github.com/acme/widget/discussions/3",
+      createdAt: "2026-10-03T00:00:00Z",
+      category: null,
+      comments: { totalCount: 0 },
     },
   ],
   pageInfo: { hasNextPage: false, endCursor: null },
@@ -85,7 +109,37 @@ const commentsPage = {
       },
     },
   ],
-  pageInfo: { hasNextPage: false, endCursor: null },
+  pageInfo: { hasPreviousPage: true, startCursor: "comments-cursor-0" },
+};
+const olderCommentsPage = {
+  comments: [
+    {
+      id: "C_0",
+      body: "Ancient message",
+      createdAt: "2025-01-01T00:00:00Z",
+      updatedAt: "2025-01-01T00:00:00Z",
+      url: "https://github.com/acme/widget/discussions/1#0",
+      author: { login: "founding" },
+      reactions: [],
+      replies: { nodes: [] },
+    },
+  ],
+  pageInfo: { hasPreviousPage: false, startCursor: "comments-start-0" },
+};
+const ideasCommentsPage = {
+  comments: [
+    {
+      id: "C_2",
+      body: "An idea",
+      createdAt: "2026-10-02T00:00:00Z",
+      updatedAt: "2026-10-02T00:00:00Z",
+      url: "https://github.com/acme/widget/discussions/2#1",
+      author: { login: "makers" },
+      reactions: [],
+      replies: { nodes: [] },
+    },
+  ],
+  pageInfo: { hasPreviousPage: false, startCursor: "ideas-cursor-0" },
 };
 
 async function publicRoutes(page: Page) {
@@ -109,9 +163,19 @@ async function publicRoutes(page: Page) {
     if (url.pathname === "/api/public/github/acme/secret")
       return json({ error: "Unknown repository." }, 404);
     if (url.pathname === "/api/public/github/acme/widget/discussions")
-      return json(discussionsPage);
+      return json(
+        url.searchParams.get("after") === "disc-cursor-1"
+          ? discussionsPage2
+          : discussionsPage,
+      );
     if (url.pathname === "/api/public/github/discussions/D_1/comments")
-      return json(commentsPage);
+      return json(
+        url.searchParams.get("before")
+          ? olderCommentsPage
+          : commentsPage,
+      );
+    if (url.pathname === "/api/public/github/discussions/D_2/comments")
+      return json(ideasCommentsPage);
     return json({}, 404);
   });
 }
@@ -187,7 +251,95 @@ test("guest history stays on the first server page", async ({ page }) => {
     "/api/public/github/acme/widget/discussions",
     "/api/public/github/discussions/D_1/comments",
   ]);
-  expect(apiRequests.every((url) => !url.includes("after="))).toBe(true);
+  expect(
+    apiRequests.every((url) => !url.includes("after=") && !url.includes("before=")),
+  ).toBe(true);
+});
+
+test("sidebar groups categories, filters and loads more channels", async ({
+  page,
+}) => {
+  const apiRequests: string[] = [];
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname.startsWith("/api/"))
+      apiRequests.push(request.url());
+  });
+  await publicRoutes(page);
+  await page.goto("/github/acme/widget");
+  await expect(
+    page.getByRole("button", { name: "# general", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("📣 Announcements")).toBeVisible();
+  await expect(page.getByText("💡 Ideas")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "# ideas", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByLabel("Filter channels", { exact: true })
+    .fill("general");
+  await expect(
+    page.getByRole("button", { name: "# general", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "# ideas", exact: true }),
+  ).toHaveCount(0);
+  await page.getByLabel("Filter channels", { exact: true }).fill("");
+  await page.getByRole("button", { name: "Load more channels" }).click();
+  await page.getByRole("button", { name: "# third", exact: true }).click();
+  await expect(page.getByText("Third channel", { exact: true })).toBeVisible({
+    timeout: 10_000,
+  });
+  await expect(
+    page.getByRole("button", { name: "Load more channels" }),
+  ).toHaveCount(0);
+  await expect(
+    apiRequests
+      .filter((url) => url.includes("/acme/widget/discussions"))
+      .map((url) => new URL(url).search),
+  ).toEqual(["", "?after=disc-cursor-1"]);
+});
+
+test("cmd-k jumps between discussions", async ({ page }) => {
+  await publicRoutes(page);
+  await page.goto("/github/acme/widget");
+  await expect(
+    page.getByRole("button", { name: "# general", exact: true }),
+  ).toBeVisible();
+  await page.keyboard.press("ControlOrMeta+k");
+  await expect(page.getByLabel("Jump to a discussion")).toBeVisible();
+  await page.getByLabel("Jump to a discussion").fill("ideas");
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/channel=D_2/);
+  await expect(page.getByText("An idea", { exact: true })).toBeVisible();
+});
+
+test("guest walks a back history of older messages", async ({ page }) => {
+  const apiRequests: string[] = [];
+  page.on("request", (request) => {
+    const path = new URL(request.url()).pathname;
+    if (path.startsWith("/api/")) apiRequests.push(request.url());
+  });
+  await publicRoutes(page);
+  await page.goto("/github/acme/widget");
+  await expect(page.getByText("First message", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Load older messages" }).click();
+  await expect(
+    page.getByText("Ancient message", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Load older messages" }),
+  ).toHaveCount(0);
+  // Selecting a channel and coming back keeps history already in cache.
+  await page.getByRole("button", { name: "# ideas", exact: true }).click();
+  await expect(page.getByText("An idea", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "# general", exact: true }).click();
+  await expect(page.getByText("Ancient message", { exact: true })).toBeVisible();
+  const comments = apiRequests
+    .filter((url) => url.includes("/comments"))
+    .map((url) => new URL(url).search);
+  expect(comments.filter((search) => search.includes("before="))).toEqual([
+    "?before=comments-cursor-0",
+  ]);
 });
 
 test("workspace layout is pinned to the viewport", async ({ page }) => {

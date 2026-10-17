@@ -6,6 +6,7 @@ import { useGitHubAuth } from "~/composables/useGitHubAuth";
 import { useChat } from "~/composables/useChat";
 import { GitHubError, parseRepository } from "~/lib/github";
 import { safeUrl } from "~/lib/links";
+import { channelSections } from "~/lib/channel-groups";
 import { useQuery } from "@tanstack/vue-query";
 import { listWorkspaceRepositories } from "~/lib/github";
 import type { Channel } from "../../shared/chat";
@@ -323,16 +324,96 @@ const roomChannels = computed(() =>
 const directChannels = computed(() =>
   chat.channels.value.filter((c) => c.kind === "dm"),
 );
+const channelFilter = ref("");
+const channelSectionsToRender = computed(() =>
+  channelSections(roomChannels.value, channelFilter.value, publicMode.value),
+);
+// Guests reopen where they left: the last channel per repository lives in
+// local storage only, consistent with the anonymous experience.
+const lastChannelKey = computed(
+  () => `gitrew:public:last-channel:v1:${repository.value.toLowerCase()}`,
+);
+watch(
+  () => chat.channels.value,
+  (list) => {
+    if (!publicMode.value || !import.meta.client || !list.length) return;
+    const saved = window.localStorage.getItem(lastChannelKey.value);
+    if (
+      saved &&
+      saved !== chat.selectedChannel.value &&
+      list.some((item) => item.id === saved)
+    ) {
+      chat.selectedChannel.value = saved;
+    }
+  },
+  { immediate: true },
+);
+watch(
+  () => chat.selectedChannel.value,
+  (id) => {
+    if (!publicMode.value || !import.meta.client) return;
+    window.localStorage.setItem(
+      lastChannelKey.value,
+      id || "",
+    );
+  },
+);
 useEventListener(
   import.meta.client ? window : undefined,
   "keydown",
   (event: KeyboardEvent) => {
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
       event.preventDefault();
+      if (publicMode.value) {
+        openChannelSwitcher();
+        return;
+      }
       globalSearch.value?.querySelector("input")?.focus();
     }
   },
 );
+const switcherOpen = ref(false);
+const switcherQuery = ref("");
+const switcherIndex = ref(0);
+const switcherInput = useTemplateRef<HTMLElement>("switcherInput");
+const switcherResults = computed(() =>
+  channelSections(
+    roomChannels.value,
+    switcherQuery.value,
+    publicMode.value,
+  ).flatMap((section) => section.items),
+);
+function openChannelSwitcher() {
+  switcherQuery.value = "";
+  switcherIndex.value = 0;
+  switcherOpen.value = true;
+  channelsOpen.value = false;
+  void nextTick(() =>
+    switcherInput.value?.querySelector("input")?.focus(),
+  );
+}
+function moveSwitcher(step: number) {
+  const size = switcherResults.value.length;
+  if (!size) return;
+  switcherIndex.value = (switcherIndex.value + step + size) % size;
+}
+function chooseSwitcher(id: string) {
+  switcherOpen.value = false;
+  void selectChannel(id);
+}
+function switcherKeydown(event: KeyboardEvent) {
+  if (event.key === "ArrowDown") {
+    event.preventDefault();
+    moveSwitcher(1);
+  } else if (event.key === "ArrowUp") {
+    event.preventDefault();
+    moveSwitcher(-1);
+  } else if (event.key === "Enter") {
+    event.preventDefault();
+    const pick = switcherResults.value[switcherIndex.value];
+    if (pick) chooseSwitcher(pick.id);
+  }
+}
 const {
   channels,
   channel,
@@ -346,6 +427,10 @@ const {
   threadDraft,
   canWrite,
   online,
+  publicHasMoreChannels,
+  publicLoadMoreChannels,
+  hasOlderMessages,
+  publicLoadOlderMessages,
 } = chat;
 const isSignedIn = computed(() =>
   Boolean(auth.viewer.value && auth.token.value),
@@ -729,19 +814,51 @@ function dayLabel(index: number) {
           @click="conversationOpen = true"
         />
       </div>
+      <UInput
+        v-if="publicMode"
+        v-model="channelFilter"
+        size="xs"
+        icon="i-octicon-search-16"
+        placeholder="Filter channels"
+        aria-label="Filter channels"
+        class="channel-filter"
+      />
       <nav class="channels" aria-label="Channels">
+        <template
+          v-for="section in channelSectionsToRender"
+          :key="section.label || 'channels'"
+        >
+          <div
+            v-if="publicMode && section.label && channelSectionsToRender.length > 1"
+            class="sidebar-section"
+          >
+            <span>{{ section.emoji ? `${section.emoji} ` : "" }}{{ section.label }}</span
+            ><span class="channel-count">{{ section.items.length }}</span>
+          </div>
+          <UButton
+            v-for="item in section.items"
+            :key="item.id"
+            :label="item.kind === 'private' ? item.name : `# ${item.name}`"
+            :icon="item.kind === 'private' ? 'i-octicon-lock-16' : undefined"
+            color="neutral"
+            variant="ghost"
+            :class="{ active: selectedChannel === item.id }"
+            :aria-current="selectedChannel === item.id ? 'page' : undefined"
+            @click="selectChannel(item.id)"
+          />
+        </template>
         <UButton
-          v-for="item in roomChannels"
-          :key="item.id"
-          :label="item.kind === 'private' ? item.name : `# ${item.name}`"
-          :icon="item.kind === 'private' ? 'i-octicon-lock-16' : undefined"
+          v-if="publicMode && publicHasMoreChannels"
+          label="Load more channels"
+          trailing-icon="i-octicon-chevron-down-16"
           color="neutral"
           variant="ghost"
-          :class="{ active: selectedChannel === item.id }"
-          :aria-current="selectedChannel === item.id ? 'page' : undefined"
-          @click="selectChannel(item.id)"
+          size="xs"
+          class="screen-wide"
+          :loading="publicLoadMoreChannels.isPending.value"
+          @click="publicLoadMoreChannels.mutate()"
         />
-        <p v-if="!channels.length && !loading" class="sidebar-note">
+        <p v-if="!roomChannels.length && !loading" class="sidebar-note">
           No channels yet.
         </p>
       </nav>
@@ -1052,6 +1169,17 @@ function dayLabel(index: number) {
             @click="search = ''"
           />
         </div>
+        <UButton
+          v-if="publicMode && hasOlderMessages"
+          label="Load older messages"
+          icon="i-octicon-history-16"
+          color="neutral"
+          variant="ghost"
+          size="xs"
+          class="feed-load-older"
+          :loading="publicLoadOlderMessages.isPending.value"
+          @click="publicLoadOlderMessages.mutate(selectedChannel)"
+        />
         <template v-for="(message, index) in roots" :key="message.id">
           <div v-if="dayLabel(index)" class="day-divider">
             <span>{{ dayLabel(index) }}</span>
@@ -1152,6 +1280,43 @@ function dayLabel(index: number) {
         </div>
       </aside>
     </Transition>
+    <div
+      v-if="switcherOpen"
+      class="switcher-overlay"
+      @click.self="switcherOpen = false"
+      @keydown.esc="switcherOpen = false"
+    >
+      <div class="switcher" ref="switcherInput" @keydown="switcherKeydown">
+        <UInput
+          v-model="switcherQuery"
+          size="lg"
+          icon="i-octicon-search-16"
+          placeholder="Jump to a discussion…"
+          aria-label="Jump to a discussion"
+        />
+        <ul class="switcher-list" role="listbox" aria-label="Discussions">
+          <li v-for="(item, index) in switcherResults" :key="item.id">
+            <button
+              type="button"
+              role="option"
+              :aria-selected="item.id === selectedChannel"
+              :class="{ 'is-focal': index === switcherIndex }"
+              @click="chooseSwitcher(item.id)"
+              @mouseenter="switcherIndex = index"
+            >
+              <span># {{ item.name }}</span>
+              <small
+                v-if="publicMode && item.category"
+                >{{ item.category.emoji }} {{ item.category.name }}</small
+              >
+            </button>
+          </li>
+          <li v-if="!switcherResults.length" class="sidebar-note">
+            No discussions match.
+          </li>
+        </ul>
+      </div>
+    </div>
     <UModal
       v-model:open="huddleOpen"
       title="Voice huddle"

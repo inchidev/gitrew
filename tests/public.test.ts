@@ -69,6 +69,7 @@ function graphqlResponse(query: string, variables: Record<string, unknown>) {
                 body: "Hello",
                 url: "https://github.com/acme/widget/discussions/1",
                 createdAt: "2026-10-01T00:00:00Z",
+                category: { name: "Announcements", emoji: "📣" },
                 comments: { totalCount: 2 },
               },
             ],
@@ -105,11 +106,10 @@ function graphqlResponse(query: string, variables: Record<string, unknown>) {
                     author: { login: "sam" },
                   },
                 ],
-                pageInfo: { hasNextPage: true, endCursor: "reply-cursor-1" },
               },
             },
           ],
-          pageInfo: { hasNextPage: true, endCursor: "msg-cursor-1" },
+          pageInfo: { hasPreviousPage: true, startCursor: "history-cursor-0" },
         },
       },
     },
@@ -216,10 +216,11 @@ describe("public browsing", () => {
     const page = (await (
       await get("/api/public/github/acme/widget/discussions")
     ).json()) as {
-      discussions: { id: string }[];
+      discussions: { id: string; category?: { name: string } }[];
       pageInfo: { hasNextPage: boolean };
     };
     expect(page.discussions.map((d) => d.id)).toEqual(["D_1"]);
+    expect(page.discussions[0]?.category?.name).toBe("Announcements");
     expect(page.pageInfo.hasNextPage).toBe(true);
     expect(upstreamCalls).toHaveLength(1);
     await get("/api/public/github/acme/widget/discussions?after=disc-cursor-1");
@@ -230,16 +231,31 @@ describe("public browsing", () => {
       comments: {
         id: string;
         reactions: Array<{ emoji: string; count: number }>;
-        replies: { nodes: { id: string }[]; pageInfo: { hasNextPage: boolean } };
+        replies: { nodes: { id: string }[] };
       }[];
-      pageInfo: { hasNextPage: boolean };
+      pageInfo: { hasPreviousPage: boolean; startCursor: string | null };
     };
     expect(thread.comments[0]!.reactions).toEqual([
       { emoji: "👍", count: 2 },
     ]);
     expect(thread.comments[0]!.replies.nodes.map((r) => r.id)).toEqual(["R_1"]);
-    expect(thread.comments[0]!.replies.pageInfo.hasNextPage).toBe(true);
-    expect(thread.pageInfo.hasNextPage).toBe(true);
+    expect(thread.pageInfo).toEqual({
+      hasPreviousPage: true,
+      startCursor: "history-cursor-0",
+    });
+    expect(upstreamCalls).toHaveLength(3);
+    // Walking history re-queries upstream with before, never after.
+    await get("/api/public/github/discussions/D_1/comments?before=history-cursor-0");
+    expect(upstreamCalls).toHaveLength(4);
+    expect((await get(`/api/public/github/discussions/D_1/comments?before=!!`)).status).toBe(400);
+    expect(
+      (
+        await get(
+          "/api/public/github/discussions/D_1/comments?before=history-cursor-0&after=oops",
+        )
+      ).status,
+    ).toBe(400);
+    expect(upstreamCalls).toHaveLength(4);
   });
 
   it("rejects invalid cursors and unknown paths", async () => {

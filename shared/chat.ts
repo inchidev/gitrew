@@ -4,6 +4,7 @@ export interface Channel {
   description: string;
   url?: string;
   repository?: string;
+  category?: { name: string; emoji: string } | null;
   kind?: "public" | "private" | "dm";
 }
 
@@ -38,4 +39,21 @@ export interface ChatTransport {
     body: string,
     parentId?: string,
   ): Promise<Message>;
+}
+
+export interface ChannelPage {
+  channels: Channel[];
+  hasMore: boolean;
+}
+export interface MessagePage {
+  messages: Message[];
+  hasMore: boolean;
+}
+
+// Optional deep-history extensions. Workspace shipments pre-load their whole
+// history; a transport that pages (anonymous GitHub browsing) implements
+// these to pull the next channel page and the older half of a conversation.
+export interface PagingTransport extends ChatTransport {
+  listMoreChannels(): Promise<ChannelPage>;
+  listOlderMessages(channelId: string): Promise<MessagePage>;
 }
