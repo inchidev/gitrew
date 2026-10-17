@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.6.1 — 2026-10-16
+
+- Point the landing hero at a live workspace: the sample screenshots are gone, the hero panel and primary action open real public discussions (nuxt/nuxt, vuejs/core, nuxt/ui) with no sign-in.
+
 ## 0.6.0 — 2026-10-16
 
 - Fill the viewport on public repository pages: the anonymous workspace takes the full page under a slim bar with brand, breadcrumb, stars, Open on GitHub and an organization/repository search with the same validation as the public index.
