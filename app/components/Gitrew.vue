@@ -869,9 +869,11 @@ function dayLabel(index: number) {
     :class="{ 'has-thread': parent || threadPresent }"
   >
     <header class="app-toolbar" :inert="Boolean(parent) && isMobile">
-      <NuxtLink to="/" class="brand" aria-label="Gitrew home"
-        ><BrandMark /><span>Gitrew</span></NuxtLink
-      >
+      <slot name="workspace-brand">
+        <NuxtLink to="/" class="brand" aria-label="Gitrew home"
+          ><BrandMark /><span>Gitrew</span></NuxtLink
+        >
+      </slot>
       <div ref="globalSearch" class="global-search">
         <UInput
           v-model="search"

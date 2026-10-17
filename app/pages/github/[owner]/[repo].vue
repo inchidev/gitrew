@@ -83,26 +83,9 @@ onMounted(() => void load());
 <template>
   <div class="public-page public-workspace-page">
     <header class="public-header">
-      <nav aria-label="Breadcrumb">
-        <NuxtLink to="/github/">github</NuxtLink>
-        <span aria-hidden="true"> / </span>
-        <NuxtLink :to="`/github/${owner}`">{{ owner }}</NuxtLink>
-        <span aria-hidden="true"> / </span>
-        <span>{{ repo }}</span>
-      </nav>
-      <span v-if="meta" class="repo-stars" title="Stargazers"
-        >★ {{ meta.stargazerCount }}</span
+      <NuxtLink to="/" class="brand" aria-label="Gitrew home"
+        ><BrandMark /><span>Gitrew</span></NuxtLink
       >
-      <a
-        v-if="meta"
-        :href="safeUrl(meta.url)"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="github-link"
-        aria-label="Open on GitHub"
-      >
-        <UIcon name="i-octicon-mark-github-16" />
-      </a>
       <UButton
         class="workspace-finder-open"
         label="Find a workspace"
@@ -176,7 +159,30 @@ onMounted(() => void load());
           v-else
           :public-source="{ owner, repo }"
           :key="`${owner}/${repo}`"
-        />
+        >
+          <template #workspace-brand>
+            <nav class="toolbar-crumb" aria-label="Breadcrumb">
+              <NuxtLink to="/github/">github</NuxtLink>
+              <span aria-hidden="true"> / </span>
+              <NuxtLink :to="`/github/${owner}`">{{ owner }}</NuxtLink>
+              <span aria-hidden="true"> / </span>
+              <span>{{ repo }}</span>
+              <span v-if="meta" class="repo-stars" title="Stargazers"
+                >★ {{ meta.stargazerCount }}</span
+              >
+              <a
+                v-if="meta"
+                :href="safeUrl(meta.url)"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="github-link"
+                aria-label="Open on GitHub"
+              >
+                <UIcon name="i-octicon-mark-github-16" />
+              </a>
+            </nav>
+          </template>
+        </Gitrew>
       </template>
     </main>
   </div>
