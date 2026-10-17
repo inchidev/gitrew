@@ -128,6 +128,42 @@ const olderCommentsPage = {
   ],
   pageInfo: { hasPreviousPage: false, startCursor: "comments-start-0" },
 };
+const nuxtMeta = {
+  description: "The Intuitive Vue Framework.",
+  stargazerCount: 40000,
+  hasDiscussionsEnabled: true,
+  url: "https://github.com/nuxt/nuxt",
+};
+const nuxtDiscussionsPage = {
+  discussions: [
+    {
+      id: "D_N1",
+      title: "3.14 released",
+      body: "Ship notes",
+      url: "https://github.com/nuxt/nuxt/discussions/1",
+      createdAt: "2026-10-01T00:00:00Z",
+      category: { name: "Announcements", emoji: "📣" },
+      activityAt: "2026-10-01T00:00:00Z",
+      comments: { totalCount: 1 },
+    },
+  ],
+  pageInfo: { hasNextPage: false, endCursor: null },
+};
+const nuxtCommentsPage = {
+  comments: [
+    {
+      id: "C_N1",
+      body: "Great release",
+      createdAt: "2026-10-01T00:00:00Z",
+      updatedAt: "2026-10-01T00:00:00Z",
+      url: "https://github.com/nuxt/nuxt/discussions/1#1",
+      author: { login: "daniel" },
+      reactions: [],
+      replies: { nodes: [] },
+    },
+  ],
+  pageInfo: { hasPreviousPage: false, startCursor: null },
+};
 const ideasCommentsPage = {
   comments: [
     {
@@ -178,6 +214,12 @@ async function publicRoutes(page: Page) {
       );
     if (url.pathname === "/api/public/github/discussions/D_2/comments")
       return json(ideasCommentsPage);
+    if (url.pathname === "/api/public/github/nuxt/nuxt")
+      return json(nuxtMeta);
+    if (url.pathname === "/api/public/github/nuxt/nuxt/discussions")
+      return json(nuxtDiscussionsPage);
+    if (url.pathname === "/api/public/github/discussions/D_N1/comments")
+      return json(nuxtCommentsPage);
     return json({}, 404);
   });
 }
