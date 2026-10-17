@@ -1,7 +1,7 @@
 // Read-only ChatTransport over the anonymous /api/public endpoints.
-// First pages load the channel list and messages; reply threads expose the
-// first page GitHub returns. Sending always fails closed: guests participate
-// on GitHub itself.
+// First load shows only the first server page of channels and messages so
+// huge repositories open instantly; deeper history stays on GitHub. Sending
+// always fails closed: guests participate on GitHub itself.
 import type { Channel, ChatTransport, Message } from "../../shared/chat";
 import {
   publicComments,
@@ -34,40 +34,28 @@ export class PublicTransport implements ChatTransport {
   ) {}
 
   async listChannels(): Promise<Channel[]> {
-    const channels: Channel[] = [];
-    let after: string | null = null;
-    do {
-      const page = await publicDiscussions(this.owner, this.repo, after);
-      channels.push(
-        ...page.discussions.map((discussion) => ({
-          id: discussion.id,
-          name: discussion.title.replace(/^#/, ""),
-          description: discussion.body,
-          url: discussion.url,
-          repository: `${this.owner}/${this.repo}`,
-          kind: "public" as const,
-        })),
-      );
-      after = page.pageInfo.hasNextPage ? page.pageInfo.endCursor : null;
-    } while (after);
-    return channels;
+    const page = await publicDiscussions(this.owner, this.repo, null);
+    return page.discussions.map((discussion) => ({
+      id: discussion.id,
+      name: discussion.title.replace(/^#/, ""),
+      description: discussion.body,
+      url: discussion.url,
+      repository: `${this.owner}/${this.repo}`,
+      kind: "public" as const,
+    }));
   }
 
   async listMessages(channelId: string): Promise<Message[]> {
+    const page = await publicComments(channelId, null);
     const messages: Message[] = [];
-    let after: string | null = null;
-    do {
-      const page = await publicComments(channelId, after);
-      for (const comment of page.comments) {
-        messages.push(toMessage(comment, channelId, ""));
-        messages.push(
-          ...comment.replies.nodes.map((reply) =>
-            toMessage(reply, channelId, comment.id),
-          ),
-        );
-      }
-      after = page.pageInfo.hasNextPage ? page.pageInfo.endCursor : null;
-    } while (after);
+    for (const comment of page.comments) {
+      messages.push(toMessage(comment, channelId, ""));
+      messages.push(
+        ...comment.replies.nodes.map((reply) =>
+          toMessage(reply, channelId, comment.id),
+        ),
+      );
+    }
     return messages;
   }
 

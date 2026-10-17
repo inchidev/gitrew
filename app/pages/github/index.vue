@@ -28,9 +28,9 @@ function open() {
 <template>
   <div class="public-page">
     <header class="public-header">
-      <NuxtLink to="/" class="brand" aria-label="Gitrew home"
-        ><BrandMark /><span>Gitrew</span></NuxtLink
-      >
+      <nav aria-label="Breadcrumb">
+        <NuxtLink to="/">Gitrew</NuxtLink>
+      </nav>
     </header>
     <main>
       <h1>Browse public communities</h1>

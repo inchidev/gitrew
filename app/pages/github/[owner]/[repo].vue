@@ -56,9 +56,6 @@ onMounted(() => void load());
 <template>
   <div class="public-page public-workspace-page">
     <header class="public-header">
-      <NuxtLink to="/" class="brand" aria-label="Gitrew home"
-        ><BrandMark /><span>Gitrew</span></NuxtLink
-      >
       <nav aria-label="Breadcrumb">
         <NuxtLink to="/github/">Public</NuxtLink>
         <span aria-hidden="true"> / </span>
@@ -75,8 +72,10 @@ onMounted(() => void load());
         target="_blank"
         rel="noopener noreferrer"
         class="github-link"
-        >Open on GitHub</a
+        aria-label="Open on GitHub"
       >
+        <UIcon name="i-octicon-mark-github-16" />
+      </a>
       <form class="org-search" @submit.prevent="open">
         <UInput
           v-model="searchOwner"

@@ -157,6 +157,26 @@ test("repository space reads discussions and threads without signing in", async 
   ).toBe(true);
 });
 
+test("guest history stays on the first server page", async ({ page }) => {
+  const apiRequests: string[] = [];
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname.startsWith("/api/"))
+      apiRequests.push(request.url());
+  });
+  await publicRoutes(page);
+  await page.goto("/github/acme/widget");
+  await expect(
+    page.getByRole("button", { name: "# general", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("First message", { exact: true })).toBeVisible();
+  expect(apiRequests.map((url) => new URL(url).pathname)).toEqual([
+    "/api/public/github/acme/widget",
+    "/api/public/github/acme/widget/discussions",
+    "/api/public/github/discussions/D_1/comments",
+  ]);
+  expect(apiRequests.every((url) => !url.includes("after="))).toBe(true);
+});
+
 test("disabled discussions banner offers a retry", async ({ page }) => {
   let metaHits = 0;
   page.on("request", (request) => {

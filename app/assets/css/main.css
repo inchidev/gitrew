@@ -1318,8 +1318,13 @@ kbd {
   white-space: nowrap;
 }
 .public-workspace-page .github-link {
-  font-size: 14px;
-  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  color: var(--ui-text-muted);
+  font-size: 18px;
+}
+.public-workspace-page .github-link:hover {
+  color: var(--ui-text-highlighted);
 }
 .public-workspace-page .org-search {
   display: flex;
