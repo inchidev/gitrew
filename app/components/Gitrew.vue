@@ -19,6 +19,8 @@ import type { MailboxConfig } from "../../shared/mailbox";
 import { legacyWorkspacePath, workspacePath } from "../../shared/routes";
 const props = defineProps<{
   publicSource?: { owner: string; repo: string };
+  /** Embedded on a foreign page (landing hero): route sync stays silent. */
+  embedded?: boolean;
 }>();
 const publicMode = computed(() => Boolean(props.publicSource));
 const route = useRoute();
@@ -708,8 +710,8 @@ watch(
   (value) => {
     if (value && (preview.value || isSignedIn.value || publicMode.value)) {
       const location = channelLocation(value.id);
-      if (route.path === location.path) return; // already there
-      if (route.path.startsWith("/github/"))
+      // The landing embed never navigates away from its host page.
+      if (!props.embedded && route.path !== location.path)
         void router.replace({
           ...location,
           query: {
@@ -719,8 +721,6 @@ watch(
               : {}),
           },
         });
-      // Off the workspace pages (the landing embed) the page stays:
-      // only the query carries the selected channel.
     }
   },
 );

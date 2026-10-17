@@ -215,7 +215,10 @@ useHead({
             <span class="live-dot" aria-hidden="true" />Live right now · nuxt/nuxt
           </p>
           <div class="live-embed">
-            <Gitrew :public-source="{ owner: 'nuxt', repo: 'nuxt' }" />
+            <Gitrew
+              embedded
+              :public-source="{ owner: 'nuxt', repo: 'nuxt' }"
+            />
           </div>
         </div>
       </section>
