@@ -91,6 +91,9 @@ function graphqlResponse(query: string, variables: Record<string, unknown>) {
               updatedAt: "2026-10-01T00:00:00Z",
               url: "https://github.com/acme/widget/discussions/1#1",
               author: { login: "robin" },
+              reactionGroups: [
+                { content: "THUMBS_UP", users: { totalCount: 2 } },
+              ],
               replies: {
                 nodes: [
                   {
@@ -226,10 +229,14 @@ describe("public browsing", () => {
     ).json()) as {
       comments: {
         id: string;
+        reactions: Array<{ emoji: string; count: number }>;
         replies: { nodes: { id: string }[]; pageInfo: { hasNextPage: boolean } };
       }[];
       pageInfo: { hasNextPage: boolean };
     };
+    expect(thread.comments[0]!.reactions).toEqual([
+      { emoji: "👍", count: 2 },
+    ]);
     expect(thread.comments[0]!.replies.nodes.map((r) => r.id)).toEqual(["R_1"]);
     expect(thread.comments[0]!.replies.pageInfo.hasNextPage).toBe(true);
     expect(thread.pageInfo.hasNextPage).toBe(true);

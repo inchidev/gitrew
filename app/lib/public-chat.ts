@@ -24,6 +24,7 @@ function toMessage(
     updatedAt: comment.updatedAt,
     status: "saved",
     url: comment.url,
+    reactions: comment.reactions?.length ? comment.reactions : undefined,
   };
 }
 

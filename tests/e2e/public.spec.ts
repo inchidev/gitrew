@@ -60,11 +60,15 @@ const commentsPage = {
   comments: [
     {
       id: "C_1",
-      body: "First message",
+      body: "First message\n\n```ts\nconst app = 1;\n```\n\n## Notes\n- pretty\n- neat\n\n<style>hack()</style>",
       createdAt: "2026-10-01T00:00:00Z",
       updatedAt: "2026-10-01T00:00:00Z",
       url: "https://github.com/acme/widget/discussions/1#1",
       author: { login: "robin" },
+      reactions: [
+        { emoji: "👍", count: 2 },
+        { emoji: "🚀", count: 3 },
+      ],
       replies: {
         nodes: [
           {
@@ -74,6 +78,7 @@ const commentsPage = {
             updatedAt: "2026-10-01T00:00:00Z",
             url: "https://github.com/acme/widget/discussions/1#r1",
             author: { login: "sam" },
+            reactions: [{ emoji: "👀", count: 1 }],
           },
         ],
         pageInfo: { hasNextPage: false, endCursor: null },
@@ -150,8 +155,16 @@ test("repository space reads discussions and threads without signing in", async 
   ).toBeVisible();
   await expect(page.getByText("Welcome", { exact: true })).toBeVisible();
   await expect(page.getByText("First message", { exact: true })).toBeVisible();
+  const body = page.locator(".message-body-md").first();
+  await expect(body.locator("code.language-ts")).toHaveText("const app = 1;");
+  await expect(body.locator("h4")).toHaveText("Notes");
+  await expect(body.locator("li")).toHaveText(["pretty", "neat"]);
+  await expect(body.locator("style")).toHaveCount(0);
+  await expect(page.getByText("👍 2")).toBeVisible();
+  await expect(page.getByText("🚀 3")).toBeVisible();
   await page.getByRole("button", { name: "1 reply" }).click();
   await expect(page.getByText("A reply", { exact: true })).toBeVisible();
+  await expect(page.getByText("👀 1")).toBeVisible();
   expect(
     apiRequests.every((url) => url.includes("/api/public/github/")),
   ).toBe(true);

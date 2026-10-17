@@ -2,11 +2,13 @@
 import dayjs from "dayjs";
 import type { Message } from "../../shared/chat";
 import { safeUrl } from "~/lib/links";
+import { renderPublicMarkdown } from "~/lib/markdown";
 const props = defineProps<{
   message: Message;
   replies?: number;
   selected?: boolean;
   inThread?: boolean;
+  markdown?: boolean;
 }>();
 const emit = defineEmits<{ thread: [id: string] }>();
 const url = computed(() => safeUrl(props.message.url));
@@ -17,6 +19,9 @@ const avatar = computed(() =>
     : "",
 );
 const avatarFailed = ref(false);
+const markdownBody = computed(() =>
+  props.markdown ? renderPublicMarkdown(props.message.body) : "",
+);
 </script>
 <template>
   <article class="message" :class="{ 'message-selected': selected }">
@@ -55,7 +60,24 @@ const avatarFailed = ref(false);
           <template v-else>On this device</template>
         </span>
       </div>
-      <p class="message-body">{{ message.body }}</p>
+      <p v-if="!markdown" class="message-body">{{ message.body }}</p>
+      <div
+        v-else
+        class="message-body message-body-md"
+        data-markdown-body
+        v-html="markdownBody"
+      />
+      <div
+        v-if="message.reactions && message.reactions.length"
+        class="message-reactions"
+      >
+        <span
+          v-for="reaction in message.reactions"
+          :key="reaction.emoji"
+          class="message-reaction"
+          >{{ reaction.emoji }} {{ reaction.count }}</span
+        >
+      </div>
       <div class="message-actions">
         <UButton
           v-if="!inThread"

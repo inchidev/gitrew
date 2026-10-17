@@ -1060,6 +1060,7 @@ function dayLabel(index: number) {
             :message="message"
             :replies="chat.replyCount(message.id)"
             :selected="selectedThread === message.id"
+            :markdown="publicMode"
             @thread="openThread($event)"
           />
         </template>
@@ -1116,7 +1117,7 @@ function dayLabel(index: number) {
           aria-label="Thread messages"
           tabindex="0"
         >
-          <MessageItem :message="parent" in-thread selected />
+          <MessageItem :message="parent" in-thread selected :markdown="publicMode" />
           <div class="thread-divider">
             {{ replies.length }}
             {{ replies.length === 1 ? "reply" : "replies" }}
@@ -1126,6 +1127,7 @@ function dayLabel(index: number) {
             :key="reply.id"
             :message="reply"
             in-thread
+            :markdown="publicMode"
           />
         </div>
         <ChatComposer
