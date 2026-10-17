@@ -5,7 +5,14 @@ import {
   useDocumentVisibility,
 } from "@vueuse/core";
 import { z } from "zod";
-import type { Channel, Message, ChatTransport } from "../../shared/chat";
+import {
+  reactionEmoji,
+  type Channel,
+  type Message,
+  type MessageReaction,
+  type ReactionContent,
+  type ChatTransport,
+} from "../../shared/chat";
 import type { MailboxConfig } from "../../shared/mailbox";
 import { VaultTransport } from "~/lib/vault";
 import { GitHubError, GitHubTransport } from "~/lib/github";
@@ -294,6 +301,33 @@ export function useChat(
         a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id),
     );
   });
+  // Slack-style local unread markers: the latest seen message timestamp per
+  // channel lives in this browser; a channel whose latest activity is newer
+  // shows its dot. Nothing leaves the device — no server-side read state.
+  const readMarks = useLocalStorage<Record<string, string>>(
+    "gitrew:read:v1",
+    {},
+  );
+  watch(
+    [selectedChannel, messages, visibility],
+    ([, list, documentVisibility]) => {
+      if (documentVisibility !== "visible" || !list.length) return;
+      const latest = list[list.length - 1]!.createdAt;
+      const channelId = selectedChannel.value;
+      if ((readMarks.value[channelId] || "") >= latest) return;
+      readMarks.value = { ...readMarks.value, [channelId]: latest };
+    },
+    { immediate: true },
+  );
+  const unread = computed(() => {
+    const map: Record<string, boolean> = {};
+    for (const channel of channels.value) {
+      if (!channel.activityAt) continue;
+      map[channel.id] =
+        channel.activityAt > (readMarks.value[channel.id] || "");
+    }
+    return map;
+  });
   const channel = computed(() =>
     channels.value.find((value) => value.id === selectedChannel.value),
   );
@@ -349,6 +383,83 @@ export function useChat(
       (preview.value ||
         (authenticated.value && Boolean(channel.value) && online.value)),
   );
+
+  const canReact = computed(
+    () =>
+      !publicMode.value &&
+      !preview.value &&
+      authenticated.value &&
+      Boolean(channel.value) &&
+      !["private", "dm"].includes(channel.value!.kind || ""),
+  );
+  type ReactionArgs = {
+    messageId: string;
+    content: ReactionContent;
+    remove: boolean;
+  };
+  // Local fallback that mirrors GitHub's counting so the badge moves before
+  // the round-trip finishes; the server result overwrites it on settle.
+  function applyLocalToggle(
+    message: Message,
+    content: ReactionContent,
+    remove: boolean,
+  ): MessageReaction[] {
+    const groups = message.reactions ? [...message.reactions] : [];
+    const index = groups.findIndex((group) => group.content === content);
+    if (remove) {
+      const group = groups[index];
+      if (!group || !group.mine) return message.reactions || [];
+      if (group.count <= 1) groups.splice(index, 1);
+      else groups[index] = { ...group, count: group.count - 1, mine: false };
+      return groups;
+    }
+    if (index === -1)
+      return [
+        ...groups,
+        { emoji: reactionEmoji[content], count: 1, content, mine: true },
+      ];
+    return groups.map((group, position) =>
+      position === index
+        ? {
+            ...group,
+            count: group.mine ? group.count : group.count + 1,
+            mine: true,
+          }
+        : group,
+    );
+  }
+  const toggleReactionMutation = useMutation({
+    mutationFn: ({ messageId, content, remove }: ReactionArgs) =>
+      new GitHubTransport(
+        channel.value?.repository || repository.value,
+        token.value,
+      ).toggleReaction(messageId, content, remove),
+    onMutate: ({ messageId, content, remove }) => {
+      const previous = messagesQuery.data.value;
+      queryClient.setQueryData<Message[]>(messageKey.value, (list) =>
+        (list || []).map((message) =>
+          message.id === messageId
+            ? {
+                ...message,
+                reactions: applyLocalToggle(message, content, remove),
+              }
+            : message,
+        ),
+      );
+      return { previous };
+    },
+    onError: (_error, _args, context) => {
+      if (context?.previous)
+        queryClient.setQueryData(messageKey.value, context.previous);
+    },
+    onSuccess: (reactions, { messageId }) => {
+      queryClient.setQueryData<Message[]>(messageKey.value, (list) =>
+        (list || []).map((message) =>
+          message.id === messageId ? { ...message, reactions } : message,
+        ),
+      );
+    },
+  });
 
   if (requestedChannel)
     watch(requestedChannel, (id) => {
@@ -520,6 +631,9 @@ export function useChat(
     messagesQuery,
     publicChannelsQuery,
     publicHasMoreChannels,
+    canReact,
+    toggleReactionMutation,
+    unread,
     publicLoadMoreChannels,
     hasOlderMessages,
     publicLoadOlderMessages,

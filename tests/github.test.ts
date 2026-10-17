@@ -146,6 +146,7 @@ describe("GitHub transport", () => {
                     title: "#general",
                     body: "Everyday",
                     url: "https://github.com/inchidev/chat/discussions/1",
+                    updatedAt: "2026-10-15T09:00:00Z",
                   },
                 ],
                 pageInfo: { hasNextPage: true, endCursor: "next" },
@@ -171,14 +172,91 @@ describe("GitHub transport", () => {
           }),
         ),
     );
-    expect(
-      (
-        await new GitHubTransport("inchidev/chat", "test-only").listChannels()
-      ).map((channel) => [channel.id, channel.name]),
-    ).toEqual([
+    const listed = await new GitHubTransport(
+      "inchidev/chat",
+      "test-only",
+    ).listChannels();
+    expect(listed.map((channel) => [channel.id, channel.name])).toEqual([
       ["one", "general"],
       ["two", "building"],
     ]);
+    expect(listed[0]?.activityAt).toBe("2026-10-15T09:00:00Z");
+  });
+
+  it("carries reactions on messages and toggles them through GitHub mutations", async () => {
+    const reacted = (
+      field: "addReaction" | "removeReaction",
+      totals: Record<string, [number, boolean]>,
+    ) =>
+      mockResponse({
+        [field]: {
+          subject: {
+            reactionGroups: Object.entries(totals).map(
+            ([content, [totalCount, viewerHasReacted]]) => ({
+              content,
+              users: { totalCount },
+              viewerHasReacted,
+            }),
+          ),
+        },
+      },
+      });
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        mockResponse({
+          node: {
+            comments: {
+              nodes: [
+                {
+                  ...comment("a"),
+                  reactionGroups: [
+                    {
+                      content: "THUMBS_UP",
+                      users: { totalCount: 2 },
+                      viewerHasReacted: false,
+                    },
+                    {
+                      content: "HEART",
+                      users: { totalCount: 1 },
+                      viewerHasReacted: true,
+                    },
+                    {
+                      content: "ROCKET",
+                      users: { totalCount: 0 },
+                      viewerHasReacted: false,
+                    },
+                  ],
+                  replies: { nodes: [], pageInfo },
+                },
+              ],
+              pageInfo,
+            },
+          },
+        }),
+      )
+      .mockResolvedValueOnce(reacted("addReaction", {
+        THUMBS_UP: [3, true],
+      }))
+      .mockResolvedValueOnce(reacted("removeReaction", {}));
+    vi.stubGlobal("fetch", fetchMock);
+    const transport = new GitHubTransport("inchidev/chat", "test-only");
+    const [message] = await transport.listMessages("D_1");
+    expect(message!.reactions).toEqual([
+      { emoji: "👍", count: 2, content: "THUMBS_UP", mine: false },
+      { emoji: "❤️", count: 1, content: "HEART", mine: true },
+    ]);
+    expect(await transport.toggleReaction("a", "THUMBS_UP", false)).toEqual([
+      { emoji: "👍", count: 3, content: "THUMBS_UP", mine: true },
+    ]);
+    expect(
+      JSON.parse(String(fetchMock.mock.calls[1]![1]!.body)).query,
+    ).toContain("addReaction");
+    expect(await transport.toggleReaction("a", "ROCKET", true)).toEqual([]);
+    expect(
+      JSON.parse(String(fetchMock.mock.calls[2]![1]!.body)).query,
+    ).toContain("removeReaction");
   });
 });
 

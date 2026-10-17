@@ -52,6 +52,7 @@ export class PublicTransport implements ChatTransport {
       description: discussion.body,
       url: discussion.url,
       repository: `${this.owner}/${this.repo}`,
+      activityAt: discussion.activityAt,
       category: discussion.category,
       kind: "public" as const,
     }));
@@ -71,7 +72,8 @@ export class PublicTransport implements ChatTransport {
         description: discussion.body,
         url: discussion.url,
         repository: `${this.owner}/${this.repo}`,
-        category: discussion.category,
+        activityAt: discussion.activityAt,
+      category: discussion.category,
         kind: "public" as const,
       })),
       hasMore: page.pageInfo.hasNextPage,

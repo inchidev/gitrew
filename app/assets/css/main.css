@@ -660,6 +660,91 @@ kbd {
   font-size: 12px;
   color: var(--ui-text-default);
 }
+button.message-reaction,
+.reaction-picker button {
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  background: none;
+  transition: border-color 120ms ease;
+}
+button.message-reaction:hover {
+  border-color: var(--ui-primary);
+}
+.message-reaction.mine {
+  border-color: var(--ui-primary);
+  background: color-mix(in srgb, var(--ui-primary) 12%, transparent);
+  color: var(--ui-primary);
+  font-weight: 600;
+}
+.reaction-picker-holder {
+  position: relative;
+  display: inline-flex;
+}
+.reaction-add {
+  opacity: 0;
+}
+.message:hover .reaction-add,
+.reaction-add:focus-visible,
+.reaction-add[aria-expanded="true"] {
+  opacity: 1;
+}
+.reaction-picker {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  z-index: 40;
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--ui-border-accented);
+  border-radius: 10px;
+  background: var(--ui-bg-elevated);
+  box-shadow: 0 10px 32px rgb(0 0 0 / 0.25);
+}
+.reaction-picker button {
+  border: none;
+  border-radius: 8px;
+  padding: 3px 6px;
+  font-size: 15px;
+  line-height: 1.2;
+}
+.reaction-picker button:hover {
+  background: var(--ui-bg-accented);
+}
+.presence-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border: 1px solid var(--ui-border-accented);
+  border-radius: 999px;
+  font-size: 11px;
+  color: var(--ui-text-muted);
+  background: var(--ui-bg);
+}
+.presence-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 2px color-mix(in srgb, #22c55e 25%, transparent);
+}
+.channels button.unread {
+  font-weight: 650;
+  color: var(--ui-text-highlighted);
+}
+.channels button.unread::after {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-left: 8px;
+  border-radius: 50%;
+  background: var(--ui-primary);
+  vertical-align: middle;
+}
 .message-body-md {
   white-space: normal;
 }

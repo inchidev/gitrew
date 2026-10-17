@@ -189,6 +189,7 @@ const discussionsSchema = z.object({
             body: z.string(),
             url: z.string(),
             createdAt: z.string(),
+            updatedAt: z.string().optional(),
             category: z
               .object({ name: z.string(), emoji: z.string() })
               .nullable()
@@ -333,7 +334,7 @@ async function publicDiscussions(
     `query PublicDiscussions($owner: String!, $name: String!, $after: String) {
       repository(owner: $owner, name: $name) { isPrivate
         discussions(first: ${PAGE.discussions}, after: $after) {
-          nodes { id title body url createdAt comments { totalCount }
+          nodes { id title body url createdAt updatedAt comments { totalCount }
             category { name emoji } }
           pageInfo { hasNextPage endCursor }
         } }
@@ -344,10 +345,13 @@ async function publicDiscussions(
   if (!parsed.repository || parsed.repository.isPrivate)
     throw new HttpError(404, "Unknown repository.");
   return {
-    discussions: parsed.repository.discussions.nodes.map((discussion) => ({
-      ...discussion,
-      body: excerpt(discussion.body, 4000),
-    })),
+    discussions: parsed.repository.discussions.nodes.map(
+      ({ updatedAt, ...discussion }) => ({
+        ...discussion,
+        body: excerpt(discussion.body, 4000),
+        activityAt: updatedAt,
+      }),
+    ),
     pageInfo: parsed.repository.discussions.pageInfo,
   };
 }
