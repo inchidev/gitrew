@@ -37,6 +37,7 @@ export interface PublicComment {
   updatedAt: string;
   url: string;
   author: { login: string } | null;
+  reactions?: Array<{ emoji: string; count: number }>;
 }
 export interface PublicThreadComment extends PublicComment {
   replies: { nodes: PublicComment[]; pageInfo: PublicPageInfo };

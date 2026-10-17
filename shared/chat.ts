@@ -7,6 +7,11 @@ export interface Channel {
   kind?: "public" | "private" | "dm";
 }
 
+export interface MessageReaction {
+  emoji: string;
+  count: number;
+}
+
 export interface Message {
   id: string;
   channelId: string;
@@ -17,6 +22,7 @@ export interface Message {
   updatedAt: string;
   status: "saved" | "local" | "pending" | "error";
   url: string;
+  reactions?: MessageReaction[];
 }
 
 export interface Draft {

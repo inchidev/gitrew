@@ -201,6 +201,23 @@ const commentSchema = z.object({
   updatedAt: z.string(),
   url: z.string(),
   author: z.object({ login: z.string() }).nullable(),
+  reactionGroups: z
+    .array(
+      z.object({
+        content: z.enum([
+          "THUMBS_UP",
+          "THUMBS_DOWN",
+          "LAUGH",
+          "HOORAY",
+          "CONFUSED",
+          "HEART",
+          "ROCKET",
+          "EYES",
+        ]),
+        users: z.object({ totalCount: z.number() }),
+      }),
+    )
+    .default([]),
 });
 const commentsSchema = z.object({
   node: z
@@ -223,6 +240,28 @@ const commentsSchema = z.object({
 
 function excerpt(body: string, limit: number): string {
   return body.length > limit ? body.slice(0, limit) + "…" : body;
+}
+
+const reactionEmoji: Record<string, string> = {
+  THUMBS_UP: "👍",
+  THUMBS_DOWN: "👎",
+  LAUGH: "😄",
+  HOORAY: "🎉",
+  CONFUSED: "😕",
+  HEART: "❤️",
+  ROCKET: "🚀",
+  EYES: "👀",
+};
+
+function toReactions(
+  groups: Array<{ content: string; users: { totalCount: number } }>,
+) {
+  return groups
+    .filter((group) => group.users.totalCount > 0)
+    .map((group) => ({
+      emoji: reactionEmoji[group.content] ?? group.content.toLowerCase(),
+      count: group.users.totalCount,
+    }));
 }
 
 async function publicOwner(token: string, owner: string, after: string | null) {
@@ -316,8 +355,10 @@ async function publicComments(token: string, id: string, after: string | null) {
       node(id: $id) { ... on Discussion { repository { isPrivate }
         comments(first: ${PAGE.comments}, after: $after) {
           nodes { id body createdAt updatedAt url author { login }
+            reactionGroups { content users { totalCount } }
             replies(first: ${PAGE.replies}) {
-              nodes { id body createdAt updatedAt url author { login } }
+              nodes { id body createdAt updatedAt url author { login }
+                reactionGroups { content users { totalCount } } }
               pageInfo { hasNextPage endCursor } } }
           pageInfo { hasNextPage endCursor } } } }
     }`,
@@ -330,11 +371,13 @@ async function publicComments(token: string, id: string, after: string | null) {
     comments: parsed.node.comments.nodes.map((comment) => ({
       ...comment,
       body: excerpt(comment.body, 8000),
+      reactions: toReactions(comment.reactionGroups),
       replies: {
         ...comment.replies,
         nodes: comment.replies.nodes.map((reply) => ({
           ...reply,
           body: excerpt(reply.body, 8000),
+          reactions: toReactions(reply.reactionGroups),
         })),
       },
     })),
