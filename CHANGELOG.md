@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 0.6.7 — 2026-10-17
+
+- The landing hero embeds the real read-only nuxt/nuxt workspace instead of a link list; the panel keeps a live kicker and the embedded instance never rewrites the host route.
+- The hero CTA reads Explore workspaces and opens the GitHub index; the repository breadcrumb is lowercase github.
+- Thread panes resize like the channels rail (drag or arrow keys, remembered per browser); channel headings sit higher on the rail, channel rows get an explicit hover background, and the message toolbar grows into a framed Discord-like block.
+- The channels filter gained an inline clear button; the find-a-workspace modal lists example repositories (Gitrew itself plus popular discussion-heavy repos).
+
 ## 0.6.6 — 2026-10-17
 
 - Workspace chrome cleanup from review marks: one Gitrew logo (the toolbar one) — the rail-top mark, the duplicate sidebar sign-in and the page-header brand are gone; guests sign in from the composer only.
