@@ -5,13 +5,34 @@ export interface Channel {
   url?: string;
   repository?: string;
   category?: { name: string; emoji: string } | null;
+  /** ISO time of the latest conversation activity, for local unread markers. */
+  activityAt?: string;
   kind?: "public" | "private" | "dm";
 }
 
 export interface MessageReaction {
   emoji: string;
   count: number;
+  /** GitHub ReactionContent name, set when the viewer can toggle it. */
+  content?: string;
+  /** Whether the signed-in viewer already added this reaction. */
+  mine?: boolean;
 }
+// The exact emoji set GitHub supports on reactions, in picker order.
+export const reactionEmoji = {
+  THUMBS_UP: "👍",
+  THUMBS_DOWN: "👎",
+  LAUGH: "😄",
+  HOORAY: "🎉",
+  CONFUSED: "😕",
+  HEART: "❤️",
+  ROCKET: "🚀",
+  EYES: "👀",
+} as const;
+export type ReactionContent = keyof typeof reactionEmoji;
+export const quickReactions = Object.entries(reactionEmoji).map(
+  ([content, emoji]) => ({ content: content as ReactionContent, emoji }),
+);
 
 export interface Message {
   id: string;
@@ -56,4 +77,14 @@ export interface MessagePage {
 export interface PagingTransport extends ChatTransport {
   listMoreChannels(): Promise<ChannelPage>;
   listOlderMessages(channelId: string): Promise<MessagePage>;
+}
+
+// GitHub-backed transports can surface real discussion reactions; optional
+// so vault and preview transports keep their plain send/read contract.
+export interface ReactingTransport extends ChatTransport {
+  toggleReaction(
+    messageId: string,
+    content: ReactionContent,
+    remove: boolean,
+  ): Promise<MessageReaction[]>;
 }

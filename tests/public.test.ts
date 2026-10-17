@@ -69,6 +69,7 @@ function graphqlResponse(query: string, variables: Record<string, unknown>) {
                 body: "Hello",
                 url: "https://github.com/acme/widget/discussions/1",
                 createdAt: "2026-10-01T00:00:00Z",
+                updatedAt: "2026-10-02T00:00:00Z",
                 category: { name: "Announcements", emoji: "📣" },
                 comments: { totalCount: 2 },
               },
@@ -221,6 +222,7 @@ describe("public browsing", () => {
     };
     expect(page.discussions.map((d) => d.id)).toEqual(["D_1"]);
     expect(page.discussions[0]?.category?.name).toBe("Announcements");
+    expect(page.discussions[0]?.activityAt).toBe("2026-10-02T00:00:00Z");
     expect(page.pageInfo.hasNextPage).toBe(true);
     expect(upstreamCalls).toHaveLength(1);
     await get("/api/public/github/acme/widget/discussions?after=disc-cursor-1");

@@ -52,6 +52,7 @@ const discussionsPage = {
       url: "https://github.com/acme/widget/discussions/1",
       createdAt: "2026-10-01T00:00:00Z",
       category: { name: "Announcements", emoji: "📣" },
+      activityAt: "2026-10-01T00:00:00Z",
       comments: { totalCount: 2 },
     },
     {
@@ -61,6 +62,7 @@ const discussionsPage = {
       url: "https://github.com/acme/widget/discussions/2",
       createdAt: "2026-10-02T00:00:00Z",
       category: { name: "Ideas", emoji: "💡" },
+      activityAt: "2026-10-02T00:00:00Z",
       comments: { totalCount: 1 },
     },
   ],
@@ -273,7 +275,10 @@ test("sidebar groups categories, filters and loads more channels", async ({
   await expect(page.getByText("💡 Ideas")).toBeVisible();
   await expect(
     page.getByRole("button", { name: "# ideas", exact: true }),
-  ).toBeVisible();
+  ).toHaveClass(/unread/);
+  await expect(
+    page.getByRole("button", { name: "# general", exact: true }),
+  ).not.toHaveClass(/unread/);
   await page
     .getByLabel("Filter channels", { exact: true })
     .fill("general");

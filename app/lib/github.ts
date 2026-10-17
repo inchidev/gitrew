@@ -1,10 +1,22 @@
 import { z } from "zod";
 import { githubFetch } from "./backend";
-import type { Channel, ChatTransport, Message } from "../../shared/chat";
+import {
+  reactionEmoji,
+  type Channel,
+  type ChatTransport,
+  type Message,
+  type MessageReaction,
+  type ReactionContent,
+} from "../../shared/chat";
 
 interface PageInfo {
   hasNextPage: boolean;
   endCursor: string | null;
+}
+interface GitHubReactionGroup {
+  content: ReactionContent;
+  users: { totalCount: number };
+  viewerHasReacted: boolean;
 }
 interface GitHubComment {
   id: string;
@@ -13,8 +25,10 @@ interface GitHubComment {
   updatedAt: string;
   url: string;
   author: { login: string } | null;
+  reactionGroups?: GitHubReactionGroup[];
   replies?: { nodes: GitHubComment[]; pageInfo: PageInfo };
 }
+type GitHubViewerGroups = GitHubReactionGroup[];
 
 const pageInfoSchema = z
   .object({ hasNextPage: z.boolean(), endCursor: z.string().nullable() })
@@ -22,6 +36,21 @@ const pageInfoSchema = z
     (page) => !page.hasNextPage || Boolean(page.endCursor),
     "Missing pagination cursor",
   );
+const reactionContentSchema = z.enum([
+  "THUMBS_UP",
+  "THUMBS_DOWN",
+  "LAUGH",
+  "HOORAY",
+  "CONFUSED",
+  "HEART",
+  "ROCKET",
+  "EYES",
+]);
+const reactionGroupSchema = z.object({
+  content: reactionContentSchema,
+  users: z.object({ totalCount: z.number() }),
+  viewerHasReacted: z.boolean(),
+});
 const commentSchema = z.object({
   id: z.string(),
   body: z.string(),
@@ -29,6 +58,7 @@ const commentSchema = z.object({
   updatedAt: z.string(),
   url: z.string(),
   author: z.object({ login: z.string() }).nullable(),
+  reactionGroups: z.array(reactionGroupSchema).optional(),
 });
 const commentsSchema = commentSchema.extend({
   replies: z
@@ -45,6 +75,7 @@ const channelsSchema = z.object({
             title: z.string(),
             body: z.string(),
             url: z.string(),
+            updatedAt: z.string().optional(),
           }),
         ),
         pageInfo: pageInfoSchema,
@@ -72,6 +103,34 @@ const repliesSchema = z.object({
     })
     .nullable(),
 });
+// Mutation payloads are namespaced under the operation field.
+const reactionToggleSchema = z.object({
+  addReaction: z
+    .object({
+      subject: z
+        .object({ reactionGroups: z.array(reactionGroupSchema) })
+        .nullable(),
+    })
+    .optional(),
+  removeReaction: z
+    .object({
+      subject: z
+        .object({ reactionGroups: z.array(reactionGroupSchema) })
+        .nullable(),
+    })
+    .optional(),
+});
+
+function toReactions(groups: GitHubViewerGroups): MessageReaction[] {
+  return groups
+    .filter((group) => group.users.totalCount > 0)
+    .map((group) => ({
+      emoji: reactionEmoji[group.content],
+      count: group.users.totalCount,
+      content: group.content,
+      mine: group.viewerHasReacted,
+    }));
+}
 
 export const viewerSchema = z.object({ id: z.number(), login: z.string() });
 export type Viewer = z.infer<typeof viewerSchema>;
@@ -273,14 +332,20 @@ export class GitHubTransport implements ChatTransport {
       const data: {
         repository: {
           discussions: {
-            nodes: { id: string; title: string; body: string; url: string }[];
+            nodes: {
+              id: string;
+              title: string;
+              body: string;
+              url: string;
+              updatedAt?: string;
+            }[];
             pageInfo: PageInfo;
           };
         } | null;
       } = await this.graphql(
         `query Channels($owner: String!, $name: String!, $after: String) {
         repository(owner: $owner, name: $name) { discussions(first: 50, after: $after) {
-          nodes { id title body url } pageInfo { hasNextPage endCursor }
+          nodes { id title body url updatedAt } pageInfo { hasNextPage endCursor }
         } }
       }`,
         { owner: this.owner, name: this.repository, after },
@@ -295,6 +360,8 @@ export class GitHubTransport implements ChatTransport {
           name: discussion.title.replace(/^#/, ""),
           description: discussion.body,
           url: discussion.url,
+          updatedAt: discussion.updatedAt,
+          activityAt: discussion.updatedAt,
         })),
       );
       const pageInfo: PageInfo = data.repository.discussions.pageInfo;
@@ -318,7 +385,9 @@ export class GitHubTransport implements ChatTransport {
         `query Messages($id: ID!, $after: String) {
         node(id: $id) { ... on Discussion { comments(first: 50, after: $after) {
           nodes { id body createdAt updatedAt url author { login }
-            replies(first: 20) { nodes { id body createdAt updatedAt url author { login } } pageInfo { hasNextPage endCursor } }
+            reactionGroups { content users { totalCount } viewerHasReacted }
+            replies(first: 20) { nodes { id body createdAt updatedAt url author { login }
+              reactionGroups { content users { totalCount } viewerHasReacted } } pageInfo { hasNextPage endCursor } }
           } pageInfo { hasNextPage endCursor }
         } } }
       }`,
@@ -351,7 +420,8 @@ export class GitHubTransport implements ChatTransport {
         } = await this.graphql(
           `query Replies($id: ID!, $after: String) {
           node(id: $id) { ... on DiscussionComment { replies(first: 100, after: $after) {
-            nodes { id body createdAt updatedAt url author { login } } pageInfo { hasNextPage endCursor }
+            nodes { id body createdAt updatedAt url author { login }
+              reactionGroups { content users { totalCount } viewerHasReacted } } pageInfo { hasNextPage endCursor } }
           } } }
         }`,
           { id: comment.id, after: replyCursor },
@@ -384,7 +454,8 @@ export class GitHubTransport implements ChatTransport {
     }>(
       `mutation Send($discussionId: ID!, $body: String!, $replyToId: ID) {
       addDiscussionComment(input: { discussionId: $discussionId, body: $body, replyToId: $replyToId }) {
-        comment { id body createdAt updatedAt url author { login } }
+        comment { id body createdAt updatedAt url author { login }
+          reactionGroups { content users { totalCount } viewerHasReacted } }
       }
     }`,
       { discussionId: channelId, body, replyToId: parentId || null },
@@ -412,6 +483,34 @@ export class GitHubTransport implements ChatTransport {
       updatedAt: comment.updatedAt,
       status: "saved",
       url: comment.url,
+      reactions: comment.reactionGroups?.length
+        ? toReactions(comment.reactionGroups)
+        : undefined,
     };
+  }
+
+  async toggleReaction(
+    messageId: string,
+    content: ReactionContent,
+    remove: boolean,
+  ): Promise<MessageReaction[]> {
+    const mutation = remove
+      ? `mutation Unreact($subjectId: ID!, $content: ReactionContent!) {
+          removeReaction(input: { subjectId: $subjectId, content: $content }) {
+            subject { ... on DiscussionComment { reactionGroups { content users { totalCount } viewerHasReacted } } } }
+        }`
+      : `mutation React($subjectId: ID!, $content: ReactionContent!) {
+          addReaction(input: { subjectId: $subjectId, content: $content }) {
+            subject { ... on DiscussionComment { reactionGroups { content users { totalCount } viewerHasReacted } } } }
+        }`;
+    const data = await this.graphql(
+      mutation,
+      { subjectId: messageId, content },
+      reactionToggleSchema,
+    );
+    const subject = (data.addReaction || data.removeReaction)?.subject;
+    if (!subject)
+      throw new GitHubError("This message is no longer available.");
+    return toReactions(subject.reactionGroups);
   }
 }

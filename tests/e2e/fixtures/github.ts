@@ -1,19 +1,23 @@
 import { expect, type Page } from "@playwright/test";
 
 const pageInfo = { hasNextPage: false, endCursor: null };
-function reply(id: string, body: string) {
+function reply(
+  id: string,
+  body: string,
+  createdAt = "2026-10-14T08:00:00Z",
+) {
   return {
     id,
     body,
-    createdAt: "2026-10-14T08:00:00Z",
-    updatedAt: "2026-10-14T08:00:00Z",
+    createdAt,
+    updatedAt: createdAt,
     url: `https://github.com/inchidev/gitrew/discussions/1#${id}`,
     author: { login: "robin" },
   };
 }
-function comment(id: string, body: string) {
+function comment(id: string, body: string, createdAt?: string) {
   return {
-    ...reply(id, body),
+    ...reply(id, body, createdAt),
     replies: { nodes: new Array<ReturnType<typeof reply>>(), pageInfo },
   };
 }
@@ -22,6 +26,15 @@ export async function githubRoutes(page: Page, failSend = false) {
     comment("remote-1", "A conversation from GitHub"),
     comment("remote-2", "This message will be deleted"),
   ];
+  messages[0]!.reactionGroups = [
+    { content: "ROCKET", users: { totalCount: 1 }, viewerHasReacted: false },
+  ];
+  const threads: Record<string, ReturnType<typeof comment>[]> = {
+    "github-general": messages,
+    "github-ideas": [
+      comment("ideas-message", "An idea queued", "2026-10-14T09:00:00Z"),
+    ],
+  };
   await page.route("https://api.github.com/**", async (route) => {
     const url = new URL(route.request().url());
     expect(route.request().headers().authorization).toBe(
@@ -68,7 +81,20 @@ export async function githubRoutes(page: Page, failSend = false) {
                   title: "#general",
                   body: "The team’s conversation",
                   url: "https://github.com/inchidev/gitrew/discussions/1",
+                  updatedAt: "2026-10-14T08:00:00Z",
                 },
+                .../* second channel carries fresher activity for unread dots */
+                  (variables.name === "gitrew"
+                    ? [
+                        {
+                          id: "github-ideas",
+                          title: "#ideas",
+                          body: "Ideas",
+                          url: "https://github.com/inchidev/gitrew/discussions/2",
+                          updatedAt: "2026-10-14T09:00:00Z",
+                        },
+                      ]
+                    : []),
               ],
               pageInfo,
             },
@@ -81,13 +107,32 @@ export async function githubRoutes(page: Page, failSend = false) {
           node: {
             comments: {
               nodes:
-                variables.id === "github-general"
-                  ? messages
-                  : [comment("private-message", "Only the private workspace")],
+                threads[variables.id as string] ||
+                [comment("private-message", "Only the private workspace")],
               pageInfo,
             },
           },
         },
+      });
+    if (query.includes("mutation React"))
+      return json({
+        data: {
+          addReaction: {
+            subject: {
+              reactionGroups: [
+                {
+                  content: "ROCKET",
+                  users: { totalCount: 2 },
+                  viewerHasReacted: true,
+                },
+              ],
+            },
+          },
+        },
+      });
+    if (query.includes("mutation Unreact"))
+      return json({
+        data: { removeReaction: { subject: { reactionGroups: [] } } },
       });
     if (query.includes("mutation Send")) {
       if (failSend) return json({ errors: [{ message: "denied" }] });

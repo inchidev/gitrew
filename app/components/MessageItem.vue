@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import dayjs from "dayjs";
-import type { Message } from "../../shared/chat";
+import {
+  quickReactions,
+  type Message,
+  type ReactionContent,
+} from "../../shared/chat";
 import { safeUrl } from "~/lib/links";
 import { renderPublicMarkdown } from "~/lib/markdown";
 const props = defineProps<{
@@ -9,8 +13,12 @@ const props = defineProps<{
   selected?: boolean;
   inThread?: boolean;
   markdown?: boolean;
+  canReact?: boolean;
 }>();
-const emit = defineEmits<{ thread: [id: string] }>();
+const emit = defineEmits<{
+  thread: [id: string];
+  react: [content: ReactionContent];
+}>();
 const url = computed(() => safeUrl(props.message.url));
 const avatar = computed(() =>
   props.message.status === "saved" &&
@@ -22,6 +30,16 @@ const avatarFailed = ref(false);
 const markdownBody = computed(() =>
   props.markdown ? renderPublicMarkdown(props.message.body) : "",
 );
+const pickerOpen = ref(false);
+function pick(content: ReactionContent) {
+  pickerOpen.value = false;
+  emit("react", content);
+}
+function pickerBlur(event: FocusEvent) {
+  const holder = event.currentTarget as HTMLElement | null;
+  if (!holder?.contains(event.relatedTarget as HTMLElement | null))
+    pickerOpen.value = false;
+}
 </script>
 <template>
   <article class="message" :class="{ 'message-selected': selected }">
@@ -68,15 +86,64 @@ const markdownBody = computed(() =>
         v-html="markdownBody"
       />
       <div
-        v-if="message.reactions && message.reactions.length"
+        v-if="(message.reactions && message.reactions.length) || canReact"
         class="message-reactions"
       >
+        <template v-for="reaction in message.reactions || []" :key="reaction.emoji">
+          <button
+            v-if="canReact && reaction.content"
+            type="button"
+            class="message-reaction"
+            :class="{ mine: reaction.mine }"
+            :aria-pressed="reaction.mine ? 'true' : 'false'"
+            :aria-label="
+              `${reaction.emoji} ${reaction.count} — ${
+                reaction.mine ? 'remove your reaction' : 'react too'
+              }`
+            "
+            @click="emit('react', reaction.content)"
+          >
+            {{ reaction.emoji }} {{ reaction.count }}
+          </button>
+          <span v-else class="message-reaction" :class="{ mine: reaction.mine }"
+            >{{ reaction.emoji }} {{ reaction.count }}</span
+          >
+        </template>
         <span
-          v-for="reaction in message.reactions"
-          :key="reaction.emoji"
-          class="message-reaction"
-          >{{ reaction.emoji }} {{ reaction.count }}</span
+          v-if="canReact"
+          class="reaction-picker-holder"
+          @focusout="pickerBlur"
+          @keydown.esc="pickerOpen = false"
         >
+          <UButton
+            color="neutral"
+            variant="ghost"
+            size="xs"
+            icon="i-octicon-smiley-16"
+            class="reaction-add"
+            :aria-expanded="pickerOpen ? 'true' : 'false'"
+            aria-haspopup="true"
+            aria-label="Add a reaction"
+            @click="pickerOpen = !pickerOpen"
+          />
+          <div v-if="pickerOpen" class="reaction-picker" role="menu">
+            <button
+              v-for="item in quickReactions"
+              :key="item.content"
+              type="button"
+              role="menuitem"
+              :class="{
+                mine: message.reactions?.some(
+                  (group) => group.content === item.content && group.mine,
+                ),
+              }"
+              :title="`React with ${item.emoji}`"
+              @click="pick(item.content)"
+            >
+              {{ item.emoji }}
+            </button>
+          </div>
+        </span>
       </div>
       <div class="message-actions">
         <UButton

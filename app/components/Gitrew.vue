@@ -9,7 +9,11 @@ import { safeUrl } from "~/lib/links";
 import { channelSections } from "~/lib/channel-groups";
 import { useQuery } from "@tanstack/vue-query";
 import { listWorkspaceRepositories } from "~/lib/github";
-import type { Channel } from "../../shared/chat";
+import type {
+  Channel,
+  Message,
+  ReactionContent,
+} from "../../shared/chat";
 import type { MailboxConfig } from "../../shared/mailbox";
 
 import { legacyWorkspacePath, workspacePath } from "../../shared/routes";
@@ -362,12 +366,19 @@ useEventListener(
   import.meta.client ? window : undefined,
   "keydown",
   (event: KeyboardEvent) => {
+    const target = event.target as HTMLElement | null;
+    const typing =
+      target &&
+      (target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT" ||
+        target.isContentEditable);
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
       event.preventDefault();
-      if (publicMode.value) {
-        openChannelSwitcher();
-        return;
-      }
+      openChannelSwitcher();
+    } else if (event.key === "/" && !typing) {
+      // Slack-style: the slash key jumps to search instead of typing "/".
+      event.preventDefault();
       globalSearch.value?.querySelector("input")?.focus();
     }
   },
@@ -431,6 +442,9 @@ const {
   publicLoadMoreChannels,
   hasOlderMessages,
   publicLoadOlderMessages,
+  canReact,
+  unread,
+  toggleReactionMutation,
 } = chat;
 const isSignedIn = computed(() =>
   Boolean(auth.viewer.value && auth.token.value),
@@ -579,6 +593,20 @@ function channelLocation(id: string) {
 function selectChannel(id: string) {
   return router.push(channelLocation(id));
 }
+function reactTo(message: Message, content: ReactionContent) {
+  if (!canReact.value) return;
+  const mine = message.reactions?.some(
+    (group) => group.content === content && group.mine,
+  );
+  toggleReactionMutation.mutate({
+    messageId: message.id,
+    content,
+    remove: Boolean(mine),
+  });
+}
+const livePresence = computed(() =>
+  live.members.value.map((member) => member.login),
+);
 watch(
   () => chat.channel.value,
   (value) => {
@@ -765,7 +793,7 @@ function dayLabel(index: number) {
               size="xs"
               @click="search = ''"
             />
-            <kbd v-else>{{ shortcutKey }} K</kbd>
+            <kbd v-else>/</kbd>
           </template>
         </UInput>
       </div>
@@ -842,7 +870,7 @@ function dayLabel(index: number) {
             :icon="item.kind === 'private' ? 'i-octicon-lock-16' : undefined"
             color="neutral"
             variant="ghost"
-            :class="{ active: selectedChannel === item.id }"
+            :class="{ active: selectedChannel === item.id, unread: unread[item.id] }"
             :aria-current="selectedChannel === item.id ? 'page' : undefined"
             @click="selectChannel(item.id)"
           />
@@ -873,7 +901,7 @@ function dayLabel(index: number) {
           icon="i-octicon-person-16"
           color="neutral"
           variant="ghost"
-          :class="{ active: selectedChannel === item.id }"
+          :class="{ active: selectedChannel === item.id, unread: unread[item.id] }"
           :aria-current="selectedChannel === item.id ? 'page' : undefined"
           @click="selectChannel(item.id)"
         />
@@ -962,6 +990,14 @@ function dayLabel(index: number) {
                   ? "Direct message"
                   : channel?.description || ""
             }}
+            <span
+              v-if="livePresence.length"
+              class="presence-chip"
+              :title="`${livePresence.join(', ')} online right now`"
+            >
+              <span class="presence-dot" aria-hidden="true" />
+              {{ livePresence.length }} online — {{ livePresence.join(", ") }}
+            </span>
           </p>
         </div>
         <div class="header-actions">
@@ -1189,7 +1225,9 @@ function dayLabel(index: number) {
             :replies="chat.replyCount(message.id)"
             :selected="selectedThread === message.id"
             :markdown="publicMode"
+            :can-react="canReact"
             @thread="openThread($event)"
+            @react="reactTo(message, $event)"
           />
         </template>
       </div>
@@ -1245,7 +1283,14 @@ function dayLabel(index: number) {
           aria-label="Thread messages"
           tabindex="0"
         >
-          <MessageItem :message="parent" in-thread selected :markdown="publicMode" />
+          <MessageItem
+            :message="parent"
+            in-thread
+            selected
+            :markdown="publicMode"
+            :can-react="canReact"
+            @react="reactTo(parent, $event)"
+          />
           <div class="thread-divider">
             {{ replies.length }}
             {{ replies.length === 1 ? "reply" : "replies" }}
@@ -1256,6 +1301,8 @@ function dayLabel(index: number) {
             :message="reply"
             in-thread
             :markdown="publicMode"
+            :can-react="canReact"
+            @react="reactTo(reply, $event)"
           />
         </div>
         <ChatComposer

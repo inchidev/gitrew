@@ -88,6 +88,35 @@ test("GitHub OAuth completes with PKCE, sends directly to Discussions, and clear
   ).toHaveCount(0);
 });
 
+test("messages react with GitHub reactions and channels mark read locally", async ({
+  page,
+}) => {
+  await githubRoutes(page);
+  await session(page);
+  await page.goto("/login?workspace=inchidev/gitrew");
+  await expect(
+    page.getByText("A conversation from GitHub", { exact: true }),
+  ).toBeVisible();
+  // The current channel is read; the sibling one with fresher activity shows a dot.
+  await expect(
+    page.getByRole("button", { name: "# ideas", exact: true }),
+  ).toHaveClass(/unread/);
+  const firstMessage = page
+    .getByRole("article")
+    .filter({ hasText: "A conversation from GitHub" });
+  await firstMessage.getByRole("button", { name: "Add a reaction" }).click();
+  await page.getByRole("menuitem", { name: "🚀" }).click();
+  await expect(
+    firstMessage.locator(".message-reaction.mine"),
+  ).toHaveText("🚀 2");
+  await expect(firstMessage.locator(".message-reaction.mine")).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await firstMessage.locator(".message-reaction.mine").click();
+  await expect(firstMessage.locator(".message-reaction.mine")).toHaveCount(0);
+});
+
 test("failed sends preserve the draft, and refresh replaces edited and deleted messages", async ({
   page,
 }) => {
